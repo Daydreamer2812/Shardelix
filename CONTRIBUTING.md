@@ -1,0 +1,24 @@
+# Contributing to FragmentLab
+
+Thank you for helping improve FragmentLab. Keep changes deterministic, CPU-first, and honest
+about measured performance.
+
+## Development setup
+
+```powershell
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+python -m pip install -e ".[dev]"
+```
+
+## Before opening a pull request
+
+1. Keep algorithms under `src/fragmentlab` and generated artifacts under `outputs/` or
+   `data/synthetic/`.
+2. Do not expose ground truth to blind inference code.
+3. Add a regression test for bug fixes and seeded evaluation for solver changes.
+4. Run `python -m unittest discover -s tests/v2 && python -m unittest discover -s tests/workflow`.
+5. Update relevant documentation when behavior, metrics, or limitations change.
+
+Pull requests should explain the problem, the approach, verification performed, and any known
+limitations. Do not commit raw datasets, generated outputs, credentials, or private documents.

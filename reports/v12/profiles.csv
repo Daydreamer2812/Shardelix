@@ -1,0 +1,13 @@
+count,seed,cut,angle_mode,profile,missing,sampling,case,status,algorithm,runtime_seconds,elapsed_seconds,peak_process_rss_mib,placed,coverage,direct_position_accuracy,adjacency_f1,pass_95,collision_pixels
+64,42,grid,quarter,fast,0.0,1,1,done,grid-edge-consensus,0.11348452499987616,0.37981098999989626,66.5859375,64,1.0,1.0,1.0,True,0
+64,42,grid,quarter,balanced,0.0,1,2,done,grid-edge-consensus,0.10898629099938262,0.39573996500075737,67.03125,64,1.0,1.0,1.0,True,0
+64,42,grid,quarter,accurate,0.0,1,3,done,grid-edge-consensus,0.3307803049992799,0.5948138700005074,102.62109375,64,1.0,1.0,1.0,True,0
+64,42,jigsaw,quarter,fast,0.0,1,4,done,blind-complementary-arc-graph,0.17955093499949726,0.5686017799998808,102.62109375,64,1.0,1.0,1.0,True,0
+64,42,jigsaw,quarter,balanced,0.0,1,5,done,blind-complementary-arc-graph,0.27654583399998955,0.6845486900001561,102.62109375,64,1.0,1.0,1.0,True,0
+64,42,jigsaw,quarter,accurate,0.0,1,6,done,blind-complementary-arc-graph,0.21583435999855283,0.575024570000096,102.62109375,64,1.0,1.0,1.0,True,0
+256,42,grid,quarter,fast,0.0,1,7,done,grid-edge-consensus,0.703800086001138,1.1655205330007448,129.01953125,256,1.0,1.0,1.0,True,0
+256,42,grid,quarter,balanced,0.0,1,8,done,grid-edge-consensus,0.6263398070004769,1.0807605990012235,129.26171875,256,1.0,1.0,1.0,True,0
+256,42,grid,quarter,accurate,0.0,1,9,done,grid-edge-consensus,0.7418482070006576,1.0456749759996455,129.26171875,256,1.0,1.0,1.0,True,0
+256,42,jigsaw,quarter,fast,0.0,1,10,done,blind-complementary-arc-graph,0.4814911729990854,0.7811436289994163,129.26171875,17,0.06640625,0.0,0.06336088154269974,False,0
+256,42,jigsaw,quarter,balanced,0.0,1,11,done,verified-contact-graph,4.9728604839983745,5.56850917400152,129.26171875,256,1.0,1.0,1.0,True,0
+256,42,jigsaw,quarter,accurate,0.0,1,12,done,verified-contact-graph,8.195199698000579,9.122959209000328,129.26171875,256,1.0,1.0,1.0,True,0

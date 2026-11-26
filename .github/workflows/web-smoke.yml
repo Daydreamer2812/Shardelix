@@ -1,0 +1,38 @@
+name: Browser engine smoke
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: python scripts/build_web.py --out build/pages
+      - run: npm install --no-save playwright
+      - run: npx playwright install --with-deps chromium
+      - name: Real WebAssembly browser workflow
+        run: |
+          python -m http.server 8767 --bind 127.0.0.1 --directory build/pages > /tmp/pages.log 2>&1 &
+          server=$!
+          trap 'kill $server || true' EXIT
+          for i in $(seq 1 20); do curl -fsS http://127.0.0.1:8767/ -o /dev/null && break || sleep 1; done
+          QA_SCREENSHOT=/tmp/studio.png node scripts/qa_studio.cjs http://127.0.0.1:8767/
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-smoke-evidence
+          path: |
+            /tmp/pages.log
+            /tmp/studio.png
+            /tmp/studio-mobile.png

@@ -1,0 +1,14 @@
+{
+  "piece_count": 64,
+  "placed": 64,
+  "direct_position_accuracy": 1.0,
+  "adjacency_f1": 1.0,
+  "collision_pixels": 0,
+  "runtime_seconds": 0.2547463920000155,
+  "pass_95": true,
+  "seed": 42,
+  "cut": "jigsaw",
+  "profile": "balanced",
+  "angle_mode": "quarter",
+  "source": "synthetic"
+}

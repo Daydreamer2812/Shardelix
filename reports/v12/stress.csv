@@ -1,0 +1,12 @@
+case,cut,count,piece_count,seed,tile,angle_mode,sampling,missing_rate,placed,direct_position_accuracy,adjacency_f1,coverage,collision_pixels,pass_95,runtime_seconds,peak_process_rss_mib,algorithm
+grid,grid,256,256,2719,16,quarter,1,0,256,1.0,1.0,1.0,0,True,0.5647758360009902,123.18359375,grid-edge-consensus
+grid16k,grid,16384,16384,11226,8,quarter,1,0,1161,0.0,0.1049694856146469,0.07086181640625,0,False,34.038805692000096,298.63671875,sparse-edge-consensus-v10
+grid16k20,grid,16384,16384,11226,20,quarter,1,0,16384,1.0,1.0,1.0,0,True,27.746696587999395,328.0234375,sparse-edge-consensus-v10
+grid65k,grid,65536,65536,11226,12,quarter,1,0,65438,0.998504638671875,0.9985771757513932,0.998504638671875,0,True,199.46977141800016,864.31640625,sparse-edge-consensus-v10
+horizontal-strips,horizontal-strips,256,256,2719,16,quarter,1,0,256,1.0,1.0,1.0,0,True,1.9518670640009077,115.02734375,rotated-strip-joint-path
+jagged,jagged,256,256,2719,16,quarter,1,0,256,1.0,1.0,1.0,0,True,7.594746191000013,109.21484375,verified-contact-graph
+jigsaw,jigsaw,256,256,2719,16,quarter,1,0,256,1.0,1.0,1.0,0,True,4.674180549000084,87.86328125,verified-contact-graph
+jigsaw-native,jigsaw,256,230,9217,24,continuous,1,0.1,214,0.9130434782608695,0.9226305609284333,0.8359578450520834,0,False,17.114214974999413,119.8984375,pose-normalized-anchored-mask-completion-v11-v12
+random,random,256,256,2719,16,quarter,1,0,256,1.0,1.0,1.0,0,True,6.002093095999953,98.8359375,verified-contact-graph
+strips,strips,256,256,2719,16,quarter,1,0,256,1.0,1.0,1.0,0,True,2.5688351720000355,116.08203125,rotated-strip-joint-path
+wavy,wavy,256,256,2719,16,quarter,1,0,256,1.0,1.0,1.0,0,True,6.668880029999855,95.296875,verified-contact-graph

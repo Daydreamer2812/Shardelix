@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FragmentLab · Reconstruction Studio</title>
+<style>
+:root{color-scheme:light;--bg:#f4f6f9;--panel:#fff;--ink:#172638;--muted:#657386;--line:#dde4ed;--brand:#2458ba;--accent:#e9f0ff;--ok:#18835a;--warn:#a16512;--danger:#b83336;--shadow:0 5px 26px #20365308}*{box-sizing:border-box}body{margin:0;font:14px/1.5 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink)}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.45;cursor:not-allowed}button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid #8db4fd;outline-offset:2px}header{height:78px;background:#12233a;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(18px,3.5vw,56px);gap:16px}header h1{font-size:22px;margin:0;letter-spacing:-.7px}header small{color:#aebdd1}.brand{display:flex;gap:13px;align-items:center}.mark{display:grid;grid-template-columns:repeat(2,15px);gap:3px;transform:rotate(-5deg)}.mark i{height:15px;background:#82aff8;border-radius:3px}.mark i:nth-child(2){background:#447bdd}.mark i:nth-child(3){background:#d5e5ff}.header-info{display:flex;gap:10px;align-items:center}.pill{border-radius:99px;padding:4px 9px;background:#edf1f6;font-size:11px;font-weight:700;color:#56687c;white-space:nowrap}.pill.blue{background:var(--accent);color:var(--brand)}.pill.green{background:#e4f5eb;color:var(--ok)}header .pill{background:#2d405a;color:#cbdaf0}main{max-width:1660px;margin:auto;padding:26px clamp(18px,3.5vw,56px) 30px}.hero{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:20px}.hero h2{font-size:25px;letter-spacing:-.6px;margin:0}.hero p{margin:4px 0 0;color:var(--muted)}.layout{display:grid;grid-template-columns:340px minmax(0,1fr);gap:20px;align-items:start}.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);min-width:0}.settings{padding:19px}.content{padding:20px}.section{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}.section h3{margin:0;font-size:14px;color:#43566e;letter-spacing:.5px}.tabbar{display:flex;padding:4px;background:#f0f3f8;border-radius:9px;gap:4px}.tabbar button{flex:1;border:0;background:none;border-radius:6px;padding:9px 5px;font-weight:650;color:var(--muted);font-size:13px}.tabbar button.active{background:#fff;color:var(--brand);box-shadow:0 1px 4px #55719420}.drop{border:1.5px dashed #a2b8d5;border-radius:10px;background:#f8faff;padding:17px 8px;text-align:center;display:block;margin:11px 0 7px;cursor:pointer}.drop.drag{border-color:var(--brand);background:var(--accent)}.drop{position:relative}.drop #upload{position:absolute;top:0;left:0;opacity:0;width:1px;height:1px;min-width:0;margin:0;padding:0;border:0;clip-path:inset(50%)}.drop strong{display:block;color:var(--brand);font-weight:700}.drop small{color:var(--muted);overflow-wrap:anywhere}.upload-icon{font-size:25px;color:#5174aa;font-weight:400}.quiet{color:var(--brand);font-size:12px;background:none;border:0;padding:0;font-weight:600}.label{display:block;font-weight:650;font-size:12px;margin:13px 0 5px}input:not([type=checkbox]):not([type=range]),select{background:white;border:1px solid #ced8e4;border-radius:7px;color:var(--ink);padding:9px;width:100%;min-width:0}input[readonly],select:disabled{background:#f2f4f7;color:var(--muted)}.fields{display:grid;grid-template-columns:1fr 1fr;gap:9px}.hint{color:var(--muted);font-size:11px;line-height:1.5;margin:5px 0}.callout{background:#eef4ff;border:1px solid #d6e3f7;color:#315784;padding:10px;border-radius:8px;margin:9px 0;font-size:12px;overflow-wrap:anywhere}.callout.warn{background:#fff8e8;border-color:#eedbb7;color:#82530e}.callout.error{background:#fff1f0;border-color:#f1c5c3;color:var(--danger)}.check{display:flex;align-items:center;gap:8px;color:var(--ink);font-size:13px;margin:12px 0}.check input,input[type=range]{accent-color:var(--brand)}input[type=range]{width:100%}.split{border-top:1px solid var(--line);padding-top:12px;margin-top:14px}details summary{cursor:pointer;font-weight:650;color:#4a5b70;font-size:13px}details[open] summary{margin-bottom:8px}.actions{display:flex;gap:8px;margin-top:16px}.button{border:1px solid var(--line);background:#fff;color:var(--ink);font-weight:650;border-radius:8px;padding:10px 12px;text-decoration:none;font-size:13px}.primary{background:var(--brand);border-color:var(--brand);color:white;flex:1}.actions .primary:hover{background:#19489f}.status{display:flex;gap:7px;align-items:center;color:var(--muted);font-size:12px}.dot{width:9px;height:9px;border-radius:50%;background:#a4afbc}.dot.running{background:#367bf3;animation:pulse 1.3s infinite}.dot.done{background:#1f9a68}.dot.error{background:#d44343}@keyframes pulse{50%{opacity:.3}}.bar{height:5px;background:#e7ecf3;border-radius:6px;overflow:hidden;margin:8px 0 16px}.bar span{display:block;height:100%;background:var(--brand);width:0;transition:width .3s}.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:16px}.stat{border:1px solid var(--line);padding:12px;border-radius:9px;min-width:0}.stat small{display:block;color:var(--muted);font-size:11px}.stat b{display:block;font-size:22px;font-weight:650;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}.panes{display:grid;grid-template-columns:1fr;gap:12px}.panes.compare{grid-template-columns:repeat(2,minmax(0,1fr))}.view{border:1px solid var(--line);border-radius:10px;overflow:hidden;min-width:0}.viewhead{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line);background:#fafbfd;font-weight:650;font-size:12px}.viewhead .check{margin:0;font-size:11px}.canvas{height:360px;display:flex;align-items:center;justify-content:center;overflow:auto;background-color:#edf1f5;background-image:conic-gradient(#e2e7ee 25%,transparent 0 50%,#e2e7ee 0 75%,transparent 0);background-size:20px 20px}.canvas img{display:block;max-width:100%;max-height:100%;object-fit:contain;cursor:zoom-in}.canvas.zoom{align-items:start;justify-content:start}.canvas.zoom img{max-width:none;max-height:none;cursor:zoom-out}.empty{background:#f8fafcdd;border:1px solid #dce4ef;padding:26px 18px;border-radius:10px;text-align:center;color:#6c7e93;margin:10px;max-width:240px}.empty strong{display:block;color:#3f536c;margin-bottom:5px}.downloads{display:flex;gap:7px;flex-wrap:wrap;margin-top:14px}.downloads .button{padding:7px 10px;color:var(--brand);font-size:12px}.table-wrap{overflow:auto;margin-top:10px}table{border-collapse:collapse;width:100%;font-size:12px}td,th{padding:8px 9px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}th{color:var(--muted);background:#f7f9fc}td.error{color:var(--danger);white-space:normal;min-width:150px}pre{max-height:300px;overflow:auto;background:#f4f7fa;padding:12px;border-radius:8px;font-size:11px;white-space:pre-wrap;overflow-wrap:anywhere}footer{display:flex;justify-content:space-between;gap:15px;color:var(--muted);font-size:11px;padding-top:15px}.hidden,[hidden]{display:none!important}@media(max-width:1080px){.layout{grid-template-columns:300px minmax(0,1fr)}.panes.compare{grid-template-columns:1fr}.canvas{height:300px}}@media(max-width:760px){.layout{grid-template-columns:1fr}.hero{display:block}.hero h2{font-size:22px}.header-info .pill:first-child{display:none}.content,.settings{padding:15px}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.panes.compare{grid-template-columns:1fr}.canvas{height:310px}header{height:66px}}
+/* Keep intrinsic grid/flex content inside the mobile viewport, including
+   long metadata, option labels, image dimensions and benchmark tables. */
+@media(max-width:760px){
+ .layout,.panes,.panes.compare{grid-template-columns:minmax(0,1fr)}
+ .fields{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .fields>* , .brand>div, .section>* , .actions>* , footer>*{min-width:0}
+ .table-wrap{max-width:100%;min-width:0}
+ .brand{min-width:0}
+ .header-info{flex-shrink:0}
+ .hero .pill{display:inline-block;margin-top:8px}
+ .content>.section{flex-wrap:wrap;gap:7px}
+ .status{overflow-wrap:anywhere}
+ .dot{flex-shrink:0}
+}
+@media(max-width:480px){
+ header{height:auto;min-height:66px;padding:10px 14px;gap:9px}
+ header h1{font-size:18px;line-height:1.2;letter-spacing:-.35px}
+ header small{display:none}
+ .brand{gap:8px}
+ .mark{grid-template-columns:repeat(2,11px);gap:2px;flex-shrink:0}
+ .mark i{height:11px}
+ header .pill{font-size:10px;padding:4px 6px}
+ main{padding:16px 12px 22px}
+ .content,.settings{padding:12px}
+ .viewhead{flex-wrap:wrap}
+ .actions{flex-wrap:wrap}
+ footer{flex-wrap:wrap}
+}
+</style></head>
+<body>
+<header><div class="brand"><div class="mark" aria-hidden="true"><i></i><i></i><i></i><i></i></div><div><h1>FragmentLab <span style="font-weight:400;color:#99bff8">Studio</span></h1><small>Digital image &amp; document reconstruction</small></div></div><div class="header-info"><span class="pill" id="engineBadge">CPU only</span><span class="pill">V12 · Research</span></div></header>
+<main>
+<div class="hero"><div><h2>Reconstruction workspace</h2><p>One blind solver framework. Generate synthetic fragments or import existing pieces.</p></div><span class="pill green">Private · Local computation</span></div>
+<div class="layout">
+<section class="panel settings">
+<div class="section"><h3>01 &nbsp; INPUT &amp; CONFIGURATION</h3></div>
+<div class="tabbar"><button type="button" id="imageTab" class="active">From image</button><button type="button" id="fragmentTab">From fragments</button></div>
+<form id="configForm">
+<label class="drop" id="drop"><span class="upload-icon">↑</span><strong id="prompt">Choose image or PDF</strong><small id="fileLabel">Drop a file or click to browse</small><input id="upload" type="file" accept="image/*,.pdf"></label>
+<button class="quiet" type="button" id="sample">Use a synthetic sample</button>
+<div id="metadataWrap" hidden><label class="check"><input id="useMeta" type="checkbox" checked> Use archive metadata</label><div id="metadataInfo" class="callout">Select fragments or ZIP.</div></div>
+<div id="geometryFields">
+<label class="label" for="cut">Cut family</label><select id="cut"><option value="grid">Rectangular grid</option><option value="strips">Vertical strips</option><option value="horizontal-strips">Horizontal strips</option><option value="jagged">Jagged</option><option value="wavy">Wavy</option><option value="jigsaw">Jigsaw</option><option value="random">Mixed irregular</option><option value="document" hidden>Document strips (unknown width)</option></select>
+<div id="manualFields" hidden>
+<div class="fields"><div><label class="label" for="width">Canvas width</label><input id="width" type="number" min="1" value="1024"></div><div><label class="label" for="height">Canvas height</label><input id="height" type="number" min="1" value="1024"></div></div>
+<div class="fields" id="gridFields"><div><label class="label" for="rows">Rows</label><input id="rows" type="number" min="1" value="16"></div><div><label class="label" for="cols">Columns</label><input id="cols" type="number" min="1" value="16"></div></div>
+<div id="expectedWrap"><label class="label" for="expected">Complete piece count (0 = auto)</label><input id="expected" type="number" min="0" value="0"></div>
+</div>
+<div id="demoFields">
+<div class="fields"><div><label class="label" for="count">Pieces</label><input id="count" type="number" min="1" value="256"></div><div><label class="label" for="maxSide">Resolution</label><select id="maxSide"><option value="1024">1024 px</option><option value="2048" selected>2048 px</option><option value="4096">4096 px</option><option value="8192">8192 px</option><option value="0">Original</option></select></div></div>
+<p class="hint" id="capHint"></p>
+<div id="pageWrap" hidden><label class="label" for="page">PDF page</label><input id="page" type="number" min="1" value="1"></div>
+</div>
+<label class="label" for="angle">Fragment rotation</label><select id="angle"><option value="none">Upright only</option><option value="quarter" selected>Quarter-turn (0°, 90°, 180°, 270°)</option><option value="continuous">Any angle (experimental)</option></select>
+<p class="hint" id="rotationHint" hidden>Continuous pose depends on alpha-mask quality; not universally accurate.</p>
+<div id="missingWrap"><label class="label" for="missing" style="display:flex;justify-content:space-between">Missing fragments <span id="missingText">0%</span></label><input type="range" id="missing" min="0" max="95" step="1" value="0"></div>
+</div>
+<div class="split"><label class="label" for="profile" style="margin-top:0">Performance profile</label><select id="profile"><option value="fast">Fast · fewer hypotheses</option><option value="balanced" selected>Balanced · recommended</option><option value="accurate">High accuracy · extra verification</option><option value="custom">Custom</option></select><p class="hint" id="profileHint">Automatic matching and bounded fallback.</p></div>
+<div id="batchWrap" class="split"><label class="check" style="margin:0"><input id="batch" type="checkbox"> Batch benchmark</label><div id="batchFields" hidden>
+<label class="label" for="counts">Piece counts</label><input id="counts" value="64, 256, 1024" placeholder="64, 256, 1024">
+<label class="label" for="seeds">Seeds</label><input id="seeds" value="42, 100">
+<label class="check"><input id="compareProfiles" type="checkbox"> Compare Fast, Balanced, High accuracy</label>
+<details><summary>More benchmark axes</summary><label class="label" for="batchCuts">Cut families (optional, comma-separated)</label><input id="batchCuts" placeholder="grid,jigsaw,random"><label class="label" for="batchAngles">Rotation modes</label><input id="batchAngles" placeholder="quarter,continuous"><label class="label" for="batchMissing">Missing rates (%)</label><input id="batchMissing" placeholder="0,10"></details>
+<p class="hint" id="batchCount">6 cases planned</p></div></div>
+<details id="advanced" class="split"><summary>Advanced settings</summary>
+<div id="seedWrap"><label class="label" for="seed">Random seed</label><input id="seed" type="number" min="0" value="42"></div>
+<div id="sampleWrap" hidden><label class="label" for="sampling">Raster sampling</label><select id="sampling"><option value="1">1× native</option><option value="2">2× oversampled</option><option value="3">3× oversampled</option><option value="4">4× oversampled</option></select><p class="hint">Import: only choose actual pre-rotation sampling.</p></div>
+<div id="customWrap" hidden><label class="label" for="strategy">Solver strategy</label><select id="strategy"><option value="auto">Adaptive</option><option value="sparse">Forced sparse grid</option></select><div id="indexWrap"><label class="label" for="edgeIndex">Grid edge index</label><select id="edgeIndex"><option value="auto">Adaptive fast + fallback</option><option value="midpoint">Fast midpoint</option><option value="legacy">V9 reference index</option><option value="mixed">Mixed experimental</option></select></div><label class="check"><input id="tune" type="checkbox" checked> Enable automatic refinement</label></div>
+</details>
+<div class="callout" id="preflight">Select an input file to start.</div>
+<div class="actions"><button id="run" class="button primary" type="submit" disabled>Run reconstruction</button><button id="cancel" class="button" type="button" disabled>Cancel</button></div>
+<div id="error" class="callout error" hidden role="alert"></div>
+</form></section>
+<section class="panel content"><div class="section"><h3>02 &nbsp; RESULTS &amp; INSPECTION</h3><div class="status" aria-live="polite"><i class="dot" id="dot"></i><span id="stage">Ready for input</span></div></div>
+<div class="bar"><span id="progress"></span></div>
+<div class="stats"><div class="stat"><small>Placed pieces</small><b id="placed">—</b></div><div class="stat"><small>Coverage</small><b id="coverage">—</b></div><div class="stat"><small>Solver time</small><b id="runtime">—</b></div><div class="stat"><small>DPA (evaluated)</small><b id="dpa">—</b></div><div class="stat"><small>Adjacency F1</small><b id="f1">—</b></div><div class="stat"><small>Peak process RAM</small><b id="ram">—</b></div></div>
+<div id="panes" class="panes">
+<div id="sourceView" class="view" hidden><div class="viewhead">Source · evaluation only</div><div class="canvas"><img id="sourceImg" alt="Input image"></div></div>
+<div class="view"><div class="viewhead">Reconstructed canvas <label class="check"><input id="cuts" type="checkbox" checked> Cut lines</label></div><div class="canvas"><div class="empty" id="empty"><strong>Awaiting reconstruction</strong>Import a source or existing fragments to begin.</div><img id="resultImg" alt="Predicted reconstruction" hidden></div></div></div>
+<div class="callout" id="notice">The solver never sees the original image, ground truth or cut template. Complete coverage is not proof of correct order.</div>
+<section id="benchmark" class="split" hidden><div class="section"><h3>BENCHMARK RESULTS</h3><span class="pill blue" id="benchSummary"></span></div><p class="hint">Preview shows the last completed case. Results ZIP contains each case and metrics.</p><div class="table-wrap"><table><thead><tr><th>#</th><th>Cut</th><th>Pieces</th><th>Seed</th><th>Rotation</th><th>Profile</th><th>Missing</th><th>DPA</th><th>F1</th><th>Solver s</th><th>Gate</th></tr></thead><tbody id="benchRows"></tbody></table></div></section>
+<div id="downloads" class="downloads"></div>
+<details class="split" id="diagnosticWrap" hidden><summary>Diagnostics and evaluation details</summary><pre id="diagnostics"></pre></details>
+<footer><span>Click an image to toggle 1:1 zoom.</span><span id="foot">Data stays local.</span></footer>
+</section></div>
+</main>
+<script>
+"use strict";
+const $=id=>document.getElementById(id),token="__SESSION_TOKEN__";
+const native=!token.startsWith("__"),visible=(id,on)=>$(id).hidden=!on,val=id=>$(id).value, checked=id=>$(id).checked;
+const cuts=["grid","strips","horizontal-strips","jagged","wavy","jigsaw","random"],angles=["none","quarter","continuous"];
+let task="demo",files=[],metadata=null,metadataPending=false,busy=false,last=null,worker=null,requestId=0,pending=new Map(),poll=null,runId=0,urls=[];
+const caps={grid:262144,strips:8192,"horizontal-strips":8192,jagged:4096,wavy:4096,jigsaw:4096,random:4096,document:1024};
+const maxCount=cut=>Math.min(caps[cut]||0,native?262144:4096),batchLimit=native?64:24,uploadLimit=(native?200:32)*1024*1024;
+$("engineBadge").textContent=native?"Native CPU":"Browser · WASM";
+$("foot").textContent=native?"Local Python engine":"Browser engine · first run downloads dependencies";
+function ensureWorker(){
+  if(!worker){worker=new Worker("./worker.js");worker.onmessage=({data:m})=>{
+    if(m.type==="progress"){if(busy)render(m.status);else if(metadataPending)$("stage").textContent=m.status.stage;return}
+    const p=pending.get(m.id);if(!p)return;pending.delete(m.id);m.error?p.reject(new Error(m.error)):p.resolve(m.value);
+  };worker.onerror=e=>{for(const p of pending.values())p.reject(new Error(e.message||"Browser engine failed"));pending.clear();worker?.terminate();worker=null;};}
+  return worker;
+}
+function ask(action,payload={}){return new Promise((resolve,reject)=>{const id=++requestId;pending.set(id,{resolve,reject});try{ensureWorker().postMessage({id,action,...payload})}catch(e){pending.delete(id);reject(e)}})}
+async function nativePost(path,config){
+  const body=new FormData();body.append("config",JSON.stringify(config));for(const f of files)body.append("files",f,f.name);
+  const r=await fetch(path,{method:"POST",headers:{"X-Studio-Token":token},body}),s=await r.json();if(!r.ok)throw Error(s.error||"Upload failed");return s;
+}
+function err(message){$("error").textContent=message||"";visible("error",!!message)}
+function changeTask(t){if(busy)return;task=t;files=[];metadata=null;metadataPending=false;$("upload").value="";$("fileLabel").textContent="Drop a file or click to browse";$("imageTab").classList.toggle("active",t==="demo");$("fragmentTab").classList.toggle("active",t==="blind");$("upload").multiple=t==="blind";$("upload").accept=t==="demo"?(native?"image/*,.pdf":"image/*"):"image/*,.zip";$("prompt").textContent=t==="demo"?(native?"Choose image or PDF":"Choose image"):"Choose fragments or ZIP";if(t==="demo"&&val("cut")==="document")$("cut").value="grid";err("");update()}
+$("imageTab").onclick=()=>changeTask("demo");$("fragmentTab").onclick=()=>changeTask("blind");
+async function takeFiles(selected){
+  if(busy)return;files=Array.from(selected);metadata=null;metadataPending=false;err("");
+  $("fileLabel").textContent=files.length===1?files[0].name:files.length+" files selected";
+  if(task==="blind"&&files.length===1&&files[0].name.toLowerCase().endsWith(".zip")){
+    const current=files[0];metadataPending=true;update();
+    try{const info=native?await nativePost("/api/inspect",{}):await ask("inspect",{files});if(files[0]!==current)return;metadata=info; $("useMeta").checked=!!info.metadata;
+      if(info.metadata){const m=info.metadata;
+        $("cut").value=m.cut;$("height").value=m.height;$("width").value=m.width;
+        $("angle").value=m.angle_mode||(m.rotations?"quarter":"none");$("sampling").value=m.sampling||1;
+        if(m.grid){$("rows").value=m.grid[0];$("cols").value=m.grid[1]}$("expected").value=m.expected_count||m.piece_count;
+      }}
+    catch(e){if(files[0]===current)err("Archive inspection: "+e.message)}
+    finally{if(files[0]===current){metadataPending=false;$("stage").textContent="Ready for input";update()}}
+  }else{$("useMeta").checked=false;update()}
+}
+$("upload").onchange=()=>takeFiles($("upload").files);
+$("drop").ondragover=e=>{e.preventDefault();$("drop").classList.add("drag")};$("drop").ondragleave=()=>$("drop").classList.remove("drag");$("drop").ondrop=e=>{e.preventDefault();$("drop").classList.remove("drag");takeFiles(e.dataTransfer.files)};
+$("sample").onclick=async()=>{if(busy)return;const c=document.createElement("canvas");c.width=512;c.height=512;const ctx=c.getContext("2d"),im=ctx.createImageData(512,512);for(let y=0;y<512;y++)for(let x=0;x<512;x++){let i=(y*512+x)*4;for(let k=0;k<3;k++)im.data[i+k]=128+60*Math.sin(x*.043+y*.087+k)+35*Math.cos(x*.17-y*.069+2*k)+25*Math.sin((x*x+y*y)*.00015+k);im.data[i+3]=255}ctx.putImageData(im,0,0);const b=await new Promise(res=>c.toBlob(res,"image/png"));await takeFiles([new File([b],"synthetic-texture.png",{type:"image/png"})])};
+function numericList(value,min,max){const a=value.split(",").map(s=>s.trim());if(a.some(s=>s===""||!Number.isInteger(+s)||+s<min||+s>max))throw Error("Use comma-separated integers from "+min+" to "+max);return [...new Set(a.map(Number))]}
+function choiceList(value,valid,fallback){if(!value.trim())return [fallback];const a=[...new Set(value.split(",").map(s=>s.trim()))];if(a.some(s=>!valid.includes(s)))throw Error("Unrecognized option in: "+value);return a}
+function config(){
+  const demo=task==="demo",locked=!demo&&checked("useMeta")&&metadata?.metadata,c=locked?metadata.metadata.cut:val("cut"),a=locked?(metadata.metadata.angle_mode||(metadata.metadata.rotations?"quarter":"none")):val("angle");
+  const x={task,cut:c,count:+val("count"),seed:+val("seed"),max_side:+val("maxSide"),page:+val("page"),width:+val("width"),height:+val("height"),rows:+val("rows"),cols:+val("cols"),expected_count:+val("expected"),angle_mode:a,rotations:a!=="none",sampling:a==="continuous"?(locked?(metadata.metadata.sampling||1):+val("sampling")):1,missing:demo?+val("missing")/100:0,profile:val("profile"),strategy:val("profile")==="custom"?val("strategy"):"auto",index_mode:val("profile")==="custom"&&c!=="document"&&["grid","strips","horizontal-strips"].includes(c)?val("edgeIndex"):"auto",tune:checked("tune"),use_metadata:!!locked};
+  if(demo&&checked("batch")){
+    const batchCuts=choiceList(val("batchCuts"),cuts,c),batchAngles=choiceList(val("batchAngles"),angles,a),ns=numericList(val("counts"),1,Math.min(...batchCuts.map(maxCount))),ss=numericList(val("seeds"),0,2147483647),ms=val("batchMissing").trim()?numericList(val("batchMissing"),0,95).map(v=>v/100):[x.missing];
+    x.batch={counts:ns,seeds:ss,cuts:batchCuts,angles:batchAngles,profiles:checked("compareProfiles")?["fast","balanced","accurate"]:[x.profile],missing_rates:ms};
+  }
+  return x;
+}
+function validate(x){
+  if(!files.length)throw Error("Select an input file to start.");
+  if(metadataPending)throw Error("Reading archive metadata…");
+  if(files.reduce((s,f)=>s+f.size,0)>uploadLimit)throw Error("Input exceeds "+(native?200:32)+" MiB");
+  if(task==="demo"){
+    if(files.length!==1)throw Error("Select one source image.");
+    if(!native&&files[0].name.toLowerCase().endsWith(".pdf"))throw Error("Convert the PDF page to PNG, or use native Studio.");
+    if(!x.batch&&(!Number.isInteger(x.count)||x.count<1||x.count>maxCount(x.cut)))throw Error("Piece count outside supported limits.");
+    if(x.batch){const n=Object.values(x.batch).reduce((a,x)=>a*x.length,1);if(n>batchLimit)throw Error("Batch exceeds "+batchLimit+" cases.");$("batchCount").textContent=n+" experiments planned";}
+  }else{
+    const n=metadata?.observed_count||files.length,expected=x.cut==="grid"?x.rows*x.cols:x.expected_count||n;
+
+    if(x.use_metadata){const m=metadata.metadata;if((m.expected_count||m.piece_count)>maxCount(m.cut)||m.piece_count!==n)throw Error("Archive count invalid or beyond backend limit.");}
+    else if(x.cut!=="document"){
+      if(files.some(f=>f.name.toLowerCase().endsWith(".zip"))&&!metadata)throw Error("Inspect ZIP before supplying overrides.");
+      if(expected<n||expected>maxCount(x.cut))throw Error("Complete count must cover the available fragments and fit the cap.");
+      if(x.height<1||x.width<1||!Number.isInteger(x.height)||!Number.isInteger(x.width))throw Error("Invalid canvas size.");
+      if(x.cut==="grid"&&(x.rows<1||x.cols<1||x.rows>x.height||x.cols>x.width))throw Error("Grid does not fit canvas.");
+    }
+  }
+}
+function update(){
+  const demo=task==="demo",locked=!!(!demo&&metadata?.metadata&&checked("useMeta")),c=locked?metadata.metadata.cut:val("cut"),a=locked?(metadata.metadata.angle_mode||(metadata.metadata.rotations?"quarter":"none")):val("angle"),rect=["grid","strips","horizontal-strips"].includes(c);
+  visible("metadataWrap",!demo);visible("sample",demo);visible("geometryFields",!locked);visible("manualFields",!demo&&c!=="document"&&!locked);visible("gridFields",c==="grid");visible("expectedWrap",c!=="grid");
+  $("useMeta").disabled=!metadata?.metadata||busy;
+  $("metadataInfo").textContent=metadataPending?"Reading ZIP…":metadata?.metadata?JSON.stringify({pieces:metadata.observed_count,cut:metadata.metadata.cut,canvas:[metadata.metadata.width,metadata.metadata.height],rotation:metadata.metadata.angle_mode||(metadata.metadata.rotations?"quarter":"none")}):files.length?"No public metadata: enter canvas constraints below.":"Select fragments or ZIP.";
+  visible("demoFields",demo);visible("pageWrap",demo&&!!files[0]?.name.toLowerCase().endsWith(".pdf"));visible("missingWrap",demo);$("cut").querySelector('[value=document]').hidden=demo;
+  $("angle").querySelector('[value=continuous]').disabled=false;
+  visible("rotationHint",a==="continuous");if(c==="document")$("rotationHint").textContent="Digital elongated RGBA strips of common height; unknown missing widths cannot be inferred.";else $("rotationHint").textContent="Continuous pose depends on alpha-mask quality; not universally accurate.";$("missingText").textContent=val("missing")+"%";$("count").max=maxCount(c);$("capHint").textContent="Resource cap: "+maxCount(c).toLocaleString()+" pieces · accuracy varies";
+  visible("batchWrap",demo);visible("batchFields",demo&&checked("batch"));$("count").disabled=demo&&checked("batch");visible("seedWrap",demo&&!checked("batch"));visible("sampleWrap",a==="continuous"&&!locked);visible("customWrap",val("profile")==="custom"&&c!=="document");visible("indexWrap",rect);
+  $("strategy").querySelector('[value=sparse]').disabled=!rect;if(!rect){$("strategy").value="auto";$("edgeIndex").value="auto"}
+  $("profileHint").textContent={fast:"Reduces automatic retries; core verification remains.",balanced:"Adaptive matching and bounded fallback.",accurate:"Extra bounded hypotheses where supported. Not an accuracy guarantee.",custom:"Manual experimental solver controls."}[val("profile")];
+  if(val("profile")==="custom"){
+    $("advanced").open=true;
+    if(rect&&val("edgeIndex")!=="auto")$("strategy").value="sparse";
+  }
+  try{validate(config());$("preflight").textContent="Ready · "+(native?"native":"browser")+" resource limits apply";$("preflight").className="callout";$("run").disabled=busy}catch(e){$("preflight").textContent=e.message;$("preflight").className=files.length?"callout warn":"callout";$("run").disabled=true}
+}
+$("configForm").addEventListener("input",update);$("configForm").addEventListener("change",update);
+function busyState(b){busy=b;$("cancel").disabled=!b;$("imageTab").disabled=b;$("fragmentTab").disabled=b;$("upload").disabled=b;$("sample").disabled=b;update()}
+const pct=x=>typeof x==="number"?(100*x).toFixed(2)+"%":"—",num=x=>typeof x==="number"?x.toFixed(2):"—";
+function clearView(){for(const id of ["placed","coverage","runtime","dpa","f1","ram"])$(id).textContent="—";visible("sourceView",false);$("panes").classList.remove("compare");visible("resultImg",false);visible("empty",true);visible("benchmark",false);visible("diagnosticWrap",false);$("downloads").replaceChildren();urls.forEach(URL.revokeObjectURL);urls=[]}
+async function fileURL(name){if(native)return "/api/file?name="+encodeURIComponent(name)+"&v="+runId;const bytes=await ask("file",{name}),mime=name.endsWith(".png")?"image/png":name.endsWith(".zip")?"application/zip":name.endsWith(".csv")?"text/csv":"application/json";const url=URL.createObjectURL(new Blob([bytes],{type:mime}));urls.push(url);return url}
+async function showImage(name,id){const current=runId,url=await fileURL(name);if(current!==runId)return;$(id).src=url;visible(id,true);if(id==="resultImg")visible("empty",false)}
+async function showResult(){if(last?.state!=="done")return;const name=checked("cuts")?"assembly_with_cuts.png":"assembly.png";if(last.files.includes(name))await showImage(name,"resultImg")}
+$("cuts").onchange=()=>showResult().catch(e=>err(e.message));for(const id of ["sourceImg","resultImg"])$(id).onclick=()=>$(id).parentElement.classList.toggle("zoom");
+function render(s){
+  $("stage").textContent=s.stage||s.state;$("dot").className="dot "+s.state;
+  const fraction=s.state==="done"?100:s.state==="running"?Math.round(((s.case||1)-1+(/Rendering/.test(s.stage)?.85:/Matching/.test(s.stage)?.52:.12))/(s.total_cases||1)*100):0;
+  $("progress").style.width=fraction+"%";
+  if(s.state==="running"&&typeof s.elapsed_seconds==="number")$("runtime").textContent=s.elapsed_seconds.toFixed(1)+" s";
+}
+function table(rows){
+  $("benchRows").replaceChildren();let passes=0,done=0;
+  for(const r of rows){const tr=document.createElement("tr");if(r.status==="done")done++;if(r.pass_95)passes++;const values=[r.case,r.cut,r.count,r.seed,r.angle_mode,r.profile,pct(r.missing),pct(r.direct_position_accuracy),pct(r.adjacency_f1),num(r.runtime_seconds),r.status==="error"?r.error:r.pass_95?"PASS":"FAIL"];for(const [i,v] of values.entries()){const td=document.createElement("td");td.textContent=v??"—";if(i===10&&r.status==="error")td.className="error";tr.append(td)}$("benchRows").append(tr)}
+  $("benchSummary").textContent=passes+" pass · "+done+"/"+rows.length+" completed";visible("benchmark",true)
+}
+async function complete(s){
+  last=s;render(s);busyState(false);
+  if(s.state!=="done"){if(s.error)err(s.error);return}
+  const d=s.diagnostics||{},m=s.metrics||{};$("placed").textContent=d.placed!=null?d.placed+" / "+d.piece_count:"—";$("coverage").textContent=pct(d.coverage);$("runtime").textContent=num(d.runtime_seconds)+(d.runtime_seconds!=null?" s":"");$("dpa").textContent=pct(m.direct_position_accuracy);$("f1").textContent=pct(m.adjacency_f1);$("ram").textContent=typeof d.process_peak_rss_mib==="number"?Math.round(d.process_peak_rss_mib)+" MiB":"—";
+  $("notice").textContent=s.benchmark&&!s.metrics?"All benchmark cases failed; inspect the errors below.":s.metrics?("Strict gate: "+(m.pass_95?"PASS":"FAIL")+" · collision pixels "+m.collision_pixels+" · "+(d.algorithm||"")+" · "+d.performance_profile):("Blind result: "+(d.status||"not evaluated")+" · absolute accuracy unknown without ground truth.");
+  $("notice").className="callout"+((s.metrics&&!m.pass_95)||d.status==="ambiguous"||d.status==="partial"?" warn":"");
+  if(s.benchmark)table(s.benchmark);
+  $("diagnostics").textContent=JSON.stringify({diagnostics:d,metrics:s.metrics},null,2);visible("diagnosticWrap",true);
+  const names={"result.zip":"Results ZIP","fragments.zip":"Shuffled pieces ZIP","assembly.png":"Image","assembly_with_cuts.png":"Cut overlay","placements.json":"Poses JSON","ambiguity.json":"Ambiguity","unanchored_components.json":"Unanchored groups","metrics.json":"Metrics","diagnostics.json":"Diagnostics","benchmark.csv":"Benchmark CSV","benchmark.json":"Benchmark JSON"};
+  for(const [name,label] of Object.entries(names)){if(!s.files.includes(name))continue;const b=document.createElement("button");b.type="button";b.className="button";b.textContent=label;b.onclick=async()=>{try{b.disabled=true;const a=document.createElement("a");a.href=await fileURL(name);a.download=name;a.click()}catch(e){err(e.message)}finally{b.disabled=false}};$("downloads").append(b)}
+  if(s.files.includes("source.png")){visible("sourceView",true);$("panes").classList.add("compare");await showImage("source.png","sourceImg")}
+  await showResult();
+}
+$("configForm").onsubmit=async e=>{e.preventDefault();if(busy)return;err("");const id=++runId;try{const x=config();validate(x);last=null;clearView();busyState(true);render({state:"running",stage:"Preparing inputs",case:1,total_cases:1});if(native){const s=await nativePost("/api/start",x);render(s);poll=setInterval(async()=>{try{const r=await fetch("/api/status",{cache:"no-store"}),s=await r.json();if(id!==runId)return;render(s);if(s.state!=="running"){clearInterval(poll);poll=null;await complete(s)}}catch(e){clearInterval(poll);poll=null;busyState(false);err(e.message)}},600)}else{const s=await ask("run",{config:x,files});if(id===runId)await complete(s)}}catch(e){if(id===runId){busyState(false);render({state:"error",stage:"Solver error"});err(e.message)}}};
+$("cancel").onclick=async()=>{if(!busy)return;++runId;if(poll){clearInterval(poll);poll=null}try{if(native)await fetch("/api/cancel",{method:"POST",headers:{"X-Studio-Token":token}});else{worker?.terminate();worker=null;for(const p of pending.values())p.reject(Error("Cancelled"));pending.clear()}}finally{busyState(false);render({state:"cancelled",stage:"Cancelled"})}};
+changeTask("demo");
+</script></body></html>

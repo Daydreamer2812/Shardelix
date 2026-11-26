@@ -1,0 +1,1 @@
+Synthetic validation fixture: 840×1120 independent Gaussian-smoothed RGB noise, seed 1937, multiscale sigmas 1.8/7/22/60, standardized channels, clipped uint8. No encoded locations or hidden coordinates. Generated as an unrelated textured input for blind straight-cut validation.
