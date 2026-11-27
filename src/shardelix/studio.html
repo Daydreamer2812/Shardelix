@@ -33,7 +33,7 @@ main{max-width:1640px;margin:auto;padding:24px clamp(16px,3.8vw,56px) 30px}.eyeb
 <div id="metadataWrap" hidden><label class="check"><input id="useMeta" type="checkbox" checked> Use archive metadata</label><div id="metadataInfo" class="callout">Select fragments or ZIP.</div></div>
 <div id="geometryFields">
 <label class="label" for="cut">Cut family</label><select id="cut"><option value="grid">Rectangular grid</option><option value="strips">Vertical strips</option><option value="horizontal-strips">Horizontal strips</option><option value="jagged">Jagged</option><option value="wavy">Wavy</option><option value="jigsaw">Jigsaw</option><option value="random">Mixed irregular</option><option value="document" hidden>Document strips (unknown width)</option></select>
-<div id="manualFields" hidden>
+<div id="manualFields" hidden><div id="inferredLayoutWrap" hidden><label class="label" for="inferredLayout">Suggested grid layout</label><select id="inferredLayout"></select><p class="hint">Estimated from opaque equal-size tiles; select the original aspect ratio or edit dimensions. Assumes no missing pieces.</p></div>
 <div class="fields"><div><label class="label" for="width">Canvas width</label><input id="width" type="number" min="1" value="1024"></div><div><label class="label" for="height">Canvas height</label><input id="height" type="number" min="1" value="1024"></div></div>
 <div class="fields" id="gridFields"><div><label class="label" for="rows">Rows</label><input id="rows" type="number" min="1" value="16"></div><div><label class="label" for="cols">Columns</label><input id="cols" type="number" min="1" value="16"></div></div>
 <div id="expectedWrap"><label class="label" for="expected">Complete piece count (0 = auto)</label><input id="expected" type="number" min="0" value="0"></div>
@@ -149,21 +149,34 @@ async function takeFiles(selected){
     if(files.length===1&&files[0].type.startsWith("image/")){inputPreviewURL=URL.createObjectURL(files[0]);$("genSource").src=inputPreviewURL;visible("genSource",true);visible("genSourceEmpty",false)}else{visible("genSource",false);visible("genSourceEmpty",true)}
   }
   if(task==="blind"){last=null;clearView();resultStage.blind="Ready for fragments";$("stage").textContent=resultStage.blind}
-  if(task==="blind"&&files.length===1&&files[0].name.toLowerCase().endsWith(".zip")){
-    const current=files[0];metadataPending=true;update();
-    try{const info=native?await nativePost("/api/inspect",{}):await ask("inspect",{files});if(files[0]!==current)return;metadata=info; $("useMeta").checked=!!info.metadata;
+  if(task==="blind"&&files.length){
+    const current=files;metadataPending=true;update();
+    try{const info=native?await nativePost("/api/inspect",{}):await ask("inspect",{files});if(files!==current)return;metadata=info; $("useMeta").checked=!!info.metadata;
       if(info.metadata){const m=info.metadata;
         $("cut").value=m.cut;$("height").value=m.height;$("width").value=m.width;
         $("angle").value=m.angle_mode||(m.rotations?"quarter":"none");$("sampling").value=m.sampling||1;
         if(m.grid){$("rows").value=m.grid[0];$("cols").value=m.grid[1]}$("expected").value=m.expected_count||m.piece_count;
+      }else if(info.suggested_grid?.layouts?.length){
+        $("cut").value="grid";applyLayout(info.suggested_grid.layouts[0]);$("expected").value=info.observed_count;
+        // Rotation is not inferable from the file shape, keep user's mode.
       }}
-    catch(e){if(files[0]===current)err("Archive inspection: "+e.message)}
-    finally{if(files[0]===current){metadataPending=false;$("stage").textContent="Ready for input";update()}}
+    catch(e){if(files===current)err("Import inspection: "+e.message)}
+    finally{if(files===current){metadataPending=false;$("stage").textContent="Ready for input";update()}}
   }else{$("useMeta").checked=false;update()}
 }
 $("upload").onchange=()=>takeFiles($("upload").files);
 $("drop").ondragover=e=>{e.preventDefault();$("drop").classList.add("drag")};$("drop").ondragleave=()=>$("drop").classList.remove("drag");$("drop").ondrop=e=>{e.preventDefault();$("drop").classList.remove("drag");takeFiles(e.dataTransfer.files)};
 $("sample").onclick=async()=>{if(busy)return;const c=document.createElement("canvas");c.width=512;c.height=512;const ctx=c.getContext("2d"),im=ctx.createImageData(512,512);for(let y=0;y<512;y++)for(let x=0;x<512;x++){let i=(y*512+x)*4;for(let k=0;k<3;k++)im.data[i+k]=128+60*Math.sin(x*.043+y*.087+k)+35*Math.cos(x*.17-y*.069+2*k)+25*Math.sin((x*x+y*y)*.00015+k);im.data[i+3]=255}ctx.putImageData(im,0,0);const b=await new Promise(res=>c.toBlob(res,"image/png"));await takeFiles([new File([b],"synthetic-texture.png",{type:"image/png"})])};
+function applyLayout(layout){$("rows").value=layout.rows;$("cols").value=layout.cols;$("width").value=layout.width;$("height").value=layout.height}
+$("inferredLayout").oninput=()=>{const layout=metadata?.suggested_grid?.layouts[+$("inferredLayout").value];if($("inferredLayout").value!==""&&layout)applyLayout(layout);update()};
+function updateLayouts(show){
+  visible("inferredLayoutWrap",show);if(!show)return;
+  const layouts=metadata.suggested_grid.layouts,select=$("inferredLayout");
+  select.replaceChildren(new Option("Custom / edit dimensions below",""));
+  for(const [i,l] of layouts.entries())select.add(new Option(l.rows+" × "+l.cols+" · "+l.width+" × "+l.height+" px",String(i)));
+  const i=layouts.findIndex(l=>+val("rows")===l.rows&&+val("cols")===l.cols&&+val("width")===l.width&&+val("height")===l.height);
+  select.value=i<0?"":String(i);
+}
 function numericList(value,min,max){const a=value.split(",").map(s=>s.trim());if(a.some(s=>s===""||!Number.isInteger(+s)||+s<min||+s>max))throw Error("Use comma-separated integers from "+min+" to "+max);return [...new Set(a.map(Number))]}
 function choiceList(value,valid,fallback){if(!value.trim())return [fallback];const a=[...new Set(value.split(",").map(s=>s.trim()))];if(a.some(s=>!valid.includes(s)))throw Error("Unrecognized option in: "+value);return a}
 function config(){
@@ -190,9 +203,9 @@ function validate(x){
     if(x.use_metadata){const m=metadata.metadata;if((m.expected_count||m.piece_count)>maxCount(m.cut)||m.piece_count!==n)throw Error("Archive count invalid or beyond backend limit.");}
     else if(x.cut!=="document"){
       if(files.some(f=>f.name.toLowerCase().endsWith(".zip"))&&!metadata)throw Error("Inspect ZIP before supplying overrides.");
-      if(expected<n||expected>maxCount(x.cut))throw Error("Complete count must cover the available fragments and fit the cap.");
+      if(expected<n)throw Error("Grid/expected count has "+expected+" slots for "+n+" uploaded fragments. Increase the grid or select the suggested layout.");if(expected>maxCount(x.cut))throw Error("Complete count exceeds the backend cap.");
       if(x.height<1||x.width<1||!Number.isInteger(x.height)||!Number.isInteger(x.width))throw Error("Invalid canvas size.");
-      if(x.cut==="grid"&&(x.rows<1||x.cols<1||x.rows>x.height||x.cols>x.width))throw Error("Grid does not fit canvas.");
+      if(x.cut==="grid"&&(!Number.isInteger(x.rows)||!Number.isInteger(x.cols)||x.rows<1||x.cols<1||x.rows>x.height||x.cols>x.width))throw Error("Grid does not fit canvas.");
     }
   }
 }
@@ -203,9 +216,9 @@ function update(){
   $("run").textContent=demo?(benchmarking?"Run benchmark":"Generate fragments"):"Run reconstruction";
   $("resultTitle").textContent=demo?(benchmarking?"Benchmark results":"Fragment output"):"Reconstruction results";
   $("workspaceIntro").textContent=demo?(benchmarking?"Run controlled experiments on generated fragments.":"Create shuffled pieces and export a reproducible case. No solving takes place."):"Import fragments, configure the solver and optionally compare with independent ground truth.";
-  visible("metadataWrap",!demo);visible("sample",demo);visible("geometryFields",!locked);visible("manualFields",!demo&&c!=="document"&&!locked);visible("gridFields",c==="grid");visible("expectedWrap",c!=="grid");
+  visible("metadataWrap",!demo);visible("sample",demo);visible("geometryFields",!locked);visible("manualFields",!demo&&c!=="document"&&!locked);visible("gridFields",c==="grid");visible("expectedWrap",c!=="grid");updateLayouts(!demo&&!locked&&c==="grid"&&!!metadata?.suggested_grid?.layouts?.length);
   $("useMeta").disabled=!metadata?.metadata||busy;
-  $("metadataInfo").textContent=metadataPending?"Reading ZIP…":metadata?.metadata?JSON.stringify({pieces:metadata.observed_count,cut:metadata.metadata.cut,canvas:[metadata.metadata.width,metadata.metadata.height],rotation:metadata.metadata.angle_mode||(metadata.metadata.rotations?"quarter":"none")}):files.length?"No public metadata: enter canvas constraints below.":"Select fragments or ZIP.";
+  $("metadataInfo").textContent=metadataPending?"Inspecting fragments…":metadata?.metadata?JSON.stringify({pieces:metadata.observed_count,cut:metadata.metadata.cut,canvas:[metadata.metadata.width,metadata.metadata.height],rotation:metadata.metadata.angle_mode||(metadata.metadata.rotations?"quarter":"none")}):metadata?.suggested_grid?metadata.observed_count+" opaque tiles · "+metadata.suggested_grid.tile_width+" × "+metadata.suggested_grid.tile_height+" px each. No metadata; grid layout below is estimated, not known.":files.length?(metadata?.observed_count?metadata.observed_count+" fragments · ":"")+"No public metadata: enter canvas constraints below.":"Select fragments or ZIP.";
   visible("demoFields",demo);visible("pageWrap",demo&&!!files[0]?.name.toLowerCase().endsWith(".pdf"));visible("missingWrap",demo);$("cut").querySelector('[value=document]').hidden=demo;
   $("angle").querySelector('[value=continuous]').disabled=false;
   visible("rotationHint",a==="continuous");if(c==="document")$("rotationHint").textContent="Digital elongated RGBA strips of common height; unknown missing widths cannot be inferred.";else $("rotationHint").textContent="Continuous pose depends on alpha-mask quality; not universally accurate.";$("missingText").textContent=val("missing")+"%";$("count").max=maxCount(c);$("capHint").textContent="Resource cap: "+maxCount(c).toLocaleString()+" pieces · accuracy varies";

@@ -1,6 +1,6 @@
 """Portable native/WebAssembly reconstruction workflow. No server dependencies."""
 from __future__ import annotations
-import csv,itertools,json,shutil,time,zipfile,hashlib
+import csv,itertools,json,shutil,time,zipfile,hashlib,math
 from pathlib import Path
 from .reconstruction.limits import GRID_MAX,MAX_PIXELS,RECTANGULAR,max_count,validate_constraints
 
@@ -15,11 +15,11 @@ WEB_BATCH_OUTPUT_BYTES=192*1024**2
 NATIVE_BATCH=64
 DOWNLOADS={"assembly.png","assembly_with_cuts.png","assembly_reference_aligned.png","assembly_reference_aligned_with_cuts.png","cut_lines.png","placements.json","unanchored_components.json","ambiguity.json","diagnostics.json","metrics.json","source.png","result.zip","fragments.zip","benchmark.csv","benchmark.json","fragments_preview.png","ground_truth.zip","comparison.json"}
 
-def safe_zip(source:Path,case:Path,*,browser=False,extract=True):
+def safe_zip(source:Path,case:Path,*,browser=False,extract=True,inspect_geometry=False):
     """Inspect/extract public metadata and image leaves; never extract truth."""
     target=case/"pieces"
     if extract:target.mkdir(parents=True,exist_ok=True)
-    size=0;num=0;meta=None;names=set()
+    size=0;num=0;meta=None;names=set();images=[]
     limit=WEB_COUNT if browser else GRID_MAX
     byte_limit=WEB_UPLOAD*3 if browser else MAX_UPLOAD*2
     with zipfile.ZipFile(source) as z:
@@ -41,9 +41,13 @@ def safe_zip(source:Path,case:Path,*,browser=False,extract=True):
             if num>limit or size>byte_limit:raise ValueError("Archive exceeds fragment/byte budget")
             if leaf in names:raise ValueError("Duplicate fragment filename")
             names.add(leaf)
+            if inspect_geometry:images.append(e)
             if extract:
                 with z.open(e) as f,(target/leaf).open("wb") as out:shutil.copyfileobj(f,out,1024*1024)
-    if not num:raise ValueError("No supported fragments found in ZIP")
+        if not num:raise ValueError("No supported fragments found in ZIP")
+        if inspect_geometry:
+            suggestion=_suggest_grid((lambda e=e:z.open(e) for e in images),num,browser) if meta is None else None
+            return meta,num,suggestion
     return meta,num
 
 def public_metadata(meta):
@@ -79,12 +83,40 @@ def _check_preview(files,browser):
     if sum(p.stat().st_size for p in files)>(WEB_UPLOAD if browser else MAX_UPLOAD):raise ValueError("Upload exceeds byte budget")
     if len(files)>(WEB_COUNT if browser else GRID_MAX):raise ValueError("Too many fragments")
 
+def _suggest_grid(openers, count, browser):
+    """Detect same-sized opaque raster tiles; shape is a suggestion, not truth."""
+    from PIL import Image
+    from .reconstruction.generator import _factor_pairs
+    total=0;tile=None
+    pixel_limit=WEB_INPUT_PIXELS if browser else MAX_PIXELS*3
+    for opener in openers:
+        with opener() as f,Image.open(f) as im:
+            total+=im.width*im.height
+            if total>pixel_limit:raise ValueError("Decoded input exceeds pixel budget")
+            if tile is None:tile=im.size
+            if im.size!=tile:return None
+            if ("A" in im.getbands() or "transparency" in im.info) and im.convert("RGBA").getchannel("A").getextrema()[0]==0:
+                return None
+    if not tile or total>(WEB_PIXELS if browser else MAX_PIXELS):return None
+    tw,th=tile
+    # Rank factor pairs by common landscape aspect. Pixels/count alone do not
+    # identify the original shape; the UI must expose editable alternatives.
+    pairs=sorted(_factor_pairs(count),key=lambda rc:(abs(math.log((rc[1]*tw/(rc[0]*th))/(4/3))),rc))
+    layouts=[{"rows":r,"cols":c,"height":r*th,"width":c*tw} for r,c in pairs]
+    return {"tile_width":tw,"tile_height":th,"expected_count":count,
+            "basis":"equal-size opaque tiles; assumes no missing fragments",
+            "layouts":layouts}
+
+
 def inspect_uploads(files,browser=False):
     _check_preview(files,browser)
     if len(files)==1 and files[0].suffix.lower()==".zip":
-        meta,n=safe_zip(files[0],files[0].parent,browser=browser,extract=False)
-        return {"metadata":public_metadata(meta),"observed_count":n}
-    return {"metadata":None,"observed_count":len(files)}
+        meta,n,suggestion=safe_zip(files[0],files[0].parent,browser=browser,extract=False,inspect_geometry=True)
+        return {"metadata":public_metadata(meta),"observed_count":n,"suggested_grid":suggestion}
+    if any(p.suffix.lower() not in IMAGE_EXT for p in files):
+        raise ValueError("Select supported fragment images or one ZIP")
+    suggestion=_suggest_grid((lambda p=p:p.open("rb") for p in files),len(files),browser)
+    return {"metadata":None,"observed_count":len(files),"suggested_grid":suggestion}
 
 def _generate_case(root,files,conf,update,browser=False):
     from .reconstruction.common import read_source,save_rgba
