@@ -122,6 +122,30 @@ const {execFileSync}=require('node:child_process');
   assert.equal(largeScan.pair_search,'indexed-contour-color');
   assert.ok(largeScan.searched_pairs<=1020);
   assert.equal(await page.locator('#dpa').textContent(),'—');
+  // Opaque unequal-width image strips: no matte segmentation or invented grid.
+  const colorStrips=await page.evaluate(()=>{
+    const c=document.createElement('canvas');c.width=60;c.height=150;
+    const ctx=c.getContext('2d'),img=ctx.createImageData(c.width,c.height);
+    for(let y=0;y<c.height;y++)for(let x=0;x<c.width;x++){
+      const q=(y*c.width+x)*4;
+      img.data[q]=120+85*Math.sin(x*.11+y*.037);
+      img.data[q+1]=130+80*Math.cos(x*.16-y*.049);
+      img.data[q+2]=110+85*Math.sin(x*.071-y*.13);img.data[q+3]=255;
+    }ctx.putImageData(img,0,0);
+    let x=0;return [11,13,17,19].map((w,i)=>{
+      const t=document.createElement('canvas');t.width=i%2?150:w;t.height=i%2?w:150;
+      const cx=t.getContext('2d');if(i%2){cx.translate(150,0);cx.rotate(Math.PI/2)}
+      cx.drawImage(c,x,0,w,150,0,0,w,150);x+=w;
+      return {name:'color-'+i+'.png',data:t.toDataURL('image/png').split(',')[1]};
+    });
+  });
+  await page.locator('#upload').setInputFiles(colorStrips.map(v=>({name:v.name,mimeType:'image/png',buffer:Buffer.from(v.data,'base64')})));
+  await page.waitForFunction(()=>document.querySelector('#metadataInfo').textContent.includes('4 image/document strips'),{},{timeout:30000});
+  await page.locator('#run').click();await done('Reconstruction exported');
+  const stripDiag=JSON.parse(await page.locator('#diagnostics').textContent()).diagnostics;
+  assert.equal(stripDiag.input_detection.route,'opaque-strips');
+  assert.equal(stripDiag.algorithm,'unknown-width-color-strip-chain');
+  assert.equal(stripDiag.placed,4);
   // English text scan fixture: exercise actual local Tesseract/WASM + TSV bridge.
   const textStrips=await page.evaluate(()=>{
     const c=document.createElement('canvas');c.width=350;c.height=480;

@@ -332,3 +332,40 @@ def _joint_grid_refine(pieces,poses,shape,grid,costs,mapping,rounds=5):
                     moved+=int(np.count_nonzero(new!=current));arr[y,x]=new
         if not moved:break
     return {pieces[mapping[arr[y,x]][0]].id:Pose(int(xs[x]),int(ys[y]),int(mapping[arr[y,x]][1])) for y,x in np.ndindex(grid)}
+
+
+def solve_unknown_color_strips(pieces):
+    """Blind opaque strips with a common long dimension and arbitrary widths.
+
+    RGB/luminance-chrominance seam profiles and binary orientation synchronization
+    operate on the canonical vertical strips. No uniform column grid is imposed.
+    """
+    from .document import chain
+    canonical=[];turns=[]
+    for p in pieces:
+        k=int(p.rgba.shape[0]<p.rgba.shape[1])
+        canonical.append(Fragment(p.id,p.rotated(k)));turns.append(k)
+    n=len(pieces)
+    if n==1:return {pieces[0].id:Pose(0,0,turns[0])},{"algorithm":"color-strip-single"}
+    raw=_strip_cost_tensor(canonical,0,512,"l1")
+    same=np.minimum(raw[0,0],raw[1,1]);flipped=np.minimum(raw[0,1],raw[1,0])
+    signs=_signed_tree(np.minimum(same,same.T),np.minimum(flipped,flipped.T))
+    ids=np.arange(n);best=None
+    for seed in (signs,np.zeros(n,int)):
+        s=seed
+        for _ in range(4):
+            mat=raw[s[:,None],s[None,:],ids[:,None],ids[None,:]]
+            order=chain(mat,.35)
+            q=_orientation_dp(raw,order)
+            for v in (s,q):
+                score=float(raw[v[order[:-1]],v[order[1:]],order[:-1],order[1:]].sum())
+                if best is None or score<best[0]:best=(score,order.copy(),v.copy())
+            if np.array_equal(s,q):break
+            s=q
+    score,order,signs=best
+    poses={};x=0
+    for i in order:
+        k=int((turns[i]+2*signs[i])%4)
+        poses[pieces[i].id]=Pose(x,0,k);x+=pieces[i].rotated(k).shape[1]
+    return poses,{"algorithm":"unknown-width-color-strip-chain","blind_seam_energy":score,
+                  "orientation_ambiguous":True,"document_missing_unknown":True}

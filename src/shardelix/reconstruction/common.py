@@ -80,7 +80,7 @@ def load_fragments(folder: Path, *, max_fragments=None, max_input_pixels=None) -
             total+=im.width*im.height
             if total>pixel_limit:
                 raise ValueError("Combined fragment crop pixels exceed resource budget")
-            a = np.asarray(im.convert("RGBA")).copy()
+            a = np.asarray(ImageOps.exif_transpose(im).convert("RGBA")).copy()
         m = a[:, :, 3] > 0
         if not m.any():
             raise ValueError(f"Empty fragment: {p}")

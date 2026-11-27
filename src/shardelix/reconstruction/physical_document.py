@@ -27,6 +27,18 @@ def _rectify(path):
     with Image.open(path) as im:
         a=np.array(ImageOps.exif_transpose(im).convert("RGBA"))
     original_size=[a.shape[1],a.shape[0]]
+    if not np.any(a[:,:,3]<128):
+        from .input_detection import solid_background,scan_evidence
+        from .scan import chroma_mask
+        keyed=chroma_mask(a)
+        if keyed is None:
+            solid=solid_background(a,exact=True)
+            keyed=solid[0] if solid is not None else None
+        if keyed is not None:
+            a[:,:,3]=keyed.astype(np.uint8)*255
+            y,x=np.nonzero(keyed);a=a[y.min():y.max()+1,x.min():x.max()+1].copy()
+        elif scan_evidence(Image.fromarray(a))=="matte-background":
+            raise NotDocumentStrips("Unmasked scan with variable illumination requires foreground segmentation")
     turn=int(a.shape[0]<a.shape[1])
     if turn:a=np.rot90(a,-1)
     mask=a[:,:,3]>=128

@@ -77,7 +77,7 @@ def _solve_opts(p):
     p.add_argument("--profile",choices=["fast","balanced","accurate","custom"],help="Performance policy")
     p.add_argument("--params",type=json.loads,help="Explicit classical solver parameter JSON")
 
-def solve_external_document(folder:Path,output:Path,rotations=False,params=None,profile=None,angle_mode=None,sampling=1,max_canvas_pixels=None):
+def solve_external_document(folder:Path,output:Path,rotations=False,params=None,profile=None,angle_mode=None,sampling=1,max_canvas_pixels=None,color_aware=False):
     """Blind external document strips, unequal widths permitted. Input must contain only pieces."""
     from .document import solve_document_strips
     import time
@@ -93,7 +93,11 @@ def solve_external_document(folder:Path,output:Path,rotations=False,params=None,
         raise ValueError("Invalid external document rotation mode")
     elif angle_mode is not None:rotations=angle_mode=="quarter"
     if angle_mode!="continuous" and sampling!=1:raise ValueError("Sampling only applies to continuous mode")
-    if profile=="fast":
+    from .document import is_documentlike
+    if color_aware and not is_documentlike(pieces):
+        from .rotation import solve_unknown_color_strips
+        poses,diag=solve_unknown_color_strips(pieces)
+    elif profile=="fast":
         from .document import _solve_document_v5
         poses,diag=_solve_document_v5(pieces,rotations=rotations,**(params or {}))
     else:

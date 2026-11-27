@@ -19,7 +19,7 @@ from scipy.spatial import cKDTree
 from .common import Fragment, json_write, save_rgba
 from .geometry import contours
 
-MAX_SCAN_PIECES = 128
+MAX_SCAN_PIECES = 256
 MAX_SCAN_SIDE = 1600
 MAX_WORK_PIXELS = 4_000_000
 
@@ -38,7 +38,7 @@ def chroma_mask(a):
     return None
 
 
-def preprocess(paths, target: Path, *, pixel_limit=24_000_000):
+def preprocess(paths, target: Path, *, pixel_limit=24_000_000, preserve_opaque=False):
     """Split separate foreground components, preserving common pixel scale."""
     target.mkdir(parents=True, exist_ok=True)
     sizes = []
@@ -55,7 +55,17 @@ def preprocess(paths, target: Path, *, pixel_limit=24_000_000):
             im = ImageOps.exif_transpose(im).convert("RGBA")
             # Convert chroma key to alpha before resampling so the sentinel
             # color cannot bleed into the foreground boundary.
-            keyed=chroma_mask(np.asarray(im)) if im.getchannel("A").getextrema()[0]>=128 else None
+            from .input_detection import solid_background,scan_evidence
+            is_opaque=im.getchannel("A").getextrema()[0]>=128
+            keyed=chroma_mask(np.asarray(im)) if is_opaque else None
+            key_bg=np.array([255,0,255]) if keyed is not None else None
+            key_method="magenta-chroma-key"
+            if is_opaque and keyed is None:
+                generic=solid_background(np.asarray(im),exact=True)
+                if generic is not None:keyed,key_bg=generic;key_method="solid-background"
+            # For automatic mode, a textured, non-matte opaque edge is evidence
+            # of a full raster piece, not permission to remove guessed pixels.
+            keep_full=bool(preserve_opaque and is_opaque and keyed is None and scan_evidence(im) is None)
             if keyed is not None:im.putalpha(Image.fromarray(keyed.astype(np.uint8)*255))
             if scale < 1:
                 im = im.resize(tuple(max(1, round(v*scale)) for v in im.size), Image.Resampling.LANCZOS)
@@ -70,10 +80,14 @@ def preprocess(paths, target: Path, *, pixel_limit=24_000_000):
         bg = None
         threshold = None
         if keyed is not None:
-            method="magenta-chroma-key"
+            method=key_method
             mask=a[:,:,3]>=128
-            bg=np.array([255,0,255])
+            bg=key_bg
             threshold=5
+        elif keep_full:
+            method="opaque-raster-preserved"
+            mask=np.ones((h,w),bool)
+            warnings.append(f"{path.name}: no reliable background detected; preserving the complete opaque raster.")
         elif np.any(a[:,:,3]<128):
             mask = a[:,:,3]>=128
         else:
@@ -135,7 +149,7 @@ def preprocess(paths, target: Path, *, pixel_limit=24_000_000):
             if len(pieces)>=MAX_SCAN_PIECES:
                 raise ValueError(f"Scan mode supports up to {MAX_SCAN_PIECES} detected pieces; separate speckle and use smaller sets.")
             y,x=sl
-            if x.start==0 or y.start==0 or x.stop==w or y.stop==h:
+            if method!="opaque-raster-preserved" and (x.start==0 or y.start==0 or x.stop==w or y.stop==h):
                 warnings.append(f"{path.name}: a piece touches the scan border; its edge may be clipped.")
             out=a[sl].copy()
             out[:,:,3]=local.astype(np.uint8)*255
@@ -429,7 +443,7 @@ def reconstruct(pieces,out:Path,report,update=lambda _:None,*,pixel_cap=8_000_00
     indexed=n>64
     if indexed:
         update("Indexing multiscale scan contours and colors")
-        pairs=_indexed_pairs(shapes,forward,reverse,scales)
+        pairs=_indexed_pairs(shapes,forward,reverse,scales,keep=10 if n<=128 else 8)
     else:
         pairs=[(i,j) for i in range(n) for j in range(i+1,n)]
     for z,(i,j) in enumerate(pairs):

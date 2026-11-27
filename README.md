@@ -288,11 +288,11 @@ The new branch segments separate paper pieces from a contrasting matte backgroun
 and estimates continuous rigid poses from complementary torn contours.
 It supports multiple non-touching pieces on one sheet, folder-wrapped scan ZIPs,
 and same-size binary foreground mask PNG sidecars (including scanned document strips).
-Metadata-free irregular fragments (including magenta-keyed artwork pieces)
-automatically use geometry-based matching even in the Digital fragments automatic
-setup. Up to 128 irregular pieces are supported; larger cases within that cap
-use indexed contour/color retrieval. Disconnected groups remain explicitly
-unanchored.
+A shared input classifier routes metadata-free rotated/nonuniform rectangular
+tiles, unequal-width opaque or continuously rotated alpha strips, and foreground
+scans or color-keyed artwork fragments to the appropriate solver. Up to 256
+irregular pieces are supported with indexed contour/color retrieval for larger
+sets. Disconnected groups remain explicitly unanchored.
 For text-bearing strips, default optional local English OCR scores words crossing
 candidate seams and helps resolve upright direction. If OCR is unavailable or
 insufficient, the pixel-only result remains available. It is slower and experimental.

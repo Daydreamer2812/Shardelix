@@ -17,9 +17,11 @@ DOWNLOADS={"assembly.png","assembly_with_cuts.png","assembly_reference_aligned.p
 
 # Auxiliary views and truth are never counted as fragments. Unknown nested
 # layouts are accepted only when one primary image directory is unambiguous.
-_AUX_DIRS={"evaluation","result","results","ground_truth","ground-truth","truth","__macosx",
-           "bg_mask","bg_mask_vis","masks","mask","mask_vis","preview","previews","thumbnails",
-           "reference","references","original","originals","labels","gt","output","outputs"}
+_MASK_DIRS={"bg_mask","bg_mask_vis","masks","mask","mask_vis","foreground_masks","alpha_masks","segmentation_masks"}
+_PRIMARY_DIRS={"pieces","fragments","tiles","patches","scans"}
+_AUX_DIRS={"evaluation","result","results","ground_truth","ground-truth","groundtruth","truth","__macosx",
+           "preview","previews","thumbnails","reference","references","original","originals",
+           "labels","gt","annotations","output","outputs"}|_MASK_DIRS
 _AUX_FILES={"source.png","reference.png","ground_truth.png","assembly.png","assembly_with_cuts.png",
             "fragments_preview.png","cut_lines.png"}
 
@@ -59,20 +61,20 @@ def safe_zip(source:Path,case:Path,*,browser=False,extract=True,inspect_geometry
             if any(x in _AUX_DIRS for x in low):
                 # Only the documented binary foreground-mask PNG convention is
                 # recognized, not arbitrary .npy arrays or result images.
-                if suffix==".png" and low and low[-1]=="bg_mask_vis" and not any(x in _AUX_DIRS for x in low[:-1]):
+                if suffix==".png" and low and low[-1] in _MASK_DIRS and not any(x in _AUX_DIRS for x in low[:-1]):
                     key=(dirs[:-1],Path(leaf).stem)
                     if key in mask_entries:raise ValueError("Duplicate foreground mask")
                     mask_entries[key]=e
                 continue
-            if leaf=="case.json":
+            if leaf.lower()=="case.json":
                 if meta is not None or e.file_size>64*1024:raise ValueError("Ambiguous or oversized metadata")
                 meta=json.loads(z.read(e))
                 if not isinstance(meta,dict):raise ValueError("Invalid public metadata")
                 continue
-            explicit_dir="pieces" in low or (scan and "scans" in low)
+            explicit_dir=bool(_PRIMARY_DIRS.intersection(low))
             if suffix not in IMAGE_EXT or (leaf.lower() in _AUX_FILES and not explicit_dir):continue
             groups.setdefault(dirs,[]).append(e)
-        explicit=[d for d in groups if "pieces" in tuple(x.lower() for x in d) or (scan and "scans" in tuple(x.lower() for x in d))]
+        explicit=[d for d in groups if _PRIMARY_DIRS.intersection(x.lower() for x in d)]
         if explicit:chosen=explicit
         elif () in groups:chosen=[()]
         else:
@@ -84,15 +86,39 @@ def safe_zip(source:Path,case:Path,*,browser=False,extract=True,inspect_geometry
         num=len(images)
         if not num:raise ValueError("No supported fragments found in ZIP")
         if num>limit:raise ValueError("Archive exceeds fragment count budget")
-        mask_count=sum((d,Path(e.filename.replace("\\","/").split("/")[-1]).stem) in mask_entries for d,e in images)
-        if extract_masks and mask_count and mask_count!=num:
-            raise ValueError("Foreground-mask archive must supply bg_mask_vis PNG for every fragment")
+        def find_mask(d,stem):
+            folders=[d]
+            if d and d[-1].lower() in _PRIMARY_DIRS:folders.append(d[:-1])
+            matches=[mask_entries[(folder,name)] for folder in folders for name in (stem,stem+"_mask",stem+"-mask","mask_"+stem)
+                     if (folder,name) in mask_entries]
+            if len(matches)>1:raise ValueError("Ambiguous foreground masks for "+stem)
+            return matches[0] if matches else None
+        resolved_masks={(d,e.filename):find_mask(d,Path(e.filename.replace("\\","/").split("/")[-1]).stem) for d,e in images}
+        mask_count=sum(m is not None for m in resolved_masks.values())
+        # Only the canonical public schema is authoritative. Foreign/stale
+        # metadata is not an instruction to a solver; re-infer from pixels.
+        metadata_warning=None
+        if meta is not None:
+            try:
+                required={"height","width","piece_count","cut","rotations"}
+                if not required.issubset(meta):raise ValueError("not the Shardelix public geometry schema")
+                observed=meta["piece_count"];expected=meta.get("expected_count",observed)
+                if type(observed) is not int or type(expected) is not int or observed!=num or expected<observed:
+                    raise ValueError("declared count differs from actual fragments")
+                validate_constraints(expected,(meta["height"],meta["width"]),meta["cut"],meta.get("grid"),meta["rotations"])
+                angle=meta.get("angle_mode","quarter" if meta["rotations"] else "none")
+                if angle not in ("none","quarter","continuous") or (angle!="none")!=meta["rotations"]:raise ValueError("invalid angle mode")
+                sampling=meta.get("sampling",1)
+                if type(sampling) is not int or sampling not in (1,2,3,4) or (sampling!=1 and angle!="continuous"):raise ValueError("invalid sampling")
+            except (ValueError,TypeError,KeyError) as exc:
+                metadata_warning="Ignored incompatible case.json: "+str(exc)[:160]
+                meta=None
         decoded=0
         for d,e in images:
             leaf=e.filename.replace("\\","/").split("/")[-1]
             if leaf in names:raise ValueError("Duplicate fragment filename")
             names.add(leaf)
-            mask=mask_entries.get((d,Path(leaf).stem))
+            mask=resolved_masks[(d,e.filename)]
             size+=e.file_size+(mask.file_size if mask is not None else 0)
             if size>byte_limit:raise ValueError("Archive exceeds fragment/byte budget")
             if extract:
@@ -106,8 +132,9 @@ def safe_zip(source:Path,case:Path,*,browser=False,extract=True,inspect_geometry
                         if decoded>(WEB_INPUT_PIXELS if browser else MAX_PIXELS*3):raise ValueError("Decoded input exceeds pixel budget")
                         if mm.mode not in ("1","L","RGB","RGBA"):raise ValueError("Foreground mask must be binary raster")
                         m=np.asarray(mm.convert("L"))
-                        if not np.all((m==0)|(m==255)) or not np.any(m):raise ValueError("Foreground mask must be nonempty and binary (0/255)")
-                        rgba=im.convert("RGBA");rgba.putalpha(Image.fromarray(m));dest=target/(Path(leaf).stem+".png")
+                        if not np.all((m==0)|(m==1)|(m==255)) or not np.any(m):raise ValueError("Foreground mask must be nonempty and binary (0/1 or 0/255)")
+                        from PIL import ImageOps
+                        rgba=im.convert("RGBA");rgba.putalpha(Image.fromarray((m>0).astype(np.uint8)*255));rgba=ImageOps.exif_transpose(rgba);dest=target/(Path(leaf).stem+".png")
                         if dest.exists():raise ValueError("Duplicate fragment filename stem")
                         rgba.save(dest)
                 else:
@@ -115,9 +142,14 @@ def safe_zip(source:Path,case:Path,*,browser=False,extract=True,inspect_geometry
         if inspect_geometry:
             openers=[lambda e=e:z.open(e) for _,e in images]
             explicit_scans=any("scans" in tuple(x.lower() for x in d) for d,_ in images)
-            suggestion=_suggest_grid(openers,num,browser) if meta is None and not mask_count and not explicit_scans else None
-            hint=_strip_hint(openers,num,browser) if meta is None and (suggestion is None or mask_count) else None
-            extra={"suggested_document":hint,"foreground_mask_count":mask_count}
+            if meta is None:
+                extra=_inspect_rasters(openers,num,browser,mask_count=mask_count,explicit_scans=explicit_scans)
+            else:
+                extra={"suggested_grid":None,"suggested_document":None,"foreground_mask_count":mask_count,
+                       "route":"metadata","input_evidence":{}}
+            extra["metadata_warning"]=metadata_warning
+            extra["partial_masks"]=bool(0<mask_count<num)
+            suggestion=extra["suggested_grid"]
             return (meta,num,suggestion,extra) if details else (meta,num,suggestion)
     return meta,num
 
@@ -154,38 +186,13 @@ def _check_preview(files,browser):
     if sum(p.stat().st_size for p in files)>(WEB_UPLOAD if browser else MAX_UPLOAD):raise ValueError("Upload exceeds byte budget")
     if len(files)>(WEB_COUNT if browser else GRID_MAX):raise ValueError("Too many fragments")
 
-def _suggest_grid(openers, count, browser):
-    """Detect same-sized opaque raster tiles; shape is a suggestion, not truth."""
-    from PIL import Image
-    from .reconstruction.generator import _factor_pairs
-    total=0;tile=None
-    pixel_limit=WEB_INPUT_PIXELS if browser else MAX_PIXELS*3
-    for opener in openers:
-        with opener() as f,Image.open(f) as im:
-            total+=im.width*im.height
-            if total>pixel_limit:raise ValueError("Decoded input exceeds pixel budget")
-            if tile is None:tile=im.size
-            if im.size!=tile:return None
-            if ("A" in im.getbands() or "transparency" in im.info) and im.convert("RGBA").getchannel("A").getextrema()[0]==0:
-                return None
-            # Equal-size opaque color-key canvases are masks, not grid tiles.
-            # Check the magenta rim before decoding the entire image.
-            rgb=im.convert("RGB") if im.mode=="P" else im
-            corners=[rgb.getpixel((x,y))[:3] for x,y in ((0,0),(im.width-1,0),(0,im.height-1),(im.width-1,im.height-1))] if rgb.mode in ("RGB","RGBA") else []
-            if sum(r>=250 and g<=5 and b>=250 for r,g,b in corners)>=3:
-                import numpy as np
-                from .reconstruction.scan import chroma_mask
-                if chroma_mask(np.asarray(im.convert("RGB"))) is not None:return None
-    if not tile or total>(WEB_PIXELS if browser else MAX_PIXELS):return None
-    tw,th=tile
-    # Rank factor pairs by common landscape aspect. Pixels/count alone do not
-    # identify the original shape; the UI must expose editable alternatives.
-    pairs=sorted(_factor_pairs(count),key=lambda rc:(abs(math.log((rc[1]*tw/(rc[0]*th))/(4/3))),rc))
-    layouts=[{"rows":r,"cols":c,"height":r*th,"width":c*tw} for r,c in pairs]
-    return {"tile_width":tw,"tile_height":th,"expected_count":count,
-            "basis":"equal-size opaque tiles; assumes no missing fragments",
-            "layouts":layouts}
+def _inspect_rasters(openers,count,browser,**kwargs):
+    from .reconstruction.input_detection import inspect_rasters
+    return inspect_rasters(openers,count,WEB_INPUT_PIXELS if browser else MAX_PIXELS*3,
+                           WEB_PIXELS if browser else MAX_PIXELS,**kwargs)
 
+def _suggest_grid(openers,count,browser):
+    return _inspect_rasters(openers,count,browser)["suggested_grid"]
 
 def inspect_uploads(files,browser=False):
     _check_preview(files,browser)
@@ -194,11 +201,8 @@ def inspect_uploads(files,browser=False):
         return {"metadata":public_metadata(meta),"observed_count":n,"suggested_grid":suggestion,**extra}
     if any(p.suffix.lower() not in IMAGE_EXT for p in files):
         raise ValueError("Select supported fragment images or one ZIP")
-    openers=[lambda p=p:p.open("rb") for p in files]
-    suggestion=_suggest_grid(openers,len(files),browser)
-    hint=_strip_hint(openers,len(files),browser) if suggestion is None else None
-    return {"metadata":None,"observed_count":len(files),"suggested_grid":suggestion,
-            "suggested_document":hint,"foreground_mask_count":0}
+    return {"metadata":None,"observed_count":len(files),
+            **_inspect_rasters([lambda p=p:p.open("rb") for p in files],len(files),browser)}
 
 def _generate_case(root,files,conf,update,browser=False):
     from .reconstruction.common import read_source,save_rgba
@@ -341,7 +345,7 @@ def _scan_single(root,files,conf,update,browser=False,truth_dir=None):
         if any(p.suffix.lower() not in IMAGE_EXT for p in files):raise ValueError("Scan mode accepts images or one ZIP")
         paths=files
     hint=_strip_hint([lambda p=p:p.open("rb") for p in paths],len(paths),browser)
-    if hint:
+    if hint and conf.get("detected_route")!="irregular":
         from .reconstruction.physical_document import reconstruct_strips,NotDocumentStrips
         update("Rectifying scanned paper strips")
         try:
@@ -350,7 +354,8 @@ def _scan_single(root,files,conf,update,browser=False,truth_dir=None):
             update("Strip silhouette inconsistent; using irregular scan processing")
         else:
             _public_archive(case,out)
-            d.update(compute_backend=backend(),workflow_elapsed_seconds=time.perf_counter()-started,performance_profile="scan-document-auto")
+            d.update(compute_backend=backend(),workflow_elapsed_seconds=time.perf_counter()-started,performance_profile="scan-document-auto",
+                     input_detection={"route":"scan-strips","evidence":conf.get("input_evidence",{}),"warning":conf.get("metadata_warning")})
             json_write(out/"diagnostics.json",d)
             if not browser and conf.get("ocr_refine",True):
                 from .reconstruction.physical_ocr import native_refine
@@ -358,10 +363,12 @@ def _scan_single(root,files,conf,update,browser=False,truth_dir=None):
                 if refined is not None:d=refined
             return d,None,out
     update("Segmenting paper from scan backgrounds")
-    pieces,report=preprocess(paths,case/"pieces",pixel_limit=WEB_INPUT_PIXELS if browser else MAX_PIXELS*3)
+    pieces,report=preprocess(paths,case/"pieces",pixel_limit=WEB_INPUT_PIXELS if browser else MAX_PIXELS*3,
+                             preserve_opaque=conf.get("auto_preserve_opaque",False))
     d=reconstruct(pieces,out,report,update,pixel_cap=WEB_PIXELS if browser else MAX_PIXELS)
     _public_archive(case,out)
-    d.update(compute_backend=backend(),workflow_elapsed_seconds=time.perf_counter()-started,performance_profile="scan-auto")
+    d.update(compute_backend=backend(),workflow_elapsed_seconds=time.perf_counter()-started,performance_profile="scan-auto",
+             input_detection={"route":"irregular","evidence":conf.get("input_evidence",{}),"warning":conf.get("metadata_warning")})
     json_write(out/"diagnostics.json",d)
     if truth_dir is not None and truth_dir.exists() and any(truth_dir.iterdir()):
         json_write(out/"comparison.json",{"pose_evaluated":False,"warning":"Scan mode does not evaluate digital ground truth: arbitrary rotation, scale and torn-edge loss require a separate physical benchmark."})
@@ -369,16 +376,18 @@ def _scan_single(root,files,conf,update,browser=False,truth_dir=None):
 
 def _single(root,files,conf,update,browser=False,truth_dir=None):
     from .reconstruction.common import read_source,save_rgba,json_write
+    detected=None
     if conf.get("task")=="blind":
         mode=conf.get("input_mode","digital")
         if mode not in ("digital","auto","scan"):raise ValueError("Unknown reconstruction input mode")
         if mode=="scan":
             return _scan_single(root,files,conf,update,browser,truth_dir)
         if conf.get("auto_layout",False):
-            info=inspect_uploads(files,browser)
-            if not info["metadata"] and (not info["suggested_grid"] or (mode=="auto" and info["observed_count"]==1)):
-                update("Detected irregular fragments — selecting geometry-based reconstruction")
-                return _scan_single(root,files,conf,update,browser,truth_dir)
+            detected=inspect_uploads(files,browser)
+            if detected["route"] in ("irregular","scan-strips"):
+                update("Detected foreground fragments — selecting geometry-based reconstruction")
+                return _scan_single(root,files,{**conf,"detected_route":detected["route"],"auto_preserve_opaque":True,
+                                                              "input_evidence":detected.get("input_evidence",{}),"metadata_warning":detected.get("metadata_warning")},update,browser,truth_dir)
     from .reconstruction.generator import generate,dimensions
     from .reconstruction.cli import solve_case,evaluate_case,solve_external_document
     from PIL import Image
@@ -393,13 +402,14 @@ def _single(root,files,conf,update,browser=False,truth_dir=None):
     count_cap=WEB_COUNT if browser else GRID_MAX
     pixel_cap=WEB_PIXELS if browser else MAX_PIXELS
     profile,tune,params=profiles(conf)
-    started=time.perf_counter();import_geometry=None
+    started=time.perf_counter();import_geometry=None;layout_trials=[]
     if task=="demo":
         meta,case,out,fit_info=_generate_case(root,files,conf,update,browser)
     elif task=="blind":
         meta=None
         if len(files)==1 and files[0].suffix.lower()==".zip":
-            meta,n=safe_zip(files[0],case,browser=browser)
+            meta,n=safe_zip(files[0],case,browser=browser,
+                            extract_masks=bool(detected and detected.get("metadata") and detected["metadata"].get("cut") not in RECTANGULAR))
         else:
             (case/"pieces").mkdir(parents=True)
             for f in files:
@@ -411,13 +421,20 @@ def _single(root,files,conf,update,browser=False,truth_dir=None):
             # cached inspection or old manual fields. Never inspect ground truth.
             if meta is not None:
                 import_geometry="archive-metadata"
+            elif detected and detected["route"] in ("opaque-strips","continuous-strips"):
+                import_geometry="inferred-strips"
+                angle="continuous" if detected["route"]=="continuous-strips" else "quarter"
+                rotations=True;sampling=1;params={}
             else:
                 update("Auto-detecting fragment geometry")
-                paths=sorted((case/"pieces").iterdir())
-                suggestion=_suggest_grid((lambda p=p:p.open("rb") for p in paths),n,browser)
-                if not suggestion:
-                    raise ValueError("Fragment geometry changed between inspection and extraction; reselect the archive.")
+                suggestion=detected["suggested_grid"] if detected else _suggest_grid((lambda p=p:p.open("rb") for p in sorted((case/"pieces").iterdir())),n,browser)
+                if not suggestion:raise ValueError("Fragment geometry changed between inspection and extraction; reselect the archive.")
                 layout=suggestion["layouts"][0]
+                if len(suggestion["layouts"])>1 and n<=64 and profile!="fast" and not params:
+                    from .reconstruction.common import load_fragments
+                    from .reconstruction.input_detection import select_visual_grid
+                    update("Checking plausible grid layouts using blind seams")
+                    layout,layout_trials=select_visual_grid(suggestion["layouts"],load_fragments(case/"pieces"),profile)
                 # Unknown square-tile orientation is resolved by quarter-turn
                 # matching; there is no need to specify a rotation mode.
                 meta=dict(height=layout["height"],width=layout["width"],piece_count=n,
@@ -456,7 +473,15 @@ def _single(root,files,conf,update,browser=False,truth_dir=None):
         held=root/"truth-held-out";(case/"evaluation").rename(held)
     try:
         if meta is None:
-            result=solve_external_document(case/"pieces",out,rotations,profile=profile,angle_mode=angle,sampling=sampling,max_canvas_pixels=pixel_cap)
+            try:
+                result=solve_external_document(case/"pieces",out,rotations,profile=profile,angle_mode=angle,sampling=sampling,max_canvas_pixels=pixel_cap,color_aware=import_geometry=="inferred-strips")
+            except ValueError:
+                if not detected or detected["route"]!="continuous-strips":raise
+                update("Strict strip rectification failed — preserving masks and trying irregular matching")
+                shutil.rmtree(case,ignore_errors=True);shutil.rmtree(out,ignore_errors=True)
+                return _scan_single(root,files,{**conf,"detected_route":"irregular","auto_preserve_opaque":True,
+                                                "input_evidence":detected.get("input_evidence",{}),
+                                                "metadata_warning":"Continuous strip estimate rejected; used irregular matching."},update,browser,truth_dir)
         else:
             result=solve_case(case,out,tune=tune,params=params or None,profile=profile)
     finally:
@@ -479,7 +504,15 @@ def _single(root,files,conf,update,browser=False,truth_dir=None):
     d["performance_profile"]=profile or "legacy"
     if import_geometry:
         d["import_geometry_mode"]=import_geometry
-        d["import_geometry"]={k:meta[k] for k in ("width","height","grid","cut","piece_count")}
+        if meta:
+            d["import_geometry"]={k:meta[k] for k in ("width","height","grid","cut","piece_count")}
+        else:
+            with Image.open(out/"assembly.png") as assembled:
+                w,h=assembled.size
+            d["import_geometry"]={"width":w,"height":h,"grid":None,"cut":"document","piece_count":n}
+    if detected:
+        d["input_detection"]={"route":detected["route"],"evidence":detected.get("input_evidence",{}),"warning":detected.get("metadata_warning")}
+        if layout_trials:d["input_detection"]["layout_trials"]=layout_trials
     from .native_core import backend
     d["compute_backend"]=backend()
     # Peak RSS is the process high-water mark (not an incremental per-case value).
@@ -558,5 +591,5 @@ def run_job(root:Path,conf,notify=lambda s:None,*,browser=False):
                         z.write(p,str(Path("cases")/directory.name/p.relative_to(directory/"result")))
     shutil.rmtree(root/"runs",ignore_errors=True)
     return {"state":"done","stage":"Benchmark complete" if batch else "Reconstruction exported",
-            "diagnostics":{k:v for k,v in d.items() if k in ("algorithm","runtime_seconds","status","placed","piece_count","coverage","collision_pixels","render_collision_pixels","identical_piece_count","sparse_high_consensus","reciprocal_seam_fraction","expected_count","missing_count","angle_mode","sampling","available_piece_recovery","normalization_seconds","index_mode","index_fallback_used","index_query_seconds","retrieval_seconds","assembly_seconds","performance_profile","process_peak_rss_mib","workflow_elapsed_seconds","frame_anchor_status","multigap_status","extra_verification","compute_backend","fast_rescue_v13","import_geometry_mode","import_geometry","scan")},
+            "diagnostics":{k:v for k,v in d.items() if k in ("algorithm","runtime_seconds","status","placed","piece_count","coverage","collision_pixels","render_collision_pixels","identical_piece_count","sparse_high_consensus","reciprocal_seam_fraction","expected_count","missing_count","angle_mode","sampling","available_piece_recovery","normalization_seconds","index_mode","index_fallback_used","index_query_seconds","retrieval_seconds","assembly_seconds","performance_profile","process_peak_rss_mib","workflow_elapsed_seconds","frame_anchor_status","multigap_status","extra_verification","compute_backend","fast_rescue_v13","import_geometry_mode","import_geometry","input_detection","scan")},
             "metrics":m,"comparison":json.loads((result/"comparison.json").read_text()) if (result/"comparison.json").exists() else None,"benchmark":rows if batch else None,"files":sorted(p.name for p in result.iterdir() if p.name in DOWNLOADS)}
