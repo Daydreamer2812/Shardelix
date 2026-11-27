@@ -286,7 +286,9 @@ In the Web Studio **Reconstruction → Input type**, leave **Automatic detection
 for irregular scans or choose **Physical paper scans / photos** explicitly.
 The new branch segments separate paper pieces from a contrasting matte background
 and estimates continuous rigid poses from complementary torn contours.
-It supports multiple non-touching pieces on one sheet and exports mask previews,
+It supports multiple non-touching pieces on one sheet, folder-wrapped scan ZIPs,
+and same-size binary foreground mask PNG sidecars (including scanned document strips).
+It exports mask previews,
 preprocessed PNGs, affine poses and an honest scan diagnostics report.
 Test results (including two public physical scan sets) are in
 [`reports/scan_simulation.json`](reports/scan_simulation.json) and

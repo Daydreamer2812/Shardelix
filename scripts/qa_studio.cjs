@@ -86,6 +86,22 @@ const {execFileSync}=require('node:child_process');
   assert.equal(await page.locator('#dpa').textContent(),'—');
   assert.match(await page.locator('#diagnostics').textContent(),/physical-scan-se2-experimental/);
   assert.ok(await page.getByRole('button',{name:'Scan processing report'}).isVisible());
+  // Folder-wrapped physical strip archive with same-stem foreground masks.
+  // Auxiliary masks and order.txt must never count as extra fragments.
+  const stripImages=await page.evaluate(()=>Array.from({length:4},(_,i)=>{
+    const c=document.createElement('canvas');c.width=19+i;c.height=120;const ctx=c.getContext('2d');
+    ctx.fillStyle='black';ctx.fillRect(0,0,c.width,c.height);
+    ctx.fillStyle='white';ctx.fillRect(2,0,14,120);
+    const mask=c.toDataURL('image/png').split(',')[1];ctx.fillStyle='#111';ctx.fillRect(5,18+i*8,7,4);
+    return [c.toDataURL('image/png').split(',')[1],mask];}));
+  const wrapped=path.join('/tmp','shardelix-wrapped-scans.zip');
+  execFileSync(process.env.PYTHON||'python',['-c','import sys,zipfile,json,base64; z=zipfile.ZipFile(sys.argv[1],"w"); pairs=json.load(sys.stdin); [(z.writestr(f"collection/{i}.png",base64.b64decode(a)), z.writestr(f"collection/bg_mask_vis/{i}.png",base64.b64decode(b))) for i,(a,b) in enumerate(pairs)]; z.writestr("collection/order.txt","not used"); z.close()',wrapped],{input:JSON.stringify(stripImages)});
+  await page.locator('#upload').setInputFiles(wrapped);
+  await page.waitForFunction(()=>document.querySelector('#metadataInfo').textContent.includes('4 foreground masks recognized'),{},{timeout:30000});
+  await page.locator('#run').click();await done('Reconstruction exported');
+  assert.equal(await page.locator('#placed').textContent(),'4 / 4');
+  assert.match(await page.locator('#diagnostics').textContent(),/physical-document-foreground-multiscale/);
+  assert.equal(await page.locator('#dpa').textContent(),'—');
   for(const width of [1024,768,390,320]){
    await page.setViewportSize({width,height:844});
    const mobile=await page.evaluate(()=>({viewport:window.innerWidth,scroll:document.documentElement.scrollWidth,overflow:[...document.querySelectorAll('body *')].filter(e=>{const r=e.getBoundingClientRect();return r.width>0&&r.right>window.innerWidth+1}).slice(0,20).map(e=>[e.tagName,e.id,String(e.className),Math.round(e.getBoundingClientRect().right)])}));

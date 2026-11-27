@@ -15,39 +15,110 @@ WEB_BATCH_OUTPUT_BYTES=192*1024**2
 NATIVE_BATCH=64
 DOWNLOADS={"assembly.png","assembly_with_cuts.png","assembly_reference_aligned.png","assembly_reference_aligned_with_cuts.png","cut_lines.png","placements.json","unanchored_components.json","ambiguity.json","diagnostics.json","metrics.json","source.png","result.zip","fragments.zip","benchmark.csv","benchmark.json","fragments_preview.png","ground_truth.zip","comparison.json","scan_report.json"}
 
-def safe_zip(source:Path,case:Path,*,browser=False,extract=True,inspect_geometry=False,scan=False):
-    """Inspect/extract public metadata and image leaves; never extract truth."""
+# Auxiliary views and truth are never counted as fragments. Unknown nested
+# layouts are accepted only when one primary image directory is unambiguous.
+_AUX_DIRS={"evaluation","result","results","ground_truth","ground-truth","truth","__macosx",
+           "bg_mask","bg_mask_vis","masks","mask","mask_vis","preview","previews","thumbnails",
+           "reference","references","original","originals","labels","gt","output","outputs"}
+_AUX_FILES={"source.png","reference.png","ground_truth.png","assembly.png","assembly_with_cuts.png",
+            "fragments_preview.png","cut_lines.png"}
+
+def _strip_hint(openers,count,browser):
+    from PIL import Image
+    if not 2<=count<=1024:return None
+    dims=[];total=0
+    for opener in openers:
+        with opener() as f,Image.open(f) as im:
+            w,h=im.size;total+=w*h
+            if total>(WEB_INPUT_PIXELS if browser else MAX_PIXELS*3):
+                raise ValueError("Decoded input exceeds pixel budget")
+            if max(w,h)<4*min(w,h):return None
+            dims.append((min(w,h),max(w,h)))
+    long=[d[1] for d in dims]
+    med=sorted(long)[len(long)//2]
+    if max(abs(v-med) for v in long)>max(2,.015*med):return None
+    return {"height":med,"width_range":[min(d[0] for d in dims),max(d[0] for d in dims)]}
+
+def safe_zip(source:Path,case:Path,*,browser=False,extract=True,inspect_geometry=False,scan=False,
+             details=False,extract_masks=False):
+    """Inspect/extract primary raster images. Never extract truth or mask previews as pieces."""
+    from PIL import Image
     target=case/"pieces"
     if extract:target.mkdir(parents=True,exist_ok=True)
-    size=0;num=0;meta=None;names=set();images=[]
+    meta=None;names=set();groups={};mask_entries={};size=0
     limit=WEB_COUNT if browser else GRID_MAX
     byte_limit=WEB_UPLOAD*3 if browser else MAX_UPLOAD*2
     with zipfile.ZipFile(source) as z:
         entries=z.infolist()
-        if len(entries)>limit+100:raise ValueError("Too many archive entries")
+        if len(entries)>3*limit+100:raise ValueError("Too many archive entries")
         for e in entries:
             parts=e.filename.replace("\\","/").split("/")
             if e.is_dir():continue
             if ".." in parts or e.filename.startswith(("/","\\")) or ":" in parts[0]:raise ValueError("Unsafe archive path")
-            leaf=parts[-1];suffix=Path(leaf).suffix.lower()
-            if "evaluation" in parts or "result" in parts:continue
+            dirs=tuple(parts[:-1]);low=tuple(p.lower() for p in dirs);leaf=parts[-1];suffix=Path(leaf).suffix.lower()
+            if any(x in _AUX_DIRS for x in low):
+                # Only the documented binary foreground-mask PNG convention is
+                # recognized, not arbitrary .npy arrays or result images.
+                if suffix==".png" and low and low[-1]=="bg_mask_vis" and not any(x in _AUX_DIRS for x in low[:-1]):
+                    key=(dirs[:-1],Path(leaf).stem)
+                    if key in mask_entries:raise ValueError("Duplicate foreground mask")
+                    mask_entries[key]=e
+                continue
             if leaf=="case.json":
                 if meta is not None or e.file_size>64*1024:raise ValueError("Ambiguous or oversized metadata")
                 meta=json.loads(z.read(e))
                 if not isinstance(meta,dict):raise ValueError("Invalid public metadata")
                 continue
-            if suffix not in IMAGE_EXT or not (len(parts)==1 or "pieces" in parts[:-1] or (scan and "scans" in parts[:-1])):continue
-            num+=1;size+=e.file_size
-            if num>limit or size>byte_limit:raise ValueError("Archive exceeds fragment/byte budget")
+            explicit_dir="pieces" in low or (scan and "scans" in low)
+            if suffix not in IMAGE_EXT or (leaf.lower() in _AUX_FILES and not explicit_dir):continue
+            groups.setdefault(dirs,[]).append(e)
+        explicit=[d for d in groups if "pieces" in tuple(x.lower() for x in d) or (scan and "scans" in tuple(x.lower() for x in d))]
+        if explicit:chosen=explicit
+        elif () in groups:chosen=[()]
+        else:
+            # Standard folder-wrapped ZIPs produced by OS archive tools.
+            # Do not guess when multiple unrelated raster directories exist.
+            chosen=list(groups)
+            if len(chosen)>1:raise ValueError("Multiple image directories in ZIP; put primary fragments in pieces/ or scans/")
+        images=[(d,e) for d in chosen for e in groups[d]]
+        num=len(images)
+        if not num:raise ValueError("No supported fragments found in ZIP")
+        if num>limit:raise ValueError("Archive exceeds fragment count budget")
+        mask_count=sum((d,Path(e.filename.replace("\\","/").split("/")[-1]).stem) in mask_entries for d,e in images)
+        if extract_masks and mask_count and mask_count!=num:
+            raise ValueError("Foreground-mask archive must supply bg_mask_vis PNG for every fragment")
+        decoded=0
+        for d,e in images:
+            leaf=e.filename.replace("\\","/").split("/")[-1]
             if leaf in names:raise ValueError("Duplicate fragment filename")
             names.add(leaf)
-            if inspect_geometry:images.append(e)
+            mask=mask_entries.get((d,Path(leaf).stem))
+            size+=e.file_size+(mask.file_size if mask is not None else 0)
+            if size>byte_limit:raise ValueError("Archive exceeds fragment/byte budget")
             if extract:
-                with z.open(e) as f,(target/leaf).open("wb") as out:shutil.copyfileobj(f,out,1024*1024)
-        if not num:raise ValueError("No supported fragments found in ZIP")
+                if extract_masks and mask is not None:
+                    # Decode only verified same-size binary PNG masks. Alpha
+                    # explicitly describes foreground (white=paper, black=background).
+                    import numpy as np
+                    with z.open(e) as f,Image.open(f) as im,z.open(mask) as mf,Image.open(mf) as mm:
+                        if im.size!=mm.size:raise ValueError("Foreground mask dimensions do not match image")
+                        decoded+=im.width*im.height
+                        if decoded>(WEB_INPUT_PIXELS if browser else MAX_PIXELS*3):raise ValueError("Decoded input exceeds pixel budget")
+                        if mm.mode not in ("1","L","RGB","RGBA"):raise ValueError("Foreground mask must be binary raster")
+                        m=np.asarray(mm.convert("L"))
+                        if not np.all((m==0)|(m==255)) or not np.any(m):raise ValueError("Foreground mask must be nonempty and binary (0/255)")
+                        rgba=im.convert("RGBA");rgba.putalpha(Image.fromarray(m));dest=target/(Path(leaf).stem+".png")
+                        if dest.exists():raise ValueError("Duplicate fragment filename stem")
+                        rgba.save(dest)
+                else:
+                    with z.open(e) as f,(target/leaf).open("wb") as out:shutil.copyfileobj(f,out,1024*1024)
         if inspect_geometry:
-            suggestion=_suggest_grid((lambda e=e:z.open(e) for e in images),num,browser) if meta is None else None
-            return meta,num,suggestion
+            openers=[lambda e=e:z.open(e) for _,e in images]
+            explicit_scans=any("scans" in tuple(x.lower() for x in d) for d,_ in images)
+            suggestion=_suggest_grid(openers,num,browser) if meta is None and not mask_count and not explicit_scans else None
+            hint=_strip_hint(openers,num,browser) if meta is None and (suggestion is None or mask_count) else None
+            extra={"suggested_document":hint,"foreground_mask_count":mask_count}
+            return (meta,num,suggestion,extra) if details else (meta,num,suggestion)
     return meta,num
 
 def public_metadata(meta):
@@ -111,18 +182,15 @@ def _suggest_grid(openers, count, browser):
 def inspect_uploads(files,browser=False):
     _check_preview(files,browser)
     if len(files)==1 and files[0].suffix.lower()==".zip":
-        meta,n,suggestion=safe_zip(files[0],files[0].parent,browser=browser,extract=False,inspect_geometry=True,scan=True)
-        # Explicit scans/ directory is an unambiguous physical-input hint,
-        # even when the scan sheets all have the same dimensions.
-        if meta is None:
-            with zipfile.ZipFile(files[0]) as archive:
-                if any("scans" in e.filename.replace("\\","/").split("/")[:-1] for e in archive.infolist() if not e.is_dir()):
-                    suggestion=None
-        return {"metadata":public_metadata(meta),"observed_count":n,"suggested_grid":suggestion}
+        meta,n,suggestion,extra=safe_zip(files[0],files[0].parent,browser=browser,extract=False,inspect_geometry=True,scan=True,details=True)
+        return {"metadata":public_metadata(meta),"observed_count":n,"suggested_grid":suggestion,**extra}
     if any(p.suffix.lower() not in IMAGE_EXT for p in files):
         raise ValueError("Select supported fragment images or one ZIP")
-    suggestion=_suggest_grid((lambda p=p:p.open("rb") for p in files),len(files),browser)
-    return {"metadata":None,"observed_count":len(files),"suggested_grid":suggestion}
+    openers=[lambda p=p:p.open("rb") for p in files]
+    suggestion=_suggest_grid(openers,len(files),browser)
+    hint=_strip_hint(openers,len(files),browser) if suggestion is None else None
+    return {"metadata":None,"observed_count":len(files),"suggested_grid":suggestion,
+            "suggested_document":hint,"foreground_mask_count":0}
 
 def _generate_case(root,files,conf,update,browser=False):
     from .reconstruction.common import read_source,save_rgba
@@ -258,12 +326,25 @@ def _scan_single(root,files,conf,update,browser=False,truth_dir=None):
     started=time.perf_counter()
     case=root/"case";out=root/"result";out.mkdir(parents=True,exist_ok=True)
     if len(files)==1 and files[0].suffix.lower()==".zip":
-        safe_zip(files[0],case,browser=browser,scan=True)
+        safe_zip(files[0],case,browser=browser,scan=True,extract_masks=True)
         (case/"pieces").rename(case/"scans")
         paths=sorted((case/"scans").iterdir())
     else:
         if any(p.suffix.lower() not in IMAGE_EXT for p in files):raise ValueError("Scan mode accepts images or one ZIP")
         paths=files
+    hint=_strip_hint([lambda p=p:p.open("rb") for p in paths],len(paths),browser)
+    if hint:
+        from .reconstruction.physical_document import reconstruct_strips,NotDocumentStrips
+        update("Rectifying scanned paper strips")
+        try:
+            d=reconstruct_strips(paths,case/"pieces",out,update,pixel_cap=WEB_PIXELS if browser else MAX_PIXELS)
+        except NotDocumentStrips:
+            update("Strip silhouette inconsistent; using irregular scan processing")
+        else:
+            _public_archive(case,out)
+            d.update(compute_backend=backend(),workflow_elapsed_seconds=time.perf_counter()-started,performance_profile="scan-document-auto")
+            json_write(out/"diagnostics.json",d)
+            return d,None,out
     update("Segmenting paper from scan backgrounds")
     pieces,report=preprocess(paths,case/"pieces",pixel_limit=WEB_INPUT_PIXELS if browser else MAX_PIXELS*3)
     d=reconstruct(pieces,out,report,update,pixel_cap=WEB_PIXELS if browser else MAX_PIXELS)

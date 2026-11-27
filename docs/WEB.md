@@ -125,6 +125,29 @@ here. Both were fully connected (6/6 and 5/5), with visually plausible text and
 art alignment, but no independent ground-truth poses or pixel accuracy claim.
 The real examples have residual visible seam gaps and small raster overlaps.
 
+### Folder-wrapped scanned strip archives
+
+ZIP files may contain a single outer collection folder (for example
+`collection/0.png`, `collection/1.png`). The importer selects the primary
+raster directory, not auxiliary views or ground truth. If the archive contains
+multiple unrelated image directories, use `pieces/` or `scans/` to identify the input.
+
+The physical scan route supports binary, same-size foreground masks stored
+under a sibling `bg_mask_vis/<image-stem>.png` folder (white/255 = paper,
+black/0 = background). The mask folder is never counted as fragments.
+Companion NumPy arrays and ordering/answer text files are not read by the solver.
+All images in a masked collection must have corresponding valid masks.
+
+If the images are elongated and share a common long dimension, the engine
+attempts physical document-strip rectification before general contour matching.
+It rectifies the foreground silhouette per row, estimates relative 180° text
+orientation from row projections, compares robust multiscale ink-edge profiles
+and optimizes a directed chain. It supports 2–128 scanned strips. For other
+shapes, the irregular scan route remains available. Physical strip ordering
+is experimental: aligned geometry and full placement do not prove that the
+text is in correct order. The normalized strips and scan report are exportable;
+the supplied ground-truth ordering is never used for inference.
+
 ## Verification status
 
 The static artifact, JS syntax, archive contents, Python tests and local
