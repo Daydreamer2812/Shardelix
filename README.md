@@ -278,3 +278,18 @@ If Shardelix helps your research or coursework, consider starring the repository
 - [Dataset protocol](docs/DATASETS.md)
 
 **License:** not yet assigned by the maintainer. Public repository visibility alone is not a license to redistribute or reuse the code. External datasets are not bundled; obtain them from their owners under the applicable terms.
+
+
+### Experimental physical scans / photos
+
+In the Web Studio **Reconstruction → Input type**, leave **Automatic detection**
+for irregular scans or choose **Physical paper scans / photos** explicitly.
+The new branch segments separate paper pieces from a contrasting matte background
+and estimates continuous rigid poses from complementary torn contours.
+It supports multiple non-touching pieces on one sheet and exports mask previews,
+preprocessed PNGs, affine poses and an honest scan diagnostics report.
+Test results (including two public physical scan sets) are in
+[`reports/scan_simulation.json`](reports/scan_simulation.json) and
+[`reports/scan_real.json`](reports/scan_real.json).
+No ground truth is used in matching; full placement is not verified accuracy.
+See [physical scan limitations](docs/WEB.md#physical-paper-scans-and-photos-experimental).

@@ -1,0 +1,36 @@
+{
+  "dataset": "https://github.com/raltgz/OpenSoft14",
+  "dataset_revision": "61bfbf8515c80db3d0074093683726bf8a59426a",
+  "note": "Public JPEG scans, not redistributed. No independent poses. Visual checks only; occupancy is not accuracy.",
+  "cases": [
+    {
+      "set": "test_new_6",
+      "expected": 6,
+      "detected": 6,
+      "placed": 6,
+      "components": 1,
+      "bbox_occupancy": 0.9294,
+      "render_collision_pixels": 843,
+      "solver_seconds": 0.884,
+      "warnings": [
+        "scan0009.jpg: a piece touches the scan border; its edge may be clipped.",
+        "scan0011.jpg: a piece touches the scan border; its edge may be clipped."
+      ],
+      "accuracy_verified": false
+    },
+    {
+      "set": "test_new_7",
+      "expected": 5,
+      "detected": 5,
+      "placed": 5,
+      "components": 1,
+      "bbox_occupancy": 0.9272,
+      "render_collision_pixels": 424,
+      "solver_seconds": 1.493,
+      "warnings": [
+        "scan0002.jpg: a piece touches the scan border; its edge may be clipped."
+      ],
+      "accuracy_verified": false
+    }
+  ]
+}

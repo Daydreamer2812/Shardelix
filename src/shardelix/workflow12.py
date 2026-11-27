@@ -13,9 +13,9 @@ WEB_INPUT_PIXELS=24_000_000
 WEB_BATCH=24
 WEB_BATCH_OUTPUT_BYTES=192*1024**2
 NATIVE_BATCH=64
-DOWNLOADS={"assembly.png","assembly_with_cuts.png","assembly_reference_aligned.png","assembly_reference_aligned_with_cuts.png","cut_lines.png","placements.json","unanchored_components.json","ambiguity.json","diagnostics.json","metrics.json","source.png","result.zip","fragments.zip","benchmark.csv","benchmark.json","fragments_preview.png","ground_truth.zip","comparison.json"}
+DOWNLOADS={"assembly.png","assembly_with_cuts.png","assembly_reference_aligned.png","assembly_reference_aligned_with_cuts.png","cut_lines.png","placements.json","unanchored_components.json","ambiguity.json","diagnostics.json","metrics.json","source.png","result.zip","fragments.zip","benchmark.csv","benchmark.json","fragments_preview.png","ground_truth.zip","comparison.json","scan_report.json"}
 
-def safe_zip(source:Path,case:Path,*,browser=False,extract=True,inspect_geometry=False):
+def safe_zip(source:Path,case:Path,*,browser=False,extract=True,inspect_geometry=False,scan=False):
     """Inspect/extract public metadata and image leaves; never extract truth."""
     target=case/"pieces"
     if extract:target.mkdir(parents=True,exist_ok=True)
@@ -36,7 +36,7 @@ def safe_zip(source:Path,case:Path,*,browser=False,extract=True,inspect_geometry
                 meta=json.loads(z.read(e))
                 if not isinstance(meta,dict):raise ValueError("Invalid public metadata")
                 continue
-            if suffix not in IMAGE_EXT or not (len(parts)==1 or "pieces" in parts[:-1]):continue
+            if suffix not in IMAGE_EXT or not (len(parts)==1 or "pieces" in parts[:-1] or (scan and "scans" in parts[:-1])):continue
             num+=1;size+=e.file_size
             if num>limit or size>byte_limit:raise ValueError("Archive exceeds fragment/byte budget")
             if leaf in names:raise ValueError("Duplicate fragment filename")
@@ -111,7 +111,13 @@ def _suggest_grid(openers, count, browser):
 def inspect_uploads(files,browser=False):
     _check_preview(files,browser)
     if len(files)==1 and files[0].suffix.lower()==".zip":
-        meta,n,suggestion=safe_zip(files[0],files[0].parent,browser=browser,extract=False,inspect_geometry=True)
+        meta,n,suggestion=safe_zip(files[0],files[0].parent,browser=browser,extract=False,inspect_geometry=True,scan=True)
+        # Explicit scans/ directory is an unambiguous physical-input hint,
+        # even when the scan sheets all have the same dimensions.
+        if meta is None:
+            with zipfile.ZipFile(files[0]) as archive:
+                if any("scans" in e.filename.replace("\\","/").split("/")[:-1] for e in archive.infolist() if not e.is_dir()):
+                    suggestion=None
         return {"metadata":public_metadata(meta),"observed_count":n,"suggested_grid":suggestion}
     if any(p.suffix.lower() not in IMAGE_EXT for p in files):
         raise ValueError("Select supported fragment images or one ZIP")
@@ -245,8 +251,40 @@ def _evaluate_external(case,out,meta,truth_dir,browser,allow_rotation):
         if warning:comparison["warning"]=" ".join(filter(None,[warning,measured.get("warning")]))
     json_write(out/"comparison.json",comparison)
 
+def _scan_single(root,files,conf,update,browser=False,truth_dir=None):
+    from .reconstruction.scan import preprocess,reconstruct
+    from .reconstruction.common import json_write
+    from .native_core import backend
+    started=time.perf_counter()
+    case=root/"case";out=root/"result";out.mkdir(parents=True,exist_ok=True)
+    if len(files)==1 and files[0].suffix.lower()==".zip":
+        safe_zip(files[0],case,browser=browser,scan=True)
+        (case/"pieces").rename(case/"scans")
+        paths=sorted((case/"scans").iterdir())
+    else:
+        if any(p.suffix.lower() not in IMAGE_EXT for p in files):raise ValueError("Scan mode accepts images or one ZIP")
+        paths=files
+    update("Segmenting paper from scan backgrounds")
+    pieces,report=preprocess(paths,case/"pieces",pixel_limit=WEB_INPUT_PIXELS if browser else MAX_PIXELS*3)
+    d=reconstruct(pieces,out,report,update,pixel_cap=WEB_PIXELS if browser else MAX_PIXELS)
+    _public_archive(case,out)
+    d.update(compute_backend=backend(),workflow_elapsed_seconds=time.perf_counter()-started,performance_profile="scan-auto")
+    json_write(out/"diagnostics.json",d)
+    if truth_dir is not None and truth_dir.exists() and any(truth_dir.iterdir()):
+        json_write(out/"comparison.json",{"pose_evaluated":False,"warning":"Scan mode does not evaluate digital ground truth: arbitrary rotation, scale and torn-edge loss require a separate physical benchmark."})
+    return d,None,out
+
 def _single(root,files,conf,update,browser=False,truth_dir=None):
     from .reconstruction.common import read_source,save_rgba,json_write
+    if conf.get("task")=="blind":
+        mode=conf.get("input_mode","digital")
+        if mode not in ("digital","auto","scan"):raise ValueError("Unknown reconstruction input mode")
+        if mode=="scan":
+            return _scan_single(root,files,conf,update,browser,truth_dir)
+        if mode=="auto" and conf.get("auto_layout",False):
+            info=inspect_uploads(files,browser)
+            if not info["metadata"] and (not info["suggested_grid"] or info["observed_count"]==1):
+                return _scan_single(root,files,conf,update,browser,truth_dir)
     from .reconstruction.generator import generate,dimensions
     from .reconstruction.cli import solve_case,evaluate_case,solve_external_document
     from PIL import Image
@@ -426,5 +464,5 @@ def run_job(root:Path,conf,notify=lambda s:None,*,browser=False):
                         z.write(p,str(Path("cases")/directory.name/p.relative_to(directory/"result")))
     shutil.rmtree(root/"runs",ignore_errors=True)
     return {"state":"done","stage":"Benchmark complete" if batch else "Reconstruction exported",
-            "diagnostics":{k:v for k,v in d.items() if k in ("algorithm","runtime_seconds","status","placed","piece_count","coverage","collision_pixels","render_collision_pixels","identical_piece_count","sparse_high_consensus","reciprocal_seam_fraction","expected_count","missing_count","angle_mode","sampling","available_piece_recovery","normalization_seconds","index_mode","index_fallback_used","index_query_seconds","retrieval_seconds","assembly_seconds","performance_profile","process_peak_rss_mib","workflow_elapsed_seconds","frame_anchor_status","multigap_status","extra_verification","compute_backend","fast_rescue_v13","import_geometry_mode","import_geometry")},
+            "diagnostics":{k:v for k,v in d.items() if k in ("algorithm","runtime_seconds","status","placed","piece_count","coverage","collision_pixels","render_collision_pixels","identical_piece_count","sparse_high_consensus","reciprocal_seam_fraction","expected_count","missing_count","angle_mode","sampling","available_piece_recovery","normalization_seconds","index_mode","index_fallback_used","index_query_seconds","retrieval_seconds","assembly_seconds","performance_profile","process_peak_rss_mib","workflow_elapsed_seconds","frame_anchor_status","multigap_status","extra_verification","compute_backend","fast_rescue_v13","import_geometry_mode","import_geometry","scan")},
             "metrics":m,"comparison":json.loads((result/"comparison.json").read_text()) if (result/"comparison.json").exists() else None,"benchmark":rows if batch else None,"files":sorted(p.name for p in result.iterdir() if p.name in DOWNLOADS)}

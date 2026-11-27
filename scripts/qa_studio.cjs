@@ -71,6 +71,21 @@ const {execFileSync}=require('node:child_process');
   await page.locator('#inferredLayout').selectOption({label:'2 × 8 · 256 × 64 px'});assert.equal(await page.locator('#width').inputValue(),'256');
   await page.locator('#inferredLayout').selectOption({label:'4 × 4 · 128 × 128 px'});assert.equal(await page.locator('#width').inputValue(),'128');
   await page.locator('#useMeta').check();
+  // Scan mode: a single opaque photo containing multiple disconnected pieces,
+  // with no metadata or canvas. Auto mode must route to paper segmentation.
+  await page.locator('#inputMode').selectOption('auto');
+  const scanData=await page.evaluate(()=>{const c=document.createElement('canvas');c.width=300;c.height=180;
+    const ctx=c.getContext('2d');ctx.fillStyle='#202020';ctx.fillRect(0,0,300,180);
+    ctx.fillStyle='#b8e0cf';ctx.fillRect(20,30,80,80);ctx.fillStyle='#dd9887';ctx.fillRect(180,50,75,100);
+    return c.toDataURL('image/png').split(',')[1];});
+  await page.locator('#upload').setInputFiles({name:'scan-overview.png',mimeType:'image/png',buffer:Buffer.from(scanData,'base64')});
+  await page.waitForFunction(()=>document.querySelector('#scanHelp').hidden===false,{},{timeout:30000});
+  await page.locator('#run').click();await done('Reconstruction exported');
+  await page.locator('#scanPreview').waitFor({state:'visible'});
+  assert.match(await page.locator('#notice').textContent(),/2 detected from 1 images/);
+  assert.equal(await page.locator('#dpa').textContent(),'—');
+  assert.match(await page.locator('#diagnostics').textContent(),/physical-scan-se2-experimental/);
+  assert.ok(await page.getByRole('button',{name:'Scan processing report'}).isVisible());
   for(const width of [1024,768,390,320]){
    await page.setViewportSize({width,height:844});
    const mobile=await page.evaluate(()=>({viewport:window.innerWidth,scroll:document.documentElement.scrollWidth,overflow:[...document.querySelectorAll('body *')].filter(e=>{const r=e.getBoundingClientRect();return r.width>0&&r.right>window.innerWidth+1}).slice(0,20).map(e=>[e.tagName,e.id,String(e.className),Math.round(e.getBoundingClientRect().right)])}));

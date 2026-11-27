@@ -1,0 +1,209 @@
+{
+  "definition": "Known synthetic truth; center error <=5 px and relative rotation <=3 degrees, after one global rigid gauge.",
+  "cases": [
+    {
+      "seed": 11,
+      "layout": "strips",
+      "edge_erosion_px": 0,
+      "noise_sigma": 1.4,
+      "expected": 4,
+      "detected": 4,
+      "placed": 4,
+      "mask_iou_mean": 0.9994,
+      "relative_pose_correct": 4,
+      "center_errors_px": [
+        0.0,
+        0.44,
+        0.81,
+        1.25
+      ],
+      "angle_errors_deg": [
+        0.0,
+        0.41,
+        0.37,
+        0.54
+      ],
+      "seconds": 0.94
+    },
+    {
+      "seed": 42,
+      "layout": "strips",
+      "edge_erosion_px": 0,
+      "noise_sigma": 2.5,
+      "expected": 4,
+      "detected": 4,
+      "placed": 4,
+      "mask_iou_mean": 0.9988,
+      "relative_pose_correct": 4,
+      "center_errors_px": [
+        0.0,
+        0.42,
+        0.88,
+        1.69
+      ],
+      "angle_errors_deg": [
+        0.0,
+        0.18,
+        0.0,
+        0.4
+      ],
+      "seconds": 0.973
+    },
+    {
+      "seed": 71,
+      "layout": "strips",
+      "edge_erosion_px": 0,
+      "noise_sigma": 4,
+      "expected": 4,
+      "detected": 4,
+      "placed": 4,
+      "mask_iou_mean": 0.9989,
+      "relative_pose_correct": 4,
+      "center_errors_px": [
+        0.0,
+        0.27,
+        0.31,
+        0.17
+      ],
+      "angle_errors_deg": [
+        0.0,
+        0.22,
+        0.27,
+        0.39
+      ],
+      "seconds": 0.831
+    },
+    {
+      "seed": 123,
+      "layout": "strips",
+      "edge_erosion_px": 0,
+      "noise_sigma": 2.5,
+      "expected": 6,
+      "detected": 6,
+      "placed": 6,
+      "mask_iou_mean": 0.9983,
+      "relative_pose_correct": 6,
+      "center_errors_px": [
+        0.0,
+        0.23,
+        0.53,
+        0.54,
+        0.51,
+        0.62
+      ],
+      "angle_errors_deg": [
+        0.0,
+        0.21,
+        0.07,
+        0.43,
+        0.21,
+        0.06
+      ],
+      "seconds": 1.627
+    },
+    {
+      "seed": 2026,
+      "layout": "strips",
+      "edge_erosion_px": 0,
+      "noise_sigma": 4,
+      "expected": 6,
+      "detected": 6,
+      "placed": 6,
+      "mask_iou_mean": 0.9977,
+      "relative_pose_correct": 6,
+      "center_errors_px": [
+        0.0,
+        0.26,
+        0.46,
+        0.39,
+        0.46,
+        0.53
+      ],
+      "angle_errors_deg": [
+        0.0,
+        0.07,
+        0.48,
+        0.5,
+        0.35,
+        0.03
+      ],
+      "seconds": 1.636
+    },
+    {
+      "seed": 806,
+      "layout": "grid",
+      "edge_erosion_px": 0,
+      "noise_sigma": 2.5,
+      "expected": 4,
+      "detected": 4,
+      "placed": 4,
+      "mask_iou_mean": 0.9988,
+      "relative_pose_correct": 4,
+      "center_errors_px": [
+        0.0,
+        0.17,
+        0.35,
+        0.34
+      ],
+      "angle_errors_deg": [
+        0.0,
+        0.04,
+        0.54,
+        0.06
+      ],
+      "seconds": 0.688
+    },
+    {
+      "seed": 991,
+      "layout": "grid",
+      "edge_erosion_px": 1,
+      "noise_sigma": 4,
+      "expected": 4,
+      "detected": 4,
+      "placed": 4,
+      "mask_iou_mean": 1.0,
+      "relative_pose_correct": 4,
+      "center_errors_px": [
+        0.0,
+        2.76,
+        1.89,
+        4.42
+      ],
+      "angle_errors_deg": [
+        0.0,
+        0.92,
+        0.35,
+        0.72
+      ],
+      "seconds": 0.639
+    },
+    {
+      "seed": 144,
+      "layout": "strips",
+      "edge_erosion_px": 1,
+      "noise_sigma": 4,
+      "expected": 6,
+      "detected": 6,
+      "placed": 6,
+      "mask_iou_mean": 0.9997,
+      "relative_pose_correct": 3,
+      "center_errors_px": [
+        0.0,
+        2.42,
+        4.64,
+        6.69,
+        8.99,
+        11.29
+      ],
+      "angle_errors_deg": [
+        0.0,
+        0.16,
+        0.12,
+        0.08,
+        0.16,
+        0.73
+      ],
+      "seconds": 1.609
+    }
+  ]
+}
