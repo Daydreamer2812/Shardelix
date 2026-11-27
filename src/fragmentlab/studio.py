@@ -138,7 +138,7 @@ def serve(port=8765,open_browser=True):
                 except Exception as e:self.reply({"error":str(e)[:500]},400)
         server=ThreadingHTTPServer(("127.0.0.1",port),Handler)
         url=f"http://127.0.0.1:{server.server_port}"
-        print(f"FragmentLab Studio: {url}",flush=True)
+        print(f"Shardelix Studio: {url}",flush=True)
         if open_browser:webbrowser.open(url)
         try:server.serve_forever()
         except KeyboardInterrupt:pass

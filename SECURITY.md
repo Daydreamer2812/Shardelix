@@ -1,6 +1,6 @@
 # Security policy
 
-FragmentLab is an offline-first research project. It does not require network credentials for
+Shardelix is an offline-first research project. It does not require network credentials for
 normal operation.
 
 ## Reporting a vulnerability

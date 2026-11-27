@@ -59,7 +59,7 @@ jobs:
           test -s build/release-web/fl_core.wasm
           test -s build/release-web/fl_core.js
           cat > build/release-web/START_HERE.txt <<'EOF'
-          FragmentLab V13 Web Studio
+          Shardelix V13 Web Studio
           With Python 3 installed, open a terminal in this directory, then run:
             python -m http.server 8767 --bind 127.0.0.1
           Open http://127.0.0.1:8767/ in your browser.
@@ -78,5 +78,5 @@ jobs:
           TAG: ${{ steps.version.outputs.tag }}
         run: |
           gh release create "$TAG" "dist/fragmentlab-$TAG-source.zip" "dist/fragmentlab-$TAG-web.zip" dist/SHA256SUMS.txt \
-            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "FragmentLab $TAG — C++ / WebAssembly" \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Shardelix $TAG — C++ / WebAssembly" \
             --notes-file "docs/releases/$TAG.md" --latest

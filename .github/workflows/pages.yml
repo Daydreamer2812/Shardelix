@@ -1,4 +1,4 @@
-name: Deploy FragmentLab Studio to GitHub Pages
+name: Deploy Shardelix Studio to GitHub Pages
 on:
   push:
     branches: [main, master]

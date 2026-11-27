@@ -1,6 +1,6 @@
 <div align="center">
 
-# FragmentLab
+# Shardelix
 
 ### Blind image reconstruction · Jigsaw puzzle solver · Classical computer vision
 
@@ -28,9 +28,9 @@ No training data, GPU, API keys or neural models required.
 
 ---
 
-## Why FragmentLab?
+## Why Shardelix?
 
-FragmentLab is a research framework for reconstructing digital images and documents from unordered fragments. It uses appearance continuity, complementary boundaries, rotation normalization, sparse graph assembly and geometric verification. The original image is **never** passed to the blind solver.
+Shardelix (formerly FragmentLab) is a research framework for reconstructing digital images and documents from unordered fragments. It uses appearance continuity, complementary boundaries, rotation normalization, sparse graph assembly and geometric verification. The original image is **never** passed to the blind solver.
 
 - **One framework, many cut families.** Rectangular grids, vertical and horizontal strips, jagged, wavy, jigsaw and mixed irregular fragments.
 - **Flexible poses.** Upright, random quarter-turns and experimental continuous in-plane rotations; optional missing fragments with explicit uncertainty.
@@ -232,10 +232,10 @@ GitHub Actions checks supported Python versions and executes a real Chromium/Web
 
 ## Citation, contributions & usage
 
-FragmentLab is an alpha research project maintained by [Daydreamer2812](https://github.com/Daydreamer2812).
+Shardelix is an alpha research project maintained by [Daydreamer2812](https://github.com/Daydreamer2812).
 If using the framework in research, cite this repository and the exact commit or release version. [Citation metadata](CITATION.cff) enables GitHub's citation panel.
 
-If FragmentLab helps your research or coursework, consider starring the repository so you can find it again, or [report a reproducible case](https://github.com/Daydreamer2812/fragmentlab-official/issues/new/choose). Honest success and failure reports are equally valuable.
+If Shardelix helps your research or coursework, consider starring the repository so you can find it again, or [report a reproducible case](https://github.com/Daydreamer2812/fragmentlab-official/issues/new/choose). Honest success and failure reports are equally valuable.
 
 - [Contributing](CONTRIBUTING.md)
 - [Security](SECURITY.md)

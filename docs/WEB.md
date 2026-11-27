@@ -25,7 +25,7 @@ For a separately hosted copy (subject to the repository license):
 1. Put the release source at the repository root, including .github, src, web
    and scripts. Review rights/license first.
 2. Under Settings → Pages, select GitHub Actions as the build and deployment source.
-3. Commit/push to main or master. Actions → Deploy FragmentLab Studio to GitHub Pages
+3. Commit/push to main or master. Actions → Deploy Shardelix Studio to GitHub Pages
    builds the static folder and deploys it. You can dispatch the workflow manually.
 4. Open the Pages URL listed by GitHub, usually
    `https://OWNER.github.io/REPO/`. Assets use relative URLs.

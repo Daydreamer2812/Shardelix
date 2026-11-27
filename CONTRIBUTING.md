@@ -1,6 +1,6 @@
-# Contributing to FragmentLab
+# Contributing to Shardelix
 
-Thank you for helping improve FragmentLab. Keep changes deterministic, CPU-first, and honest
+Thank you for helping improve Shardelix. Keep changes deterministic, CPU-first, and honest
 about measured performance.
 
 ## Development setup
