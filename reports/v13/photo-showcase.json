@@ -1,0 +1,13 @@
+{
+  "piece_count": 36,
+  "placed": 36,
+  "direct_position_accuracy": 1.0,
+  "adjacency_f1": 1.0,
+  "collision_pixels": 0,
+  "runtime_seconds": 0.09249715400000014,
+  "seed": 42,
+  "cut": "jigsaw",
+  "profile": "balanced",
+  "angle_mode": "quarter",
+  "source": "scikit-image astronaut (NASA public-domain photograph)"
+}
