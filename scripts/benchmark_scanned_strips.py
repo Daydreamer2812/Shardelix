@@ -3,9 +3,8 @@
 Download the archive from the original research page:
 https://people.tamu.edu/~xinli/DocReassembly/data/DocDataset.zip
 Run PYTHONPATH=src python scripts/benchmark_scanned_strips.py /path/DocDataset.zip
-Requires optional native Tesseract + English traineddata. Images and truth are
-not distributed with this repository. The ordering file is read only after
-both solutions are computed.
+Images and truth are not distributed with this repository. The ordering
+file is read only after the pixel-only solution is computed.
 """
 from __future__ import annotations
 import argparse
@@ -18,7 +17,6 @@ import zipfile
 import numpy as np
 from PIL import Image
 from shardelix.reconstruction.physical_document import reconstruct_strips
-from shardelix.reconstruction.physical_ocr import native_refine
 
 
 def metrics(order, truth):
@@ -51,20 +49,13 @@ def evaluate(z, name, case):
         with Image.open(io.BytesIO(z.read(prefix+"bg_mask_vis/"+leaf))) as mask:
             rgba.putalpha(mask.convert("L"))
         rgba.save(scans/(alias+".png"))
-    reconstruct_strips(sorted(scans.glob("*.png")), pieces, out)
-    def order():
-        poses = json.loads((out/"placements.json").read_text())["poses"]
-        return sorted(poses, key=lambda i: poses[i]["x"])
-    before = order()
-    with zipfile.ZipFile(out/"fragments.zip", "w") as archive:
-        for p in sorted(pieces.glob("*.png")):
-            archive.write(p, "pieces/"+p.name)
-    diag = native_refine(out, case/"ocr-work", lambda msg: print(name,msg,flush=True))
-    after = order()
-    # Evaluation labels enter the process only once all inference has finished.
+    diag = reconstruct_strips(sorted(scans.glob("*.png")), pieces, out)
+    poses = json.loads((out/"placements.json").read_text())["poses"]
+    order = sorted(poses, key=lambda i: poses[i]["x"])
+    # Evaluation labels enter the process only once inference has finished.
     truth = [aliases[v] for v in z.read(prefix+"order.txt").decode().split()]
-    return {"case": name, "baseline": metrics(before,truth), "ocr": metrics(after,truth),
-            "ocr_diagnostics": diag.get("scan",{}).get("ocr") if diag else None}
+    return {"case": name, "pixel_only": metrics(order, truth),
+            "runtime_seconds": diag["runtime_seconds"]}
 
 
 def main():
@@ -76,7 +67,8 @@ def main():
         results = [evaluate(z, name, Path(tmp)/name)
                    for name in ("real1_27", "real2_56", "real3_39")]
     data = {"dataset":"DocDataset, physical stripes", "seed":624,
-            "protocol":"Anonymized scan pixels + foreground masks only; truth read after both solves.",
+            "source":"https://people.tamu.edu/~xinli/DocReassembly/data/DocDataset.zip",
+            "protocol":"Anonymized scan pixels + foreground masks only; truth read after reconstruction.",
             "results":results}
     text = json.dumps(data,indent=2)
     print(text)

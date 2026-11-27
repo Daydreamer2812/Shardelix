@@ -318,14 +318,14 @@ structure tensors, line-exit voting, masked Fourier translation search and
 contextual pose consensus, with no ML or reference image. High accuracy
 forces this bounded route; Balanced activates it on difficult inputs.
 See [design and development results](docs/ERODED_RECOVERY.md).
-For text-bearing strips, default optional local English OCR scores words crossing
-candidate seams and helps resolve upright direction. If OCR is unavailable or
-insufficient, the pixel-only result remains available. It is slower and experimental.
+Text-bearing strips use classical foreground rectification, relative orientation
+from row projections, and multiscale ink-edge continuity, without character
+recognition or language models. Ordering and global upright orientation are experimental.
 It exports mask previews,
 preprocessed PNGs, affine poses and an honest scan diagnostics report.
 Test results (including two public physical scan sets) are in
 [`reports/scan_simulation.json`](reports/scan_simulation.json) and
 [`reports/scan_real.json`](reports/scan_real.json), and
-[`reports/scan_strip_ocr.json`](reports/scan_strip_ocr.json) (native OCR strip benchmark).
+[`reports/scan_strips.json`](reports/scan_strips.json) (pixel-only physical strip benchmark).
 No ground truth is used in matching; full placement is not verified accuracy.
 See [physical scan limitations](docs/WEB.md#physical-paper-scans-and-photos-experimental).

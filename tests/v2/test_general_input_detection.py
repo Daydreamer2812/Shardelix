@@ -22,7 +22,7 @@ def texture(h,w):
 
 
 def run(root):
-    return run_job(root,{"task":"blind","input_mode":"auto","auto_layout":True,"ocr_refine":False},browser=True)
+    return run_job(root,{"task":"blind","input_mode":"auto","auto_layout":True},browser=True)
 
 
 class GeneralInputTests(unittest.TestCase):

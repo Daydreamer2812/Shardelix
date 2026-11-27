@@ -1,0 +1,41 @@
+{
+  "dataset": "DocDataset, physical stripes",
+  "seed": 624,
+  "source": "https://people.tamu.edu/~xinli/DocReassembly/data/DocDataset.zip",
+  "protocol": "Anonymized scan pixels + foreground masks only; truth read after reconstruction.",
+  "results": [
+    {
+      "case": "real1_27",
+      "pixel_only": {
+        "directed_correct": 5,
+        "undirected_correct": 8,
+        "positions_correct": 8,
+        "total_joins": 26,
+        "total_pieces": 27
+      },
+      "runtime_seconds": 2.6969970210011525
+    },
+    {
+      "case": "real2_56",
+      "pixel_only": {
+        "directed_correct": 6,
+        "undirected_correct": 9,
+        "positions_correct": 0,
+        "total_joins": 55,
+        "total_pieces": 56
+      },
+      "runtime_seconds": 8.855719416998909
+    },
+    {
+      "case": "real3_39",
+      "pixel_only": {
+        "directed_correct": 2,
+        "undirected_correct": 5,
+        "positions_correct": 2,
+        "total_joins": 38,
+        "total_pieces": 39
+      },
+      "runtime_seconds": 6.016306656001689
+    }
+  ]
+}

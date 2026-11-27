@@ -109,7 +109,7 @@ def reconstruct_strips(paths,target:Path,out:Path,update=lambda _:None,*,pixel_c
     for p in pieces:save_rgba(target/(p.id+".png"),p.rgba)
     images=[_ink(p) for p in pieces]
     # Common text-line projection determines relative 180° orientation.
-    # Global upside-down ambiguity remains without a reference or OCR.
+    # Global upside-down ambiguity remains in blind pixel-only matching.
     inner=[im[:,im.shape[1]//6:max(im.shape[1]//6+1,5*im.shape[1]//6)] for im in images]
     same,flipped=_projection_cost(inner)
     signs=_signed_tree(same,flipped,neighbors=12)
@@ -133,7 +133,7 @@ def reconstruct_strips(paths,target:Path,out:Path,update=lambda _:None,*,pixel_c
     rgba,labels,collision=render(pieces,poses,(h,w))
     save_rgba(out/"assembly.png",rgba);write_cut_outputs(out,rgba,labels)
     warnings=["Physical strip order is experimental. Full placement does not establish correct adjacency.",
-              "Global orientation is ambiguous without OCR/reference; minor scan alignment and edge damage may remain."]
+              "Global orientation is ambiguous in blind pixel-only matching; minor scan alignment and edge damage may remain."]
     if any(not r["masked"] for r in records):warnings.append("Some inputs had no foreground mask; their entire raster was treated as paper.")
     diag={"algorithm":"physical-document-foreground-multiscale","status":"unverified",
           "placed":len(poses),"piece_count":len(pieces),"coverage":float((labels>=0).mean()),

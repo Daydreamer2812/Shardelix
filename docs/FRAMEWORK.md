@@ -15,7 +15,7 @@ Shardelix provides one input pipeline for generation, reconstruction and evaluat
 | Observed input | Internal route |
 |---|---|
 | Rectangular uniform tiles / public grid metadata | Sparse grid or dense grid matching, consensus and pose verification |
-| Document strips | Strip ordering; optional OCR for scanned text-bearing strips |
+| Document strips | Pixel-only strip ordering; foreground rectification and multiscale ink-edge continuity for scanned strips |
 | Irregular masks / physical scans | Segmentation, complementary contour and color matching; bounded eroded-edge continuation |
 | Explicit original image enabled | Indexed rotation-invariant classical registration, continuous SE(2) refinement and distractor rejection |
 
@@ -25,7 +25,7 @@ Shardelix provides one input pipeline for generation, reconstruction and evaluat
 | Balanced (default) | Adaptive matching, bounded physical fallback | Validated indexed |
 | High accuracy | Extra verification and deeper bounded physical search | Indexed-deep micro-fragment/border search (experimental) |
 
-The original-image option is off by default. Ground-truth files and original matching images have distinct paths. Generator-to-reconstruction transfer never opts into matching. The old explicit `reference_engine: "fft"` config is available only for reproducing historical experiments. All matching remains classical CV; optional OCR is separate.
+The original-image option is off by default. Ground-truth files and original matching images have distinct paths. Generator-to-reconstruction transfer never opts into matching. The old explicit `reference_engine: "fft"` config is available only for reproducing historical experiments. All matching uses classical CV, without OCR or trained models.
 
 ## One command or Python function
 

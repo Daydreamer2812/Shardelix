@@ -163,7 +163,7 @@ const {execFileSync}=require('node:child_process');
   assert.equal(stripDiag.input_detection.route,'opaque-strips');
   assert.equal(stripDiag.algorithm,'unknown-width-color-strip-chain');
   assert.equal(stripDiag.placed,4);
-  // English text scan fixture: exercise actual local Tesseract/WASM + TSV bridge.
+  // Text scan fixture: exercise pixel-only classical strip matching.
   const textStrips=await page.evaluate(()=>{
     const c=document.createElement('canvas');c.width=350;c.height=480;
     const ctx=c.getContext('2d');ctx.fillStyle='white';ctx.fillRect(0,0,c.width,c.height);
@@ -176,17 +176,16 @@ const {execFileSync}=require('node:child_process');
     });
   });
   await page.locator('#inputMode').selectOption('scan');
-  assert.ok(await page.locator('#scanOCR').isChecked());
-  await page.locator('#upload').setInputFiles(textStrips.map((v,i)=>({name:'ocr-'+i+'.png',mimeType:'image/png',buffer:Buffer.from(v,'base64')})));
+  assert.equal(await page.locator('#scanOCR').count(),0);
+  await page.locator('#upload').setInputFiles(textStrips.map((v,i)=>({name:'scan-'+i+'.png',mimeType:'image/png',buffer:Buffer.from(v,'base64')})));
   await page.locator('#run').click();await done('Reconstruction exported');
-  const ocr=JSON.parse(await page.locator('#diagnostics').textContent()).diagnostics.scan.ocr;
-  assert.ok(ocr&&['applied','insufficient_evidence'].includes(ocr.status),JSON.stringify(ocr));
-  assert.equal(ocr.candidate_pairs,20);
+  const textDiag=JSON.parse(await page.locator('#diagnostics').textContent()).diagnostics;
+  assert.equal(textDiag.algorithm,'physical-document-foreground-multiscale');
+  assert.equal(textDiag.scan.kind,'document-strips');
+  assert.equal(textDiag.scan.ocr,undefined);
+  assert.equal(textDiag.accuracy_verified,false);
   assert.equal(await page.locator('#placed').textContent(),'5 / 5');
   assert.equal(await page.locator('#dpa').textContent(),'—');
-  // Disable the optional stage to preserve the basic offline scan route.
-  await page.locator('#scanOCR').uncheck();await page.locator('#run').click();await done('Reconstruction exported');
-  assert.equal(JSON.parse(await page.locator('#diagnostics').textContent()).diagnostics.scan.ocr,undefined);
   for(const width of [1024,768,390,320]){
    await page.setViewportSize({width,height:844});
    const mobile=await page.evaluate(()=>({viewport:window.innerWidth,scroll:document.documentElement.scrollWidth,overflow:[...document.querySelectorAll('body *')].filter(e=>{const r=e.getBoundingClientRect();return r.width>0&&r.right>window.innerWidth+1}).slice(0,20).map(e=>[e.tagName,e.id,String(e.className),Math.round(e.getBoundingClientRect().right)])}));

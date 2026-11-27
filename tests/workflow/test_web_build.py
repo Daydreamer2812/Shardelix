@@ -18,8 +18,12 @@ class WebBuildTests(unittest.TestCase):
             self.assertIn('assetURL("engine.zip")',worker);self.assertIn('searchParams.set("v",revision)',worker)
             self.assertIn("browser=True",worker);self.assertIn("engine.zip",worker)
             self.assertIn("v0.27.7",worker)
+            self.assertNotIn("scanOCR",html)
+            self.assertNotIn("tesseract",worker.lower())
+            self.assertNotIn("refineScan",worker)
             with zipfile.ZipFile(d/"engine.zip") as z:
-                for f in ("shardelix/api.py","shardelix/native_core.py","shardelix/workflow12.py","shardelix/reconstruction/recovery12.py","shardelix/reconstruction/physical_ocr.py","shardelix/reconstruction/eroded.py","shardelix/reconstruction/continuation.py","shardelix/reconstruction/spectral_gap.py","shardelix/reconstruction/reference_match.py","shardelix/reconstruction/reference_index.py"):
+                self.assertNotIn("shardelix/reconstruction/physical_ocr.py",z.namelist())
+                for f in ("shardelix/api.py","shardelix/native_core.py","shardelix/workflow12.py","shardelix/reconstruction/recovery12.py","shardelix/reconstruction/physical_document.py","shardelix/reconstruction/eroded.py","shardelix/reconstruction/continuation.py","shardelix/reconstruction/spectral_gap.py","shardelix/reconstruction/reference_match.py","shardelix/reconstruction/reference_index.py"):
                     self.assertEqual(z.read(f),(ROOT/"src"/f).read_bytes())
             p=subprocess.run([sys.executable,"-c","import shardelix;print(shardelix.__version__)"],cwd=d,
                          env={**os.environ,"PYTHONPATH":str(d/"engine.zip")},capture_output=True,text=True)

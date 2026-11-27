@@ -367,10 +367,6 @@ def _scan_single(root,files,conf,update,browser=False,truth_dir=None):
             d.update(compute_backend=backend(),workflow_elapsed_seconds=time.perf_counter()-started,performance_profile="scan-document-auto",
                      input_detection={"route":"scan-strips","evidence":conf.get("input_evidence",{}),"warning":conf.get("metadata_warning")})
             json_write(out/"diagnostics.json",d)
-            if not browser and conf.get("ocr_refine",True):
-                from .reconstruction.physical_ocr import native_refine
-                refined=native_refine(out,root/"ocr-work",update)
-                if refined is not None:d=refined
             return d,None,out
     update("Segmenting paper from scan backgrounds")
     pieces,report=preprocess(paths,case/"pieces",pixel_limit=WEB_INPUT_PIXELS if browser else MAX_PIXELS*3,
