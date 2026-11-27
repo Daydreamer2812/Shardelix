@@ -4,7 +4,7 @@
 
 Fragment generator → generate anonymous pieces → export fragments ZIP and independent ground truth ZIP.
 Reconstruction → direct transfer or import RGBA PNGs / ZIP + public metadata → Solver(profile) → optional independent evaluator.
-The source/reference image never enters matching.
+The source/reference image never enters blind matching. The separate, opt-in [DAFNE reference-assisted mode](DAFNE_REFERENCE.md) uses an explicit matching reference upload, not the evaluation-only truth slot.
 
 The benchmark switch repeats the same generated-case workflow across selected
 counts, cuts, seeds and profiles. The independent evaluator reads known truth

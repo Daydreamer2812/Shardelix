@@ -38,7 +38,7 @@ function safeName(value){
   if(!name||name==="."||name===".."||name.includes("\0")) throw new Error("Invalid filename");
   return name;
 }
-async function putFiles(p,root,files,truth=null){
+async function putFiles(p,root,files,truth=null,matchingReference=null){
   p.globals.set("bridge_root",root);
   p.runPython("from pathlib import Path\nimport shutil\nshutil.rmtree(bridge_root,ignore_errors=True)\n(Path(bridge_root)/'upload').mkdir(parents=True)");
   const names=new Set();let size=0;
@@ -49,11 +49,12 @@ async function putFiles(p,root,files,truth=null){
     if(size>32*1024*1024)throw new Error("Browser upload exceeds 32 MiB");
     p.FS.writeFile(root+"/upload/"+name,new Uint8Array(await f.arrayBuffer()));
   }
-  if(truth){
-    size+=truth.size;
+  for(const [folder,reference] of [["truth",truth],["matching_reference",matchingReference]]){
+    if(!reference)continue;
+    size+=reference.size;
     if(size>32*1024*1024)throw new Error("Combined fragments and reference exceed 32 MiB");
-    p.FS.mkdirTree(root+"/truth");
-    p.FS.writeFile(root+"/truth/"+safeName(truth.name),new Uint8Array(await truth.arrayBuffer()));
+    p.FS.mkdirTree(root+"/"+folder);
+    p.FS.writeFile(root+"/"+folder+"/"+safeName(reference.name),new Uint8Array(await reference.arrayBuffer()));
   }
 }
 // OCR libraries and language data are downloaded; all candidate pixels stay local.
@@ -144,7 +145,7 @@ async function handle(m){
       post("reply",{id:m.id,value:JSON.parse(json)});
       p.runPython("shutil.rmtree('/inspect',ignore_errors=True)");
     } else if(m.action==="run"){
-      await putFiles(p,"/job",m.files,m.truth);
+      await putFiles(p,"/job",m.files,m.truth,m.matchingReference);
       p.globals.set("bridge_config",JSON.stringify(m.config));
       const json=await p.runPythonAsync("import json\nfrom js import sendProgress\nfrom shardelix.workflow12 import run_job\njson.dumps(run_job(Path(bridge_root),json.loads(bridge_config),lambda s:sendProgress(json.dumps(s)),browser=True),allow_nan=False)");
       const state=await refineScan(p,JSON.parse(json),m.config);

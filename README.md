@@ -10,9 +10,16 @@ What if the original image no longer exists? No preview, no template, no answer 
 
 Shardelix is a classical computer vision research framework that estimates how shuffled, rotated and potentially incomplete digital fragments fit together, without ever seeing the original image during reconstruction.
 
-**No reference image · No ground truth during inference · No pretrained model · No training dataset**
+**Blind mode: no reference image · No ground truth during inference · No pretrained model · No training dataset**
 
 CPU-first Python and C++20 · Native execution and in-browser WebAssembly
+
+> **DAFNE research branch:** The default reconstruction remains reference-free.
+> This branch also exposes a separately labeled, opt-in classical
+> reference-assisted DAFNE mode. It requires the original artwork, never reads
+> pose truth during matching and is not a blind result. See the
+> [verified DAFNE development benchmark and instructions](docs/DAFNE_REFERENCE.md).
+
 
 [![Version](https://img.shields.io/badge/version-13.0.1-2463eb?style=flat-square)](pyproject.toml)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776ab?style=flat-square&logo=python&logoColor=white)](pyproject.toml)
