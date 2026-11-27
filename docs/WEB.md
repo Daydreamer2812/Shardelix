@@ -137,8 +137,7 @@ required in physical mode.
   piece-raster folder layouts keep islands of damaged masks together; overview
   scans still split multiple silhouettes. High accuracy enables the deeper
   no-ML continuation/FFT search; Balanced activates it automatically after
-  sparse/weak matching. This may take minutes; the padded field budget is
-  five million pixels and the stage is capped at 128 pieces.
+  sparse/weak matching. This may take minutes; the padded field and Fourier workspace estimates determine whether the stage runs. Above 128 pieces the pair search is sparse.
   See [eroded recovery](ERODED_RECOVERY.md).
 - The preview shows detected masks; download the normalized mask ZIP, scan
   processing report, reconstruction PNG, boundary overlay and affine poses.
@@ -154,8 +153,7 @@ required in physical mode.
   budget. Above 128 pieces, compact C++ lattice matching and integer spatial
   assembly bypass continuous search when appropriate. Sparse continuous and
   gap fallbacks estimate their descriptor and verification workspace; if the
-  budget is insufficient, independent components remain explicit. Deep
-  spectral continuation remains capped at 128. The mask contact sheet previews
+  budget is insufficient, independent components remain explicit. Deep continuation uses the same adaptive memory policy and sparse search above 128 pieces. The mask contact sheet previews
   at most 256 pieces; all normalized rasters and component poses remain in the
   output. See [measured resource scaling](RESOURCE_SCALING.md).
   All processing is local.

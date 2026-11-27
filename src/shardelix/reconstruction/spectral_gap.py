@@ -58,9 +58,8 @@ def _correlation(a,b,N):
     return fft.irfft2(freq,s=(N,N),axes=(-2,-1))
 
 
-def fft_proposals(shapes,fields,pairs,max_gap,update=lambda _:None,*,limit=14):
-    """All translations at 24 angles for a bounded set of piece pairs."""
-    if not pairs:return {}
+def _grid(shapes,max_gap):
+    """Same sampling geometry for search and preflight memory estimation."""
     centers=[s.points.mean(0) for s in shapes]
     extent=max(float(np.linalg.norm(s.points-c,axis=1).max()) for s,c in zip(shapes,centers))
     step=max(2.8,(4*(extent+max_gap+5))/96.)
@@ -71,6 +70,30 @@ def fft_proposals(shapes,fields,pairs,max_gap,update=lambda _:None,*,limit=14):
     if N>112:
         step*=N/112
         N=fft.next_fast_len(int(math.ceil(4*(extent+band+4)/step))+2,real=True)
+    return centers,step,band,N
+
+
+def spectral_workspace(shapes,pairs,max_gap):
+    """Estimated FFT cache + correlation peak bytes, excluding input fields."""
+    if not pairs:return 0
+    _,_,_,N=_grid(shapes,max_gap)
+    fixed=set();moving=defaultdict(set)
+    for i,j in pairs:
+        if i==j:continue
+        i,j=min(i,j),max(i,j);fixed.add(i);moving[j].add(i)
+    if not moving:return 0
+    max_neighbors=max(map(len,moving.values()))
+    # 13 complex64 channels in each spectrum; include the stacked fixed
+    # neighbor cache, a moving spectrum, and batched 12-pair temporaries.
+    plane=N*(N//2+1)*8
+    return int(13*plane*(len(fixed)+max_neighbors+2)
+               +32*min(12,max_neighbors)*plane+N*N*200+8*1024**2)
+
+
+def fft_proposals(shapes,fields,pairs,max_gap,update=lambda _:None,*,limit=14):
+    """All translations at 24 angles for a bounded set of piece pairs."""
+    if not pairs:return {}
+    centers,step,band,N=_grid(shapes,max_gap)
     y,x=np.indices((N,N),dtype=np.float32)
     xy=np.stack([(x-N//2)*step,(y-N//2)*step],axis=-1)
     by_moving=defaultdict(list)

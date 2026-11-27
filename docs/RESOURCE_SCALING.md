@@ -43,9 +43,7 @@ own constraints. Browser uses a conservative 256 MiB solver-memory estimate,
 4,096 fragments, 32 MiB compressed upload and 8 MP canvas.
 
 Continuous and gap matching remain conditional on descriptor and verification
-cost estimates. Deep spectral continuation remains limited to 128 pieces
-and five million padded field pixels; scanned-strip mode remains limited to
-128 pieces. Remaining independent components are exported without a fake
+cost estimates. Deep continuation now estimates padded-field and peak workspace memory, with sparse pair nomination above 128 pieces. FFT verification runs only if its estimated workspace fits. Scanned-strip mode retains its separate 128-piece limit. Remaining independent components are exported without a fake
 placement. Blind upright orientation and absolute image accuracy cannot be
 certified without independent evidence.
 

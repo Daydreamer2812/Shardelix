@@ -44,6 +44,28 @@ class ErodedFragmentTests(unittest.TestCase):
         self.assertGreaterEqual(len(correct),2)
         self.assertTrue(any(len(g)==1 for g in groups))
 
+    def test_rounded_damage_does_not_prefer_a_larger_weak_contact_tree(self):
+        from unittest.mock import patch
+        from shardelix.reconstruction.scan import reconstruct
+        y,x=np.indices((36,36))
+        mask=(x-18)**2+(y-18)**2<16**2
+        rgba=np.dstack([np.repeat((70+3*x)[...,None],3,axis=-1).astype(np.uint8),
+                        mask.astype(np.uint8)*255])
+        pieces=[Fragment(f"p{i}",rgba.copy()) for i in range(20)]
+        pose=lambda i:(np.eye(2),np.array([45.*i,0.]))
+        large=[{i:pose(i) for i in range(5)}]+[{i:pose(0)} for i in range(5,20)]
+        small=[{i:pose(i) for i in range(2)}]+[{i:pose(0)} for i in range(2,20)]
+        edge={"a":"p0","b":"p1","score":15.,"consensus_supported":True}
+        for rounded,expected in ((True,2),(False,5)):
+            with tempfile.TemporaryDirectory() as tmp,                  patch("shardelix.reconstruction.scan._pair",return_value=[]),                  patch("shardelix.reconstruction.scan._merge",return_value=(large,[])),                  patch("shardelix.reconstruction.eroded.gap_candidates",return_value=([],{})),                  patch("shardelix.reconstruction.continuation.recover",return_value=(small,[edge],
+                       {"attempted":True,"population_prior":rounded,"accepted_joins":1})):
+                out=Path(tmp)
+                diag=reconstruct(pieces,out,{"input_images":20,"warnings":[],"common_scale":1.})
+                self.assertEqual(diag["placed"],expected)
+                comp=json.loads((out/"component_placements.json").read_text())
+                self.assertEqual(len(comp["components"][0]["members"]),expected)
+                self.assertNotIn("alternative",comp)
+
     def test_piece_raster_preserves_disconnected_material(self):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp); (root/"upload").mkdir()
@@ -64,6 +86,8 @@ class ErodedFragmentTests(unittest.TestCase):
             self.assertTrue(all(p["mask_pixels"]==int((a[:,:,3]>0).sum()) for p in report["pieces"]))
             comp=json.loads((root/"result"/"component_placements.json").read_text())
             self.assertFalse(comp["accuracy_verified"])
+            self.assertNotIn("alternative",comp)
+            self.assertNotIn("other_model",comp)
             self.assertEqual(sum(len(g["members"]) for g in comp["components"]),2)
             self.assertIn("component_placements.json",state["files"])
             # In the rendered singleton, both disconnected islands survive.

@@ -12,7 +12,7 @@ OCR, trained model, filenames encoding order, or evaluation labels are used.
 | Native irregular / physical import | 4,096 | Adaptive RAM/pixels; outer archive ceiling 262,144 |
 | Browser irregular / physical import | 1,024 | 4,096 outer archive ceiling; 256 MiB solver budget estimate |
 | Gap-aware recovery | 512 sparse | Estimated descriptor workspace and pair budget (sparse above 128) |
-| Deep spectral and pictorial continuation | 128 | 128 |
+| Deep spectral and pictorial continuation | 128 | Estimated padded fields, descriptor and FFT workspace; sparse above 128 |
 | Physical document strips | 128 | 128 |
 
 Counts are resource guards, not certified accuracy or throughput. Browser
@@ -50,8 +50,7 @@ benchmarks below are retained for comparison.
    descriptors and distributed per-piece vote budgets. Above 128 pieces,
    Balanced nominates up to six pairs per piece; High accuracy nominates up to eight; the actual degree is reduced to fit the resource budget.
    The union of incoming/outgoing nominations is retained. Cap each pair at six
-   poses before geometric and photometric verification. The previous deep
-   solver remains available for up to 128 pieces.
+   poses before geometric and photometric verification. The same deep continuation stage can process larger degraded sets with sparse nominations, subject to its field and Fourier memory estimates.
 6. Render only observed pixels. Integer assembly preserves the pixel lattice
    instead of rotating the entire image again. Cut-line output is calculated
    in one pass over labels. Preview up to 256 masks; all normalized masks and

@@ -130,7 +130,7 @@ def make_field(shape, max_gap):
                  np.arctan2(ray[ids,1],ray[ids,0]),feat.astype(np.float32),ids)
 
 
-def line_hypotheses(fields, max_gap):
+def line_hypotheses(fields, max_gap, *, degree=None):
     """Vote in SE(2) from opposing pictorial line exits, not boundary chords."""
     if not any(len(f.points) for f in fields):
         return {}
@@ -153,6 +153,16 @@ def line_hypotheses(fields, max_gap):
         # R maps b's outward direction to the negative outward ray of a.
         angle=float((theta[a]-theta[b]+2*np.pi)%(2*np.pi)-np.pi)
         best[i,j].append((int(a),int(b),angle,float(d)))
+    if degree is not None:
+        # Retain the most distinctive pair nominations from both endpoints;
+        # dense repeated textures need not allocate a quadratic pose list.
+        near=defaultdict(list)
+        for (i,j),items in best.items():
+            quality=min(q[3] for q in items)
+            near[i].append((quality,j));near[j].append((quality,i))
+        keep={(min(i,j),max(i,j)) for i,items in near.items()
+              for _,j in sorted(items)[:degree]}
+        best={pair:items for pair,items in best.items() if pair in keep}
     result={}
     for pair,items in best.items():
         items=sorted(items,key=lambda h:h[3])[:48]
@@ -160,7 +170,8 @@ def line_hypotheses(fields, max_gap):
         for a,b,angle,d in items:
             R=rotation(angle)
             ray=np.array([math.cos(theta[a]),math.sin(theta[a])])
-            for gap in (1.,4.,8.,13.,20.,30.,40.):
+            gaps=(1.,4.,8.,13.,20.,30.,40.) if max_gap<=40. else (1.,4.,8.,13.,20.,30.,40.,.75*max_gap,max_gap)
+            for gap in gaps:
                 if gap>max_gap+1:continue
                 t=xy[a]-R@xy[b]+gap*ray
                 proposals.append((angle,t,2,d))
@@ -343,6 +354,38 @@ def score_candidates(shapes, fields, candidates, max_gap, previous=()):
     return scored,active
 
 
+def bridge_evidence(a,b,fa,fb,R,t,max_gap):
+    """Compare two independent predictions halfway across the missing seam.
+
+    Correlation of *variations* along the seam removes the advantage of a
+    common flat paint colour. Mid-gap comparison halves the extrapolation
+    horizon relative to predicting all the way into the opposite fragment.
+    Original pixels and output alpha are never changed.
+    """
+    pos=b.points@R.T+t;d,idx=a.tree.query(pos)
+    opp=-np.sum(a.tangent[idx]*(b.tangent@R.T),axis=1)
+    inward=np.column_stack([-a.tangent[idx,1],a.tangent[idx,0]])
+    normal=-np.sum(inward*(pos-a.points[idx]),axis=1)
+    good=(d<=max_gap+3)&(opp>.15)&(normal>=-2.)&(normal>=.38*d-2.)
+    run=_longest_run(good);run=run[good[run]]
+    if len(run)<6:return None
+    # Compare a narrow ribbon, not a lone centreline, using two predictions
+    # into the gap. No midpoint is obtained from ground truth or filenames.
+    p=a.points[idx[run]];q=pos[run]
+    xy=p[:,None,:]+(q-p)[:,None,:]*np.array([.25,.5,.75])[None,:,None]
+    A=_sample(fa.rgb,xy+fa.pad);B=_sample(fb.rgb,(xy-t)@R+fb.pad)
+    A=A.mean(axis=1);B=B.mean(axis=1)
+    x=A-A.mean(axis=0);y=B-B.mean(axis=0)
+    n1=float(np.sum(x*x));n2=float(np.sum(y*y))
+    variance=math.sqrt(min(n1,n2)/max(1,3*len(run)))
+    corr=float(np.sum(x*y)/max(1.e-3,math.sqrt(n1*n2)))
+    error=float(np.mean(abs(A-B)))
+    # Coherence of contrast across the gap, not just agreement of mean RGB.
+    da=np.diff(A,axis=0);db=np.diff(B,axis=0)
+    cross=float(np.sum(da*db)/max(1.e-3,math.sqrt(float(np.sum(da*da)*np.sum(db*db)))))
+    return corr,cross,error,variance
+
+
 def _closed_triangles(shapes,modes):
     """Find corroborating SE(2) cycles with distinct boundary arcs.
 
@@ -384,7 +427,7 @@ def _closed_triangles(shapes,modes):
     return support
 
 
-def independent_consensus(shapes,candidates):
+def independent_consensus(shapes,candidates,*,sparse=False):
     """Merge SE(2) modes supported by distinct proposal families.
 
     Preserve local alternatives for confidence calculations. A mode must beat
@@ -408,6 +451,26 @@ def independent_consensus(shapes,candidates):
             s,i,j,R,t,info=item[0]
             families=sorted(set(q[-1].get("source","line-contour") for q in item))
             weight=s*(1.+.26*min(2,len(families)-1))
+            # The peak is often biased by a particular grid orientation or a
+            # single extrapolated texture patch. Estimate a pose at the actual
+            # moving centre from all locally compatible, high-quality peaks.
+            near=[q for q in item if q[0]>=.65*s]
+            center=shapes[j].points.mean(0)
+            if len(near)>1:
+                roots=[]
+                for family in families:
+                    part=[q for q in near if q[-1].get("source","line-contour")==family]
+                    if not part:continue
+                    ww=np.array([q[0] for q in part]);ww/=ww.sum()
+                    angles=[math.atan2(q[3][1,0],q[3][0,0]) for q in part]
+                    roots.append((np.sum(ww*np.exp(1j*np.asarray(angles))),
+                                  np.sum(ww[:,None]*np.array([q[3]@center+q[4] for q in part]),axis=0)))
+                P=rotation(float(np.angle(sum(q[0] for q in roots))))
+                u=np.mean([q[1] for q in roots],axis=0)-P@center
+                d,da=pose_difference(shapes,j,R,t,P,u)
+                if d<=5. and da<=.14 and _overlap(shapes[i],shapes[j],P,u)<=.035:
+                    R,t=P,u
+                    info={**info,"pose_fused":True}
             c=(weight,i,j,R,t,{**info,"base_weight":float(s),"families":families})
             z=len(modes);modes.append(c)
             incident[i].append(z);incident[j].append(z)
@@ -435,7 +498,12 @@ def independent_consensus(shapes,candidates):
         legacy="legacy" in f
         # Two generators alone are not independent photometric evidence;
         # still require a relative confidence margin on BOTH fragments.
-        strong=(s>=7. and uniqueness>=1.08 and (multi or (lines>=2 and strength>=.50)))
+        # FFT and point retrieval use overlapping photometric evidence, so
+        # two proposal families alone must not certify a weak single exit.
+        # Legacy geometry, multiple exits, or a large uniqueness margin
+        # provide the extra evidence to seed a component.
+        independent=(legacy and multi) or (lines>=2 and strength>=.50)
+        strong=(s>=7. and uniqueness>=1.08 and (independent or (multi and uniqueness>=1.35)))
         multi_line=(lines>=3 and strength>=.9 and s>=12. and uniqueness>=.98)
         clear=(s>=9.5 and uniqueness>=1.25 and info.get("texture",0)>10.)
         confirmed=(legacy and multi and s>=6. and uniqueness>=1.02)
@@ -443,13 +511,24 @@ def independent_consensus(shapes,candidates):
         # a single weak/ambiguous color match.
         loop=loops[z]>0 and s>=7. and uniqueness>=1.02 and (multi or lines>=2)
         if not (strong or clear or confirmed or multi_line or loop):continue
+        # A piece geometrically atypical for a coherent population can still
+        # join, but must win by a larger margin rather than receiving a free
+        # pass from a single weak colour match. No fragments are removed.
+        prior=info.get("population_weight",1.)
+        if uniqueness<1.08/math.sqrt(max(.1,prior)) and not (multi_line or loop):continue
+        # Sparse nomination has not seen many competitors. Do not interpret
+        # their absence as high confidence. Require corroborated cycles,
+        # a distinctive legacy shape seam, or several separate line exits.
+        if sparse and not (loop or (confirmed and uniqueness>=1.25) or
+                           (multi and multi_line and uniqueness>=1.20)):
+            continue
         w=s*min(1.6,max(.8,uniqueness))
         accepted.append((float(w),i,j,R,t,{**info,"seam_uniqueness":float(uniqueness),
                     "loop_support":int(loops[z]),"consensus_supported":bool(multi or loop)}))
     return accepted,modes
 
 
-def confidence_forest(shapes, seeds, modes):
+def confidence_forest(shapes, seeds, modes, fields=None, max_gap=36.):
     """Grow conservative components, rechecking ambiguity after other pieces
     occupy part of the canvas. No single ambiguous bridge merges two clusters.
     """
@@ -477,6 +556,8 @@ def confidence_forest(shapes, seeds, modes):
             if _overlap(shapes[k],shapes[j],P.T@Q,P.T@(v-w))>.025:return None
         return j,Q,v
     used=set();groups=[];joins=[]
+    # Evaluate new implied seams only on the bounded frontier.
+    direct_trials=0
     # Include confidence in the ranking of each join. Pair hypotheses near
     # the same pose have already been collapsed into modes.
     for seed in sorted(seeds,key=lambda q:-q[0]):
@@ -485,7 +566,7 @@ def confidence_forest(shapes, seeds, modes):
         group={i:(np.eye(2),np.zeros(2)),j:(R,t)}
         used.update((i,j));local=[seed]
         # Limit expensive contextual search; components can remain separate.
-        while len(group)<32:
+        while len(group)<len(shapes):
             options=[]
             for a in list(group):
                 # Most incident alternatives are weak. Use a bounded frontier.
@@ -494,7 +575,6 @@ def confidence_forest(shapes, seeds, modes):
                     k=y if x==a else x
                     if k in used or score<6.:continue
                     families=inf.get("families",[])
-                    if len(families)<2 and inf.get("line_count",0)<2:continue
                     if inf.get("population_weight",1.)<.50:continue
                     pose=can_place(group,a,c)
                     if pose is None:continue
@@ -505,7 +585,6 @@ def confidence_forest(shapes, seeds, modes):
                     other=max([d[0] for d in incident[k] if d is not c and competes(c,d,k)
                                and (d[1],d[2])!=(c[1],c[2])]+[1.])
                     incoming=score/other
-                    if incoming<1.12:continue
                     best=1.
                     for d in incident[a]:
                         if d is c or not competes(c,d,a):continue
@@ -513,32 +592,69 @@ def confidence_forest(shapes, seeds, modes):
                         if d[0]<=best:continue
                         if can_place(group,a,d) is not None:best=d[0]
                     conditional=score/best
-                    if conditional<.92:continue
                     # Check independently retrieved relations to other
                     # members of the component at the implied pose.
                     support=0
+                    direct_support=0
                     for b,(P,w) in group.items():
                         if b==a:continue
                         key=(min(b,k),max(b,k))
+                        found=False
                         for d in by_pair[key]:
-                            if d[0]<5.:continue
+                            if d[0]<6. or d[-1].get("population_weight",1.)<.5:continue
+                            if competes(c,d,k):continue
                             if b<k:E,e=P.T@Q,P.T@(v-w);n=k
                             else:E,e=Q.T@P,Q.T@(w-v);n=b
                             dd,da=pose_difference(shapes,n,E,e,d[3],d[4])
                             if dd<7. and da<.13:
-                                support+=1;break
-                    # A borderline frontier edge must have two line exits
-                    # or independently corroborating geometry. This is not
-                    # permission to attach on color similarity alone.
-                    if inf.get("line_count",0)<2 and support==0:continue
-                    weight=score*math.sqrt(min(2.,incoming)*min(1.5,conditional))*(1+.25*min(2,support))
-                    options.append((weight,a,k,Q,v,c,incoming,conditional,support))
+                                support+=1;found=True;break
+                        # Retrieval is lossy: a second correct seam may not
+                        # have made any pair's short list. Verify the implied
+                        # geometry and appearance directly against OBSERVED
+                        # pixels, never against the output canvas.
+                        if found or fields is None or score<6. or direct_trials>=32*len(shapes):continue
+                        if incoming<.65 or conditional<.65:continue
+                        E,e=P.T@Q,P.T@(v-w)
+                        # Fast centre/radius rejection before full band work.
+                        A,B=shapes[b],shapes[k]
+                        ca,cb=A.points.mean(0),B.points.mean(0)
+                        if np.linalg.norm(ca-E@cb-e)>np.linalg.norm(A.points-ca,axis=1).max()+np.linalg.norm(B.points-cb,axis=1).max()+max_gap:continue
+                        direct_trials+=1
+                        check=_band_score(A,B,fields[b],fields[k],E,e,max_gap)
+                        if check is None:continue
+                        value,metrics=check
+                        if value<4. or metrics["texture"]<8.:continue
+                        # Do not let two anchors certify the same incoming arc.
+                        extra=(value,b,k,E,e,metrics)
+                        if competes(c,extra,k):continue
+                        evidence=bridge_evidence(A,B,fields[b],fields[k],E,e,max_gap)
+                        if evidence is None:continue
+                        corr,cross,error,variance=evidence
+                        if corr<.40 or error>25. or variance<5.:continue
+                        # Compare to independently retrieved alternatives
+                        # on both arcs, including unrelated fragment IDs.
+                        rival=max([d[0] for node in (b,k) for d in incident[node]
+                                   if competes(extra,d,node) and d[1:3]!=key]+[1.])
+                        lc,ls=line_support(fields[b],fields[k],E,e,max_gap)
+                        strength=value*(1.+.18*min(3,lc)+.45*min(1.5,ls)+.15*max(0,min(3,lc)-1)**2)
+                        if strength<.60*rival:continue
+                        support+=1;direct_support+=1
+                    # Two separate anchors on different incoming arcs can
+                    # resolve an ambiguous single seam. Without them keep the
+                    # original strict, mutually distinctive one-anchor gate.
+                    multi_anchor=(support>=1 and score>=6. and incoming>=.70 and conditional>=.70)
+                    single_anchor=(incoming>=1.12 and conditional>=.92 and
+                                   (len(families)>=2 or inf.get("line_count",0)>=2) and
+                                   (inf.get("line_count",0)>=2 or support>0))
+                    if not (single_anchor or multi_anchor):continue
+                    weight=score*math.sqrt(min(2.,incoming)*min(1.5,conditional))*(1+.40*min(2,support))
+                    options.append((weight,a,k,Q,v,c,incoming,conditional,support,direct_support))
             if not options:break
-            weight,a,k,Q,v,c,u1,u2,support=max(options,key=lambda q:q[0])
+            weight,a,k,Q,v,c,u1,u2,support,direct_support=max(options,key=lambda q:q[0])
             group[k]=(Q,v);used.add(k)
             s,x,y,E,e,inf=c
             local.append((float(weight),x,y,E,e,{**inf,"seam_uniqueness":float(min(u1,u2)),
-                         "context_support":int(support),"contextual_growth":True,"loop_support":int(support)}))
+                         "context_support":int(support),"direct_bridge_support":int(direct_support),"contextual_growth":True,"loop_support":int(support)}))
         groups.append(group)
         for s,i,j,_,_,inf in local:
             joins.append({"a":shapes[i].fragment.id,"b":shapes[j].fragment.id,"score":float(s),**inf})
@@ -553,27 +669,56 @@ def confidence_forest(shapes, seeds, modes):
     return groups,joins
 
 
-def recover(shapes,previous,update=lambda _:None):
+def recover(shapes,previous,update=lambda _:None,*,memory_budget=None,profile="balanced"):
     """Bounded high-quality classical search; useful when contact is sparse."""
     from .eroded import _hypotheses,_profiles
-    from .spectral_gap import fft_proposals
+    from .spectral_gap import fft_proposals,spectral_workspace
     n=len(shapes)
-    if not 2<=n<=128:
-        return None,[],{"attempted":False,"reason":"piece budget"}
+    if n<2:return None,[],{"attempted":False,"reason":"insufficient fragments"}
+    from .resource_budget import resource_budget
+    budget=memory_budget or resource_budget()
     median=float(np.median([min(s.fragment.mask.shape) for s in shapes]))
-    max_gap=min(36.,max(10.,median*.70))
-    pad=math.ceil(max_gap)+16
-    pixels=sum((s.fragment.mask.shape[0]+2*pad)*(s.fragment.mask.shape[1]+2*pad) for s in shapes)
-    if pixels>5_000_000:
-        return None,[],{"attempted":False,"reason":"padded field pixel budget"}
+    # Scale the gap with the measured masks (larger scan fragments can have
+    # physically wider abrasion). Reserve headroom for descriptors and FFTs.
+    max_gap=min(max(36.,median*.35),max(10.,median*.70))
+    field_limit=budget.memory_bytes//96
+    requested_gap=max_gap
+    def field_cost(gap):
+        pad=math.ceil(gap)+16
+        areas=[(s.fragment.mask.shape[0]+2*pad)*(s.fragment.mask.shape[1]+2*pad) for s in shapes]
+        pixels=sum(areas)
+        return pixels,44*pixels+160*max(areas)+192_000*n
+    pixels,workspace=field_cost(max_gap)
+    # If padding, rather than the observed fragments, is the bottleneck,
+    # use the widest smaller gap that fits instead of skipping continuation.
+    if pixels>field_limit or workspace>budget.memory_bytes:
+        lo,hi=10.,max_gap
+        for _ in range(12):
+            mid=(lo+hi)/2
+            p,w=field_cost(mid)
+            if p<=field_limit and w<=budget.memory_bytes:lo=mid
+            else:hi=mid
+        max_gap=lo
+        pixels,workspace=field_cost(max_gap)
+    if pixels>field_limit or workspace>budget.memory_bytes:
+        return None,[],{"attempted":False,"reason":"estimated continuation fields exceed memory budget",
+                        "estimated_field_pixels":pixels,"field_pixel_budget":field_limit,
+                        "estimated_workspace_bytes":workspace}
+    # FFT spectra can require close to 1 MiB per piece. Sparse nomination
+    # bounds work on larger sets; do not impose a fixed piece-count ceiling.
+    sparse=n>128
+    degree=min(8 if profile=="accurate" else 6,budget.gap_pair_budget//max(1,n))
+    if sparse and degree<2:
+        return None,[],{"attempted":False,"reason":"estimated continuation pair budget"}
     profiles=_profiles(shapes)
     if sum(float(np.percentile(p.texture,80))>=4. for p in profiles)<2:
         return None,[],{"attempted":False,"reason":"insufficient pictorial texture"}
     update("Classical deep recovery: extrapolating observed pictorial structure")
     fields=[make_field(s,max_gap) for s in shapes]
-    hyps=line_hypotheses(fields,max_gap)
+    hyps=line_hypotheses(fields,max_gap,degree=degree if sparse else None)
     line_count=sum(map(len,hyps.values()))
-    for i,j,a,t,v,d in _hypotheses(profiles,min(30.,max_gap),update):
+    for i,j,a,t,v,d in _hypotheses(profiles,min(max(30.,median*.30),max_gap),update,
+                                   sparse_degree=degree if sparse else None):
         hyps.setdefault((i,j),[]).append((a,t,v,d))
     # Bound search on large sets, preserving the strongest distinct proposals
     # per pair. The old and new methods can disagree; retain alternatives.
@@ -600,19 +745,25 @@ def recover(shapes,previous,update=lambda _:None):
     near=defaultdict(list)
     for (i,j),s in best.items():
         near[i].append((s,j));near[j].append((s,i))
-    pairs={(min(i,j),max(i,j)) for i,cs in near.items()for _,j in sorted(cs,reverse=True)[:16]}
+    spectral_degree=degree if sparse else 16
+    pairs={(min(i,j),max(i,j)) for i,cs in near.items()for _,j in sorted(cs,reverse=True)[:spectral_degree]}
     pairs.update((i,j) for _,i,j,*_ in previous)
     # For small sets, search all pairs, including ones missed by point retrieval.
     if n<=24:pairs={(i,j) for i in range(n) for j in range(i+1,n)}
+    spectral_bytes=spectral_workspace(shapes,pairs,max_gap)+pixels*44+192_000*n
+    spectral_skipped=spectral_bytes>budget.memory_bytes
+    if spectral_skipped:pairs=set()
     spectral=fft_proposals(shapes,fields,sorted(pairs),max_gap,update)
     sr=verify(spectral,"spectral",4)
     sf,_=score_candidates(shapes,fields,sr,max_gap,previous)
     weights,_=population_weights(shapes)
     legacy=[(float(s*math.sqrt(weights[i]*weights[j])),i,j,R,t,{**info,"source":"legacy",
              "population_weight":float(math.sqrt(weights[i]*weights[j]))})for s,i,j,R,t,info in previous]
-    seeds,modes=independent_consensus(shapes,ranked+sf+legacy)
-    groups,joins=confidence_forest(shapes,seeds,modes)
-    stats={"attempted":True,"gap_limit_px":max_gap,"line_tokens":sum(len(f.points)for f in fields),
+    seeds,modes=independent_consensus(shapes,ranked+sf+legacy,sparse=sparse)
+    groups,joins=confidence_forest(shapes,seeds,modes,fields,max_gap)
+    stats={"attempted":True,"gap_limit_px":max_gap,"requested_gap_limit_px":requested_gap,"field_pixels":int(pixels),"field_pixel_budget":int(field_limit),"estimated_workspace_bytes":int(workspace),
+           "spectral_estimated_workspace_bytes":int(spectral_bytes),
+           "sparse_degree":degree if sparse else None,"spectral_skipped_for_memory":bool(spectral_skipped),"line_tokens":sum(len(f.points)for f in fields),
            "line_proposals":line_count,"point_proposals":n_hyp,"point_verified":len(raw),
            "spectral_pairs":len(pairs),"spectral_proposals":sum(map(len,spectral.values())),
            "spectral_verified":len(sr),"population_prior":prior_on,
@@ -620,5 +771,6 @@ def recover(shapes,previous,update=lambda _:None):
            "pose_modes":len(modes),"seed_hypotheses":len(seeds),"accepted_joins":len(joins),
            "contextual_growth_joins":sum(bool(j.get("contextual_growth"))for j in joins),
            "closed_loop_joins":sum(j.get("loop_support",0)>0 for j in joins),
+           "direct_bridge_joins":sum(j.get("direct_bridge_support",0)>0 for j in joins),
            "component_sizes":[len(g)for g in groups]}
     return groups,joins,stats

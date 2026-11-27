@@ -307,17 +307,19 @@ It supports multiple non-touching pieces on one sheet, folder-wrapped scan ZIPs,
 and same-size binary foreground mask PNG sidecars (including scanned document strips).
 A shared input classifier routes metadata-free rotated/nonuniform rectangular
 tiles, unequal-width opaque or continuously rotated alpha strips, and foreground
-scans or color-keyed artwork fragments to the appropriate solver. Up to 256
-irregular pieces are supported with indexed contour/color retrieval for larger
-sets. Disconnected groups remain explicitly unanchored.
-For heavily damaged fragments, automatic gap-aware recovery evaluates inward
-color/gradient continuation across eroded edges and exports independent component
-poses without filling missing material. Explicit piece raster folders preserve
-disconnected surviving mask islands. This is experimental and limited to 128
-pieces in the gap-aware stage. A deeper classical continuation route adds
-structure tensors, line-exit voting, masked Fourier translation search and
-contextual pose consensus, with no ML or reference image. High accuracy
-forces this bounded route; Balanced activates it on difficult inputs.
+scans or color-keyed artwork fragments to the appropriate solver. Irregular
+fragment search uses adaptive native memory estimates and a browser memory
+budget; the outer import ceilings are not accuracy guarantees.
+For heavily damaged fragments, the same automatic workflow evaluates
+inward color/gradient continuity and structure-tensor extrapolation,
+line-exit voting, masked Fourier translation search, and multi-anchor
+pose consensus. It exports only the selected independent component graph
+without filling missing material or forcing uncertain parts into the canvas.
+Explicit piece raster folders preserve disconnected surviving mask islands.
+Balanced activates the bounded recovery automatically on difficult inputs;
+High accuracy spends more time searching. Sparse nomination and working-set
+estimates replace the fixed 128-piece continuation ceiling. No ML, OCR,
+or reference image is used by blind recovery.
 See [design and development results](docs/ERODED_RECOVERY.md).
 Text-bearing strips use classical foreground rectification, relative orientation
 from row projections, and multiscale ink-edge continuity, without character

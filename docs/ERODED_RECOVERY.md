@@ -2,7 +2,7 @@
 
 ## Scope
 
-The physical scan solver now has an independent reference-free model for
+The physical scan solver now has an adaptive reference-free pipeline for
 eroded boundaries, missing material, unknown continuous rotations and
 distractor fragments. It does not synthesize missing image pixels. Neither
 source images nor ground-truth poses are loaded by the matching algorithm.
@@ -32,7 +32,7 @@ This is an experimental extension, not a claim of a solved DAFNE benchmark.
 5. Check local triangle-cycle agreement and refine redundant pose constraints
    with robust soft-L1 residuals. Reject a refinement if it creates collisions
    or increases residuals. Rank independent components by seam confidence,
-   not only their size. Keep the alternative model if applicable.
+   not only their size. The continuation stage consumes the verified gap hypotheses; only the final selected components are exported.
 6. Output the primary component and transparently represent the lost material.
    No spatial relationship is assumed between disconnected components.
 
@@ -47,7 +47,7 @@ joins and 3/87 primary poses on the severe DAFNE case; it did not solve it.
 - `assembly.png`: observed pixels of the selected connected group only.
 - `component_placements.json`: every component (including singletons),
   its accepted joins and each fragment's 2×3 working crop → component
-  affine matrix, crop origin, model name, and optional alternative model.
+  affine matrix, crop origin, and selected model name. Intermediate competing assemblies are no longer duplicated.
   Each component uses its own independent coordinate gauge. The file
   is not a globally registered reconstruction; do not combine unrelated
   groups by their raw coordinate values.
@@ -56,8 +56,7 @@ joins and 3/87 primary poses on the severe DAFNE case; it did not solve it.
 - `placements.json`: primary component's output-canvas poses as before.
 
 Global orientation remains ambiguous without additional information. Counts
-and coverage are not accuracy. The deep spectral solver remains bounded to
-128 pieces; sparse gap recovery uses a descriptor/pair memory estimate. The physical import route uses adaptive memory with the outer archive ceilings of 262,144 native / 4,096 browser. See [scaling evidence](RESOURCE_SCALING.md).
+and coverage are not accuracy. Deep continuation and sparse gap recovery use field, descriptor, and pair working-set estimates rather than a 128-piece cutoff. The physical import route uses adaptive memory with the outer archive ceilings of 262,144 native / 4,096 browser. See [scaling evidence](RESOURCE_SCALING.md).
 There is no claim of 65,000-piece support for irregular eroded data.
 
 ## Evaluation
@@ -112,18 +111,39 @@ Pass `deep_recovery: "always"` or `false` to override the policy in the API.
   smooth and compact; no input fragments are deleted. Contextual forest growth
   rejects candidates that collide with existing members and requires multiple
   line crossings or consistent independent pose evidence. Unanchored groups
-  and alternate model poses remain available in the JSON. Primary ranking
-  uses combined evidence with a weak-link penalty, not ground truth.
-- The stage is limited to 2–128 pieces and five million padded field pixels.
-  It can take minutes on large degraded data, and performance is hardware
-  dependent. It uses only NumPy/SciPy and does not train or load any model.
+  remain available in the JSON. Primary ranking uses combined evidence with
+  a weak-link penalty, not ground truth.
+- Compatible pose peaks are fused around the moving-fragment centre,
+  balancing proposal families instead of overcounting densely sampled Fourier
+  angles. The fused pose must stay close to the strongest peak and pass
+  an observed-mask collision check; confidence derives from the original mode.
+- During component growth, two different anchors on distinct incoming arcs
+  can resolve ambiguous individual seams. If retrieval missed a second
+  candidate, the implied relative pose is independently checked directly
+  against both original masks and bidirectional appearance. A narrow mid-gap
+  ribbon compares contrast variation between the extrapolated fields,
+  rather than merely comparing mean colour.
+- Above 128 pieces the same stage uses sparse pair nomination. Sparse seeds
+  require corroboration by a cycle, a distinctive verified prior seam or
+  multiple line exits plus independent proposal families: fewer retrieved
+  competitors do not imply higher confidence. The padded field workspace
+  is estimated from available memory (96 bytes per padded pixel, plus a
+  peak-field and descriptor check); reduce gap padding when it is the
+  bottleneck. Fourier memory is estimated from the actual grid, unique cached
+  spectra and maximum nominated neighbor batch, rather than a fixed per-piece
+  multiplier. Fourier search is skipped if its estimated workspace does not fit.
+  On a rounded, compact population with weak exact contact, choose the
+  confidence-verified damaged components rather than a larger speculative
+  contact tree. The solver can take minutes on
+  challenging inputs. It uses only NumPy/SciPy and does not train or load
+  a model.
 
 Reproducible synthetic comparisons with the previous solver:
 ```sh
 PYTHONPATH=src python scripts/benchmark_classical.py
 ```
 Raw results: [classical_benchmark.json](../reports/classical_benchmark.json).
-The selected main result is unchanged on these 11 fixtures; alternate
+In the historical run, the selected main result was unchanged on these 11 fixtures; alternate
 component predictions may have better precision at the cost of coverage.
 The 8px erosion cases remain unresolved despite the larger search.
 
@@ -171,3 +191,46 @@ python scripts/evaluate_dafne_components.py INPUT.zip TRUTH.zip RESULT_DIR
 
 The evaluator accepts the DAFNE dataset-pack annotation JSON convention,
 not arbitrary external truth formats. No external dataset files are bundled.
+
+## Unified missing-edge update
+
+The blind route now produces one final component graph, with independent
+components retained; only the primary component is rendered. It no longer
+duplicates the earlier competing graphs in the result JSON. The optional
+reference-assisted route is unchanged.
+
+Measured in native Balanced mode (truth read independently after inference):
+
+| Data | Prior / initial | Revised |
+|---|---:|---:|
+| DAFNE Resurrection (102 observed; 87 genuine) — correct relative joins | 6/16 | 6/13 |
+| Resurrection — relative precision | 37.5% | 46.2% |
+| Resurrection — joins to distractors | 1 | 0 |
+| Resurrection — correct primary poses | 3/87 | 3/87 |
+| Masaccio (101 observed) — incorrect joins, before/after rounded-selection guard | 64 | 11 |
+| Masaccio — correct relative joins | 0 | 0 |
+| 11 synthetic erosion regression cases — correct relative joins | 30/61 | 30/61 |
+| Severe 137-piece synthetic scan — correct relative joins | 0/0 | 0/0 |
+
+The Masaccio case identified the bias toward larger weak contact components
+and was rerun after fixing it; neither it nor the Resurrection development
+case constitutes an independent held-out accuracy estimate. The 137-piece
+case exercised 6.4 million padded field pixels and 66 Fourier candidate
+pairs, beyond the previous continuation ceiling, but no verified seam
+survived. It returned unanchored fragments instead of unconfirmed pairs.
+Direct implied-seam verification was validated by a controlled regression,
+not by a successful new contextual join on these two official DAFNE cases.
+Thus the principal measured DAFNE gain is fewer false links, not complete
+global restoration or increased genuine-pose recall.
+
+[Raw results and limitations](../reports/unified_missing_edge_recovery.json).
+
+To reproduce a variant from a downloaded [official DAFNE archive](https://vision.unipv.it/DAFchallenge/DAFNE_dataset/dataset_download.html), without extracting or matching the source image:
+
+```sh
+PYTHONPATH=src python scripts/benchmark_blind_dafne.py ARCHIVE.zip \
+  --case 2019-2-20_16.30.25 --out results/blind_dafne
+```
+
+The script opens only the eroded PNGs before inference, and reads the
+official annotation text afterward. No DAFNE artwork is bundled.

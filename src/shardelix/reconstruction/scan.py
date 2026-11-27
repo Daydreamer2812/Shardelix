@@ -648,7 +648,6 @@ def reconstruct(pieces,out:Path,report,update=lambda _:None,*,pixel_cap=8_000_00
     exact_size=len(groups[0])
     contact_model="exact-lattice" if lattice_only else "sparse-hybrid-se2" if large else "exact-contact"
     recovery={"attempted":False,"selected":False,"exact_largest_component":exact_size}
-    alternative=None
     recovered=[]
     # Preserve the exact-contact route on clean data. A sparse, disconnected
     # assembly can trigger bounded gap-aware recovery without a known canvas.
@@ -680,36 +679,44 @@ def reconstruct(pieces,out:Path,report,update=lambda _:None,*,pixel_cap=8_000_00
             # Prefer an independently verified component; don't select by
             # number of placed fragments alone. Otherwise retain exact.
             if len(ggroups[0])>=2 and (exact_size<max(3,math.ceil(.12*n)) or len(ggroups[0])>=exact_size):
-                alternative=(groups,joins,contact_model)
                 groups,joins=ggroups,gjoins
                 recovery["selected"]=True
-            else:
-                alternative=(ggroups,gjoins,"gap-aware")
     if gap_recovery and not gap_allowed:recovery["reason"]="Estimated gap descriptor / verification workspace exceeds the profile resource budget"
     report["gap_recovery"]=recovery
     assembly_model="gap-aware" if recovery["selected"] else contact_model
     deep={"attempted":False,"selected":False}
-    other_model=None
     # This high-quality route is bounded and is activated automatically when
     # the normal solver remains sparse. Keep routine intact cases fast.
-    if gap_recovery and deep_recovery and 2<=n<=128 and (
+    if gap_recovery and deep_recovery and gap_allowed and 2<=n and hasattr(shapes[0],"points") and (
           deep_recovery=="always" or (recovery["attempted"] and (weak_small or exact_size<max(2,math.ceil(.60*n))))):
         from .continuation import recover
-        cg,cj,stats=recover(shapes,recovered,update)
+        cg,cj,stats=recover(shapes,recovered,update,memory_budget=memory_budget,profile=profile)
         deep.update(stats)
-        if cg is not None and len(cg[0])>=2:
+        if cg is not None:
+            # Rounded, compact populations have lost much of their original
+            # complementary geometry. A large weak contact tree is not
+            # stronger evidence than a small confidence-verified component.
+            rounded_damage=bool(deep.get("population_prior")) and exact_size<math.ceil(.60*n)
             members={shapes[i].fragment.id for i in cg[0]}
             supported=[j for j in cj if j["a"] in members and j["b"] in members
                        and (j.get("consensus_supported") or j.get("line_count",0)>=2 or j.get("contextual_growth"))]
-            if supported and len(cg[0])>=len(groups[0]):
-                other_model=alternative
-                alternative=(groups,joins,assembly_model)
+            if rounded_damage or (supported and len(cg[0])>=len(groups[0])):
                 groups,joins=cg,cj
                 assembly_model="classical-continuation"
                 deep["selected"]=True
-            else:
-                other_model=(cg,cj,"classical-continuation")
-    if deep_recovery and n>MAX_GAP_PIECES:deep["reason"]="deep continuation capped at 128 pieces"
+                deep["selection_reason"]="rounded damaged population; confidence before component size" if rounded_damage else "corroborated component"
+                recovery["selected"]=False
+    # Do not fall back to isolated approximate-contact pairs merely because
+    # a sparse damaged search returned no corroborated seam. In particular,
+    # a lack of exact lattice evidence and an empty independent verification
+    # cannot certify a two-piece approximate fragment component.
+    if (large and not lattice_only and exact_size<=2 and not recovered
+            and lattice.get("accepted_candidates",0)==0
+            and deep.get("attempted") and deep.get("accepted_joins")==0):
+        deep["withheld_unconfirmed_contact_joins"]=len(joins)
+        joins=[]
+        groups=[{i:(np.eye(2),np.zeros(2))} for i in range(n)]
+        report["warnings"].append("Approximate pairs lacked independent damage-recovery support; retaining unanchored fragments instead of guessing.")
     report["deep_recovery"]=deep
     update("Rendering scan reconstruction")
     main=groups[0]
@@ -738,12 +745,6 @@ def reconstruct(pieces,out:Path,report,update=lambda _:None,*,pixel_cap=8_000_00
     comp={"model":assembly_model,"accuracy_verified":False,
           "coordinate_system":"independent per-component SE(2); no placement between components",
           "primary_component":0,"components":component_records(groups,joins)}
-    if alternative is not None:
-        ag,aj,am=alternative
-        comp["alternative"]={"model":am,"components":component_records(ag,aj)}
-    if other_model is not None:
-        ag,aj,am=other_model
-        comp["other_model"]={"model":am,"components":component_records(ag,aj)}
     json_write(out/"component_placements.json",comp)
     searched=lattice.get("verified_pairs",0) if lattice_only else len(pairs)
     report.update({"pair_search":"exact-lattice" if lattice_only else "sparse-hybrid-se2" if large else "indexed-contour-color" if indexed else "all-pairs","lattice":lattice,"spatial_merge":spatial,"searched_pairs":searched,"possible_pairs":n*(n-1)//2,"candidate_poses":len(candidates),"candidate_pairs":len({(c[1],c[2]) for c in candidates}),"accepted_joins":joins,"component_sizes":[len(g) for g in groups],
