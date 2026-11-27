@@ -73,7 +73,7 @@ class State:
             atomic_json(self.job/"config.json",conf)
             atomic_json(self.job/"status.json",{"state":"running","stage":"Starting worker"})
             self.started=time.monotonic()
-            self.process=subprocess.Popen([sys.executable,"-m","fragmentlab.studio","--worker",str(self.job)],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+            self.process=subprocess.Popen([sys.executable,"-m","shardelix.studio","--worker",str(self.job)],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
     def cancel(self):
         with self.lock:
             if self.process and self.process.poll() is None:
@@ -83,7 +83,7 @@ class State:
                 atomic_json(self.job/"status.json",{"state":"cancelled","stage":"Cancelled"})
 
 def serve(port=8765,open_browser=True):
-    with tempfile.TemporaryDirectory(prefix="fragmentlab-studio-") as td:
+    with tempfile.TemporaryDirectory(prefix="shardelix-studio-") as td:
         state=State(td)
         class Handler(BaseHTTPRequestHandler):
             def log_message(self,*args):pass

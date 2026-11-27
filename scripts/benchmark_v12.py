@@ -10,8 +10,8 @@ from tempfile import TemporaryDirectory
 import argparse
 import numpy as np
 from scipy.ndimage import gaussian_filter
-from fragmentlab.reconstruction.generator import generate
-from fragmentlab.reconstruction.common import json_write
+from shardelix.reconstruction.generator import generate
+from shardelix.reconstruction.common import json_write
 
 def fixture(case,seed,width,missing,angle,axis):
     n=32;h=384;w=n*width
@@ -34,7 +34,7 @@ def run(case,out,src):
     env={**os.environ,"PYTHONPATH":str(src),"OPENBLAS_NUM_THREADS":"1"}
     code="""from pathlib import Path
 import sys
-from fragmentlab.reconstruction.cli import solve_case,evaluate_case
+from shardelix.reconstruction.cli import solve_case,evaluate_case
 c,o=map(Path,sys.argv[1:]);t=c/'evaluation';h=c.parent/'held';t.rename(h)
 try:solve_case(c,o)
 finally:h.rename(t)

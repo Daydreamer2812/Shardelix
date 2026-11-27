@@ -5,10 +5,10 @@ import tempfile
 import unittest
 
 import numpy as np
-from fragmentlab.reconstruction.common import read_source
-from fragmentlab.reconstruction.generator import generate
-from fragmentlab.reconstruction.cli import solve_case,evaluate_case
-from fragmentlab.reconstruction.straight import _strip_assignment
+from shardelix.reconstruction.common import read_source
+from shardelix.reconstruction.generator import generate
+from shardelix.reconstruction.cli import solve_case,evaluate_case
+from shardelix.reconstruction.straight import _strip_assignment
 
 
 class StraightTests(unittest.TestCase):

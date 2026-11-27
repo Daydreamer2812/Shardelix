@@ -22,5 +22,5 @@ jobs:
         run: python -m unittest discover -s tests/workflow
       - name: Reference backend parity / fallback
         env:
-          FRAGMENTLAB_CORE: python
+          SHARDELIX_CORE: python
         run: python -m unittest discover -s tests/v2

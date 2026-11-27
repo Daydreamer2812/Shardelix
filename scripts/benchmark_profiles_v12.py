@@ -5,7 +5,7 @@ import argparse,shutil
 import numpy as np
 from scipy.ndimage import gaussian_filter
 from PIL import Image
-from fragmentlab.workflow12 import run_job
+from shardelix.workflow12 import run_job
 def main():
     p=argparse.ArgumentParser();p.add_argument("--out",type=Path,default=Path("reports/v12/profiles.csv"));a=p.parse_args()
     with TemporaryDirectory() as t:

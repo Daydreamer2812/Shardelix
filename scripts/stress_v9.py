@@ -5,9 +5,9 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 from benchmark_scale_v8 import textured
-from fragmentlab.reconstruction.generator import generate,dimensions
-from fragmentlab.reconstruction.cli import solve_case,evaluate_case
-from fragmentlab.reconstruction.common import json_write,read_source
+from shardelix.reconstruction.generator import generate,dimensions
+from shardelix.reconstruction.cli import solve_case,evaluate_case
+from shardelix.reconstruction.common import json_write,read_source
 def run(a):
     root=Path(a.out);root.mkdir(parents=True,exist_ok=True)
     n=a.count;r,c=dimensions(n,1,1)

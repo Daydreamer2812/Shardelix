@@ -4,14 +4,14 @@ import argparse,shutil,zipfile
 ROOT=Path(__file__).resolve().parents[1]
 def build(output, wasm=False):
     output=Path(output);output.mkdir(parents=True,exist_ok=True)
-    shutil.copyfile(ROOT/"src/fragmentlab/studio.html",output/"index.html")
+    shutil.copyfile(ROOT/"src/shardelix/studio.html",output/"index.html")
     shutil.copyfile(ROOT/"web/worker.js",output/"worker.js")
     shutil.copyfile(ROOT/"web/core_bridge.js",output/"core_bridge.js")
     if wasm:
         from build_wasm import build as compile_wasm
         compile_wasm(output)
     with zipfile.ZipFile(output/"engine.zip","w",zipfile.ZIP_DEFLATED,compresslevel=9) as z:
-        for p in sorted((ROOT/"src/fragmentlab").rglob("*.py")):
+        for p in sorted((ROOT/"src/shardelix").rglob("*.py")):
             if "__pycache__" in p.parts:continue
             info=zipfile.ZipInfo(p.relative_to(ROOT/"src").as_posix(),date_time=(2026,1,1,0,0,0))
             info.compress_type=zipfile.ZIP_DEFLATED

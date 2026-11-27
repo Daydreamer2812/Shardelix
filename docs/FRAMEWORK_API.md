@@ -1,4 +1,4 @@
-# FragmentLab 11.0: framework API
+# Shardelix 11.0: framework API
 
 ## Install and call
 Python 3.11+, NumPy, SciPy, Pillow. The package is a research/framework
@@ -6,7 +6,7 @@ release candidate (alpha), not a production service. Install the supplied
 wheel locally with dependencies already available, or use `PYTHONPATH=src`.
 
 ```python
-from fragmentlab import Solver, ResourceLimits
+from shardelix import Solver, ResourceLimits
 solver = Solver(profile="balanced", index_mode="auto", limits=ResourceLimits(
     max_fragments=16384, max_canvas_pixels=32_000_000,
     max_input_pixels=96_000_000))

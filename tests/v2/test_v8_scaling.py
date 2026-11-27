@@ -5,14 +5,14 @@ import zipfile
 from pathlib import Path
 import numpy as np
 from scipy.ndimage import gaussian_filter
-from fragmentlab import Fragment,Pose,Solver
-from fragmentlab.reconstruction.common import load_fragments
-from fragmentlab.reconstruction.generator import generate
-from fragmentlab.reconstruction.evaluation import evaluate
-from fragmentlab.reconstruction.cli import solve_case
-from fragmentlab.reconstruction.geometry import _keys
-from fragmentlab.studio import safe_zip,worker
-from fragmentlab.reconstruction.limits import validate_constraints
+from shardelix import Fragment,Pose,Solver
+from shardelix.reconstruction.common import load_fragments
+from shardelix.reconstruction.generator import generate
+from shardelix.reconstruction.evaluation import evaluate
+from shardelix.reconstruction.cli import solve_case
+from shardelix.reconstruction.geometry import _keys
+from shardelix.studio import safe_zip,worker
+from shardelix.reconstruction.limits import validate_constraints
 
 class V8Tests(unittest.TestCase):
     def test_sparse_public_api_and_hidden_truth(self):

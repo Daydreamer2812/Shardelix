@@ -1,4 +1,4 @@
-# FragmentLab V12 release evidence
+# Shardelix V12 release evidence
 
 V12 retains V11's classical CPU-only blind framework and expands its usable
 settings and its missing/continuous recovery. All comparisons below use

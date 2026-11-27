@@ -8,7 +8,7 @@ def build(out):
     out=Path(out);out.mkdir(parents=True,exist_ok=True)
     functions="['_malloc','_free','_fl_abi','_fl_contours','_fl_free','_fl_loop_votes','_fl_rerank','_fl_profiles']"
     subprocess.run([compiler,str(ROOT/"cpp/core.cpp"),"-std=c++20","-O3","-ffp-contract=off","-msimd128","-DNDEBUG","--no-entry",
-        "-sMODULARIZE=1","-sEXPORT_NAME=createFragmentLabCore","-sENVIRONMENT=worker","-sALLOW_MEMORY_GROWTH=1",
+        "-sMODULARIZE=1","-sEXPORT_NAME=createShardelixCore","-sENVIRONMENT=worker","-sALLOW_MEMORY_GROWTH=1",
         "-sEXPORTED_RUNTIME_METHODS=['HEAPU8','HEAP32']", "-sEXPORTED_FUNCTIONS="+functions,"-o",str(out/"fl_core.js")],check=True)
 if __name__=="__main__":
     p=argparse.ArgumentParser();p.add_argument("--out",required=True);build(p.parse_args().out)

@@ -1,11 +1,11 @@
 import unittest,tempfile
 from pathlib import Path
 import numpy as np
-from fragmentlab.reconstruction.common import load_fragments,read_source,Pose,Fragment
-from fragmentlab.reconstruction.generator import generate
-from fragmentlab.reconstruction.grid_consensus import solve_consensus_grid
-from fragmentlab.reconstruction.document import oriented_path_milp
-from fragmentlab.reconstruction.evaluation import evaluate
+from shardelix.reconstruction.common import load_fragments,read_source,Pose,Fragment
+from shardelix.reconstruction.generator import generate
+from shardelix.reconstruction.grid_consensus import solve_consensus_grid
+from shardelix.reconstruction.document import oriented_path_milp
+from shardelix.reconstruction.evaluation import evaluate
 import json
 
 class ConsensusTests(unittest.TestCase):

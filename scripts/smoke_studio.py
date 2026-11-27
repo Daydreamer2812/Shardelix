@@ -9,7 +9,7 @@ with socket.socket() as sock:
 base=f"http://127.0.0.1:{port}"
 root=Path.cwd()
 env={**os.environ,"PYTHONPATH":str(root/"src")}
-p=subprocess.Popen([sys.executable,"-m","fragmentlab","studio","--port",str(port),"--no-browser"],env=env)
+p=subprocess.Popen([sys.executable,"-m","shardelix","studio","--port",str(port),"--no-browser"],env=env)
 try:
     for i in range(80):
         try: html=urllib.request.urlopen(base).read().decode();break

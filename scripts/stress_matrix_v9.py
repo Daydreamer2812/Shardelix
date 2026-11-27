@@ -9,7 +9,7 @@ CSV. Use one worker for comparable latency; parallel workers measure contention.
 import argparse,csv,json,os,subprocess,sys,time
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
-from fragmentlab.reconstruction.generator import CUTS
+from shardelix.reconstruction.generator import CUTS
 
 def matrix(preset):
     for cut in CUTS:

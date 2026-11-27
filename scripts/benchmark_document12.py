@@ -2,11 +2,11 @@
 import numpy as np,tempfile,json,csv
 from PIL import Image
 from pathlib import Path
-from fragmentlab.reconstruction.pose9 import rotate_raster
-from fragmentlab.reconstruction.cli import solve_external_document
-from fragmentlab.reconstruction.common import Pose,load_fragments
-from fragmentlab.reconstruction.document12 import normalize_document_strips
-from fragmentlab.reconstruction.evaluation import canvas_align
+from shardelix.reconstruction.pose9 import rotate_raster
+from shardelix.reconstruction.cli import solve_external_document
+from shardelix.reconstruction.common import Pose,load_fragments
+from shardelix.reconstruction.document12 import normalize_document_strips
+from shardelix.reconstruction.evaluation import canvas_align
 from scipy.ndimage import gaussian_filter
 ROOT=Path(__file__).resolve().parents[1]
 rows=[]

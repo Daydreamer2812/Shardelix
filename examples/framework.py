@@ -7,7 +7,7 @@ of images to the same solve method.
 from pathlib import Path
 import numpy as np
 from scipy.ndimage import gaussian_filter
-from fragmentlab import Fragment, ResourceLimits, Solver
+from shardelix import Fragment, ResourceLimits, Solver
 
 rng = np.random.default_rng(815)
 source = np.clip(127 + 420 * gaussian_filter(

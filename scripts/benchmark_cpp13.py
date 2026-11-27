@@ -4,11 +4,11 @@ import argparse,json,os,subprocess,sys,tempfile,time
 from pathlib import Path
 import numpy as np
 from benchmark_scale_v8 import textured
-from fragmentlab.reconstruction.generator import generate,dimensions
+from shardelix.reconstruction.generator import generate,dimensions
 
 def measure(case,output,profile):
-    from fragmentlab.reconstruction.cli import solve_case,evaluate_case
-    from fragmentlab.native_core import backend
+    from shardelix.reconstruction.cli import solve_case,evaluate_case
+    from shardelix.native_core import backend
     truth=case.parent/"held";(case/"evaluation").rename(truth)
     try:
         t=time.perf_counter();result=solve_case(case,output,profile=profile);elapsed=time.perf_counter()-t
@@ -26,7 +26,7 @@ def main():
         for n in map(int,a.counts.split(",")):
             rr,cc=dimensions(n,1,1);case=root/f"grid-{n}";generate(textured(rr*20,cc*20,12226),case,n,"grid",11226,True)
             for mode in ("python","auto"):
-                r=subprocess.run([sys.executable,__file__,"--measure",str(case),str(root/f"out-{n}-{mode}"),"balanced"],env={**os.environ,"FRAGMENTLAB_CORE":mode},capture_output=True,text=True,check=True)
+                r=subprocess.run([sys.executable,__file__,"--measure",str(case),str(root/f"out-{n}-{mode}"),"balanced"],env={**os.environ,"SHARDELIX_CORE":mode},capture_output=True,text=True,check=True)
                 row=json.loads(r.stdout.strip().splitlines()[-1]);row.update(count=n,cut="grid",tile=20,seed=11226);rows.append(row);print(json.dumps(row),flush=True)
     a.out.parent.mkdir(parents=True,exist_ok=True);a.out.write_text(json.dumps(rows,indent=2)+"\n")
 if __name__=="__main__":main()

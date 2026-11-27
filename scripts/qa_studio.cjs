@@ -14,7 +14,7 @@ const assert=require('node:assert/strict'),path=require('node:path');
   await page.locator('#run').click();await done('Fragments generated');await page.locator('#transfer').waitFor({state:'visible'});
   assert.equal(await page.locator('#genCount').textContent(),'16 / 16');
   assert.equal(await page.locator('#reconstructionOutput').isHidden(),true);
-  const pieces=path.join('/tmp','fragmentlab-v13-replay.zip'),truth=path.join('/tmp','fragmentlab-v13-truth.zip'),source=path.join('/tmp','fragmentlab-v13-source.png');
+  const pieces=path.join('/tmp','shardelix-v13-replay.zip'),truth=path.join('/tmp','shardelix-v13-truth.zip'),source=path.join('/tmp','shardelix-v13-source.png');
   for(const [id,file] of [['downloadFragments',pieces],['downloadTruth',truth],['downloadSource',source]]){
    const [d]=await Promise.all([page.waitForEvent('download'),page.locator('#'+id).click()]);await d.saveAs(file);
   }

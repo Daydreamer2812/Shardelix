@@ -1,17 +1,17 @@
 import unittest
 import numpy as np
 from scipy.ndimage import gaussian_filter
-from fragmentlab import Fragment,Pose
-from fragmentlab.reconstruction.sparse_grid import candidates,_links_reference
-from fragmentlab.reconstruction.links11 import reciprocal_links
-from fragmentlab.reconstruction.grid_consensus import edge_costs
-from fragmentlab.reconstruction.dense11 import exact_mgc_candidates
-from fragmentlab.reconstruction.anchor11 import anchored_complete,soft_pack
-from fragmentlab.reconstruction.strip_gap11 import solve_thin_missing
-from fragmentlab.reconstruction.common import render
-from fragmentlab.reconstruction.evaluation import canvas_align
-from fragmentlab.reconstruction.gridmetrics10 import grid_objective
-from fragmentlab.reconstruction.solver import objective
+from shardelix import Fragment,Pose
+from shardelix.reconstruction.sparse_grid import candidates,_links_reference
+from shardelix.reconstruction.links11 import reciprocal_links
+from shardelix.reconstruction.grid_consensus import edge_costs
+from shardelix.reconstruction.dense11 import exact_mgc_candidates
+from shardelix.reconstruction.anchor11 import anchored_complete,soft_pack
+from shardelix.reconstruction.strip_gap11 import solve_thin_missing
+from shardelix.reconstruction.common import render
+from shardelix.reconstruction.evaluation import canvas_align
+from shardelix.reconstruction.gridmetrics10 import grid_objective
+from shardelix.reconstruction.solver import objective
 
 def texture(h,w,seed=51):
     rng=np.random.default_rng(seed)
@@ -65,7 +65,7 @@ class Recovery11Tests(unittest.TestCase):
     def test_ambiguity_export_no_accuracy_claim(self):
         import tempfile,json
         from pathlib import Path
-        from fragmentlab import ReconstructionResult
+        from shardelix import ReconstructionResult
         p=[frag(i,np.full((8,8,3),190,np.uint8)) for i in range(2)]
         r=ReconstructionResult(p,{"0":Pose(0,0)},(8,16),{"identical_piece_count":2,"_unanchored_components":[{"count":1,"poses":{"1":{"cell_x":0,"cell_y":0,"k":0}}}]},(1,2),True)
         with tempfile.TemporaryDirectory() as t:

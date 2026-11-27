@@ -14,9 +14,9 @@ class WebBuildTests(unittest.TestCase):
             self.assertIn("browser=True",worker);self.assertIn("engine.zip",worker)
             self.assertIn("v0.27.7",worker)
             with zipfile.ZipFile(d/"engine.zip") as z:
-                for f in ("fragmentlab/api.py","fragmentlab/native_core.py","fragmentlab/workflow12.py","fragmentlab/reconstruction/recovery12.py"):
+                for f in ("shardelix/api.py","shardelix/native_core.py","shardelix/workflow12.py","shardelix/reconstruction/recovery12.py"):
                     self.assertEqual(z.read(f),(ROOT/"src"/f).read_bytes())
-            p=subprocess.run([sys.executable,"-c","import fragmentlab;print(fragmentlab.__version__)"],cwd=d,
+            p=subprocess.run([sys.executable,"-c","import shardelix;print(shardelix.__version__)"],cwd=d,
                          env={**os.environ,"PYTHONPATH":str(d/"engine.zip")},capture_output=True,text=True)
             self.assertEqual(p.returncode,0,p.stderr)
             self.assertEqual(p.stdout.strip(),"13.0.0")

@@ -1,6 +1,6 @@
 # Research references
 
-FragmentLab implements its own classical matching and assembly pipeline. The
+Shardelix implements its own classical matching and assembly pipeline. The
 following published work motivates comparisons and future research; it does
 not imply that their implementations are reproduced or that a matched
 state-of-the-art comparison has been completed.
@@ -22,7 +22,7 @@ state-of-the-art comparison has been completed.
 
 - Y. Liang and X. Li, *Reassembling Shredded Document Stripes Using Word-path Metric and Greedy Composition Optimal Matching Solver*, IEEE Transactions on Multimedia, 2019.
 - F. A. Paixao et al., *Fast(er) Reconstruction of Shredded Text Documents via Self-Supervised Deep Asymmetric Metric Learning*, CVPR 2020.
-  Direction-dependent compatibility; learned models are outside FragmentLab's CPU-classical scope.
+  Direction-dependent compatibility; learned models are outside Shardelix's CPU-classical scope.
 
 Reported measurements from papers are not directly comparable with the
 synthetic V12 cases. A valid comparison requires matched input, split,

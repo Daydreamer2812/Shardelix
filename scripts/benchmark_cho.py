@@ -5,14 +5,14 @@ import argparse,hashlib,json,time,csv
 from pathlib import Path
 import numpy as np
 from PIL import Image
-from fragmentlab.reconstruction.common import Fragment,Pose,load_fragments,render,save_rgba,json_write
-from fragmentlab.reconstruction.evaluation import evaluate
-from fragmentlab.reconstruction.overlay import write_cut_outputs
-from fragmentlab.reconstruction.solver import solve
-from fragmentlab.reconstruction.generator import generate
-from fragmentlab.reconstruction.cli import solve_case,evaluate_case
-from fragmentlab.reconstruction.straight import solve_straight
-from fragmentlab.reconstruction.rotation import solve_rotated_tiles
+from shardelix.reconstruction.common import Fragment,Pose,load_fragments,render,save_rgba,json_write
+from shardelix.reconstruction.evaluation import evaluate
+from shardelix.reconstruction.overlay import write_cut_outputs
+from shardelix.reconstruction.solver import solve
+from shardelix.reconstruction.generator import generate
+from shardelix.reconstruction.cli import solve_case,evaluate_case
+from shardelix.reconstruction.straight import solve_straight
+from shardelix.reconstruction.rotation import solve_rotated_tiles
 
 def features(pieces):
     grads=[];white=[];std=[];keys=[]
@@ -42,10 +42,10 @@ def run(case,out,method,rotate,previews=True,params=None):
         # Exact V5 defaults via unchanged legacy path; rotated V5 same single strategy.
         if rotate:poses,diag=solve_rotated_tiles(pieces,shape,grid,samples=24,gradient_weight=.25,top_k=3)
         else:
-            from fragmentlab.reconstruction.solver import _solve_v5
+            from shardelix.reconstruction.solver import _solve_v5
             poses,diag=_solve_v5(pieces,shape,"grid",grid,False,auto_tune=True)
     elif method=="candidate":
-        from fragmentlab.reconstruction.grid_consensus import solve_consensus_grid
+        from shardelix.reconstruction.grid_consensus import solve_consensus_grid
         poses,diag=solve_consensus_grid(pieces,shape,grid,rotate,**(params or {}))
     else:poses,diag=solve(pieces,shape,"grid",grid,rotate,auto_tune=True)
     runtime=time.perf_counter()-start

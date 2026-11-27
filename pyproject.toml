@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "fragmentlab"
+name = "shardelix"
 version = "13.0.0"
 description = "Blind-only classical digital image and document fragment reconstruction"
 readme = "README.md"
@@ -31,7 +31,7 @@ pdf = ["PyMuPDF>=1.23"]
 ui = []  # Studio uses the standard library
 
 [project.scripts]
-fragmentlab = "fragmentlab.reconstruction.cli:main"
+shardelix = "shardelix.reconstruction.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -50,4 +50,4 @@ select = ["E", "F", "I", "UP", "B"]
 
 
 [tool.setuptools.package-data]
-fragmentlab = ["studio.html"]
+shardelix = ["studio.html"]

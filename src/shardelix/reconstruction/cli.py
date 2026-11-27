@@ -1,4 +1,4 @@
-"""FragmentLab V7: one public mode, blind reconstruction."""
+"""Shardelix V7: one public mode, blind reconstruction."""
 from __future__ import annotations
 import argparse
 import json
@@ -20,7 +20,7 @@ def solve_case(folder:Path,output:Path,mode="blind",reference=None,tune=True,par
     """
     if mode!="blind" or reference is not None or template is not None:
         raise ValueError("Blind only: source/reference/template are prohibited")
-    from fragmentlab.api import Solver
+    from shardelix.api import Solver
     meta=read_json(folder/"case.json")
     if not isinstance(meta,dict):raise ValueError("case.json must contain an object")
     for k in ("height","width","piece_count","cut","rotations"):
@@ -105,7 +105,7 @@ def solve_external_document(folder:Path,output:Path,rotations=False,params=None,
     if shape[0]*shape[1]>min(MAX_PIXELS,max_canvas_pixels or MAX_PIXELS):
         raise ValueError("Estimated document canvas exceeds pixel budget")
     if angles is not None:
-        from fragmentlab.api import ReconstructionResult
+        from shardelix.api import ReconstructionResult
         diag.update(extra,angle_mode="continuous",sampling=sampling,expected_count=len(pieces),missing_count=0,
                     algorithm="estimated-document-pose-v12-"+diag.get("algorithm","document"),
                     mode="blind",runtime_seconds=time.perf_counter()-start,orientation_ambiguous=True,document_missing_unknown=True)
@@ -127,7 +127,7 @@ def solve_external_document(folder:Path,output:Path,rotations=False,params=None,
     return result
 
 def main(argv=None):
-    parser=argparse.ArgumentParser(prog="fragmentlab",description="Blind-only classical CPU fragment reconstruction")
+    parser=argparse.ArgumentParser(prog="shardelix",description="Blind-only classical CPU fragment reconstruction")
     sub=parser.add_subparsers(dest="command",required=True)
     p=sub.add_parser("studio",help="Launch local browser UI");p.add_argument("--port",type=int,default=8765);p.add_argument("--no-browser",action="store_true")
     p=sub.add_parser("generate");_gen_opts(p);p.add_argument("--out",type=Path,required=True)
@@ -146,7 +146,7 @@ def main(argv=None):
     p.add_argument("--max-trials",type=int,default=12);p.add_argument("--require-95",action="store_true")
     a=parser.parse_args(argv)
     if a.command=="studio":
-        from fragmentlab.studio import serve
+        from shardelix.studio import serve
         serve(a.port,not a.no_browser);return 0
     if a.command in {"generate","run"}:
         src=read_source(a.source,a.max_side,a.page)

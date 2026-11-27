@@ -5,10 +5,10 @@ import unittest
 import numpy as np
 from PIL import Image
 from scipy.ndimage import gaussian_filter
-from fragmentlab.reconstruction.common import Fragment,render
-from fragmentlab.reconstruction.document import chain,solve_document_strips
-from fragmentlab.reconstruction.generator import CUTS,generate
-from fragmentlab.reconstruction.cli import solve_external_document
+from shardelix.reconstruction.common import Fragment,render
+from shardelix.reconstruction.document import chain,solve_document_strips
+from shardelix.reconstruction.generator import CUTS,generate
+from shardelix.reconstruction.cli import solve_external_document
 
 class DocumentTests(unittest.TestCase):
     def test_removed_cut_families(self):

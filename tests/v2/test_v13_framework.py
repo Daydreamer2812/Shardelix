@@ -3,10 +3,10 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 from scipy.ndimage import gaussian_filter
-from fragmentlab.native_core import backend,contours,loop_votes,rerank,profiles
-from fragmentlab.reconstruction.geometry import _contours_reference
-from fragmentlab.reconstruction.links11 import _loop_votes_reference
-from fragmentlab.workflow12 import run_job
+from shardelix.native_core import backend,contours,loop_votes,rerank,profiles
+from shardelix.reconstruction.geometry import _contours_reference
+from shardelix.reconstruction.links11 import _loop_votes_reference
+from shardelix.workflow12 import run_job
 
 def texture():
     return np.clip(127+480*gaussian_filter(np.random.default_rng(2287).normal(size=(256,256,3)),(1.4,1.4,0)),0,255).astype(np.uint8)
@@ -27,8 +27,8 @@ class V13Tests(unittest.TestCase):
             np.testing.assert_array_equal(loop_votes(a),_loop_votes_reference(a))
     def test_cpp_edge_descriptors(self):
         if backend()=="python-reference":self.skipTest("C++ optional backend not built")
-        from fragmentlab import Fragment
-        from fragmentlab.reconstruction.grid_consensus import _profiles_reference
+        from shardelix import Fragment
+        from shardelix.reconstruction.grid_consensus import _profiles_reference
         rng=np.random.default_rng(11)
         p=[Fragment(str(i),rng.integers(0,256,(*shape,4),np.uint8)) for i,shape in enumerate([(1,1),(1,5),(5,1),(8,13),(13,8),(8,13)])]
         a,b=profiles(p),_profiles_reference(p)

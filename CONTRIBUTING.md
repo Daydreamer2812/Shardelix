@@ -13,7 +13,7 @@ python -m pip install -e ".[dev]"
 
 ## Before opening a pull request
 
-1. Keep algorithms under `src/fragmentlab` and generated artifacts under `outputs/` or
+1. Keep algorithms under `src/shardelix` and generated artifacts under `outputs/` or
    `data/synthetic/`.
 2. Do not expose ground truth to blind inference code.
 3. Add a regression test for bug fixes and seeded evaluation for solver changes.

@@ -33,7 +33,7 @@ python -m pip install -e .
 python scripts/build_native.py
 python -m unittest discover -s tests/v2
 python -m unittest discover -s tests/workflow
-FRAGMENTLAB_CORE=python python -m unittest discover -s tests/v2
+SHARDELIX_CORE=python python -m unittest discover -s tests/v2
 python scripts/build_web.py --out build/pages --wasm
 ```
 

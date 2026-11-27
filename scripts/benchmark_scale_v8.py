@@ -8,15 +8,15 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 from scipy.ndimage import gaussian_filter
-from fragmentlab.reconstruction.common import load_fragments,read_source,render,save_rgba,Pose,json_write
-from fragmentlab.reconstruction.generator import generate,dimensions
-from fragmentlab.reconstruction.evaluation import evaluate
-from fragmentlab.reconstruction.solver import solve
+from shardelix.reconstruction.common import load_fragments,read_source,render,save_rgba,Pose,json_write
+from shardelix.reconstruction.generator import generate,dimensions
+from shardelix.reconstruction.evaluation import evaluate
+from shardelix.reconstruction.solver import solve
 try:
-    from fragmentlab.reconstruction.solver import _solve_v7
+    from shardelix.reconstruction.solver import _solve_v7
 except ImportError:
     _solve_v7=solve  # original V7 checkout for apples-to-apples comparison
-from fragmentlab.reconstruction.overlay import write_cut_outputs
+from shardelix.reconstruction.overlay import write_cut_outputs
 def textured(h,w,seed):
     """Distinct, spatially correlated synthetic texture; not a real-photo claim."""
     rng=np.random.default_rng(seed)

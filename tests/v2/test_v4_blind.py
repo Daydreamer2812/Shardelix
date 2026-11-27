@@ -3,12 +3,12 @@ from pathlib import Path
 import tempfile,json,unittest
 import numpy as np
 from PIL import Image
-from fragmentlab.reconstruction.common import Fragment,Pose,read_source,load_fragments,render
-from fragmentlab.reconstruction.generator import generate
-from fragmentlab.reconstruction.cli import solve_case,evaluate_case
-from fragmentlab.reconstruction.evaluation import evaluate
-from fragmentlab.reconstruction.overlay import cut_overlay
-from fragmentlab.reconstruction.verified import exact_holes,verify_pair
+from shardelix.reconstruction.common import Fragment,Pose,read_source,load_fragments,render
+from shardelix.reconstruction.generator import generate
+from shardelix.reconstruction.cli import solve_case,evaluate_case
+from shardelix.reconstruction.evaluation import evaluate
+from shardelix.reconstruction.overlay import cut_overlay
+from shardelix.reconstruction.verified import exact_holes,verify_pair
 
 class V4BlindTests(unittest.TestCase):
     def test_cut_overlay_is_predicted_only(self):

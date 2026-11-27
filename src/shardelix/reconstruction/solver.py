@@ -51,7 +51,7 @@ def _solve_v5(pieces,shape,cut="random",grid=None,rotations=False,
     start=time.perf_counter()
     params=params or {}
     if mode!="blind" or reference is not None or template is not None:
-        raise ValueError("FragmentLab V7 is blind only; source and cut template are prohibited")
+        raise ValueError("Shardelix V7 is blind only; source and cut template are prohibited")
     if not pieces:raise ValueError("Expected at least one piece")
     is_strip=grid is not None and min(grid)==1
     if is_strip and (params.get("strategy")=="document" or (not params and is_documentlike(pieces))):
@@ -126,7 +126,7 @@ def _solve_v7(pieces,shape,cut="random",grid=None,rotations=False,
           mode="blind",reference=None,auto_tune=True,params=None,template=None):
     """V7: V6 baseline plus blind strip-block, grid-line and frontier refinement."""
     if mode!="blind" or reference is not None or template is not None:
-        raise ValueError("FragmentLab V7 is blind only; source and template are prohibited")
+        raise ValueError("Shardelix V7 is blind only; source and template are prohibited")
     if not pieces:raise ValueError("Expected at least one piece")
     if not grid or min(grid)==1 or (params and params.get("strategy")!="consensus"):
         start=time.perf_counter()

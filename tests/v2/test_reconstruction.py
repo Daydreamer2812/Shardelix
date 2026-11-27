@@ -5,12 +5,12 @@ import tempfile
 import unittest
 import numpy as np
 
-from fragmentlab.reconstruction.common import Pose, Fragment, render, load_fragments
-from fragmentlab.reconstruction.generator import CUTS, generate
-from fragmentlab.reconstruction.cli import solve_case, evaluate_case
-from fragmentlab.reconstruction.solver import solve
-from fragmentlab.reconstruction.geometry import contours, R, _vertex_to_pose
-from fragmentlab.reconstruction.evaluation import evaluate
+from shardelix.reconstruction.common import Pose, Fragment, render, load_fragments
+from shardelix.reconstruction.generator import CUTS, generate
+from shardelix.reconstruction.cli import solve_case, evaluate_case
+from shardelix.reconstruction.solver import solve
+from shardelix.reconstruction.geometry import contours, R, _vertex_to_pose
+from shardelix.reconstruction.evaluation import evaluate
 
 
 def source(h=256,w=320):

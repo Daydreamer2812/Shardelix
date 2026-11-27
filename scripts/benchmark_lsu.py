@@ -6,9 +6,9 @@ import argparse,csv,json,re,time,hashlib
 from pathlib import Path
 import numpy as np
 from PIL import Image
-from fragmentlab.reconstruction.common import Fragment,render,save_rgba,json_write
-from fragmentlab.reconstruction.document import solve_document_strips,DEFAULT
-from fragmentlab.reconstruction.overlay import write_cut_outputs
+from shardelix.reconstruction.common import Fragment,render,save_rgba,json_write
+from shardelix.reconstruction.document import solve_document_strips,DEFAULT
+from shardelix.reconstruction.overlay import write_cut_outputs
 
 def split(name):
     if name.startswith("real"):return "physical"
@@ -38,7 +38,7 @@ def run(folder,params=None,output=None,baseline=False):
     rotate=part=="orientation"
     start=time.perf_counter()
     # Both methods receive only anonymous pieces. No proof of pixel truth for physical/orientation.
-    from fragmentlab.reconstruction.document import _solve_document_v5
+    from shardelix.reconstruction.document import _solve_document_v5
     solver=_solve_document_v5 if baseline else solve_document_strips
     poses,diag=solver(pieces,rotations=rotate,**(params or {}))
     elapsed=time.perf_counter()-start
@@ -90,7 +90,7 @@ def run(folder,params=None,output=None,baseline=False):
             if (ra,rc)>(ea,ec):ec,ea=rc,ra
         alternatives.append({"hypothesis":alt["hypothesis"],"direct_order_accuracy":ao,"directed_neighbor_accuracy":aa,"equivalence_order_accuracy":ec,"equivalence_neighbor_accuracy":ea,"blind_energy":alt["blind_energy"]})
         if output:
-            from fragmentlab.reconstruction.common import Pose
+            from shardelix.reconstruction.common import Pose
             pp={k:Pose(**v) for k,v in alt["poses"].items()}
             im,lb,_=render(pieces,pp,shape)
             altout=output/("alternative_"+alt["hypothesis"])

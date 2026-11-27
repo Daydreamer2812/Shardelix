@@ -4,7 +4,7 @@ import os,sys
 from pathlib import Path
 import numpy as np
 
-_mode=os.getenv("FRAGMENTLAB_CORE","auto")
+_mode=os.getenv("SHARDELIX_CORE",os.getenv("FRAGMENTLAB_CORE","auto"))
 _lib=None
 _bridge=None
 if _mode!="python":

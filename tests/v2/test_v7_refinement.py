@@ -2,14 +2,14 @@
 import unittest,tempfile,json
 from pathlib import Path
 import numpy as np
-from fragmentlab.reconstruction.common import load_fragments,read_source,Pose,render
-from fragmentlab.reconstruction.generator import generate
-from fragmentlab.reconstruction.evaluation import evaluate
-from fragmentlab.reconstruction.frontier import complete_frontier
-from fragmentlab.reconstruction.grid_refine import refine_grid_lines,refine_grid_phase
-from fragmentlab.reconstruction.grid_consensus import edge_costs,dimension_filter,score_grid
-from fragmentlab.reconstruction.straight import _grid_bounds
-from fragmentlab.reconstruction.strip_refine import refine_strip_blocks,_lcp
+from shardelix.reconstruction.common import load_fragments,read_source,Pose,render
+from shardelix.reconstruction.generator import generate
+from shardelix.reconstruction.evaluation import evaluate
+from shardelix.reconstruction.frontier import complete_frontier
+from shardelix.reconstruction.grid_refine import refine_grid_lines,refine_grid_phase
+from shardelix.reconstruction.grid_consensus import edge_costs,dimension_filter,score_grid
+from shardelix.reconstruction.straight import _grid_bounds
+from shardelix.reconstruction.strip_refine import refine_strip_blocks,_lcp
 
 def fixture(src,folder,count,cut,seed=234,rot=True):
     meta=generate(src,folder,count,cut,seed,rot)

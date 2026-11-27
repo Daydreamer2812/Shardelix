@@ -59,7 +59,7 @@ python -m venv .venv
 # Windows PowerShell: .venv\Scripts\Activate.ps1
 python -m pip install -e .
 python scripts/build_native.py   # optional C++20 compiler (g++ or clang++)
-python -m fragmentlab studio
+python -m shardelix studio
 ```
 
 Open the local Studio at **http://127.0.0.1:8765**. Choose **Fragment generator**, click *Use a synthetic sample*, set the cut and piece count, and generate. Use **Send to reconstruction** to transfer the anonymous pieces and a separately held reference. Or download the two ZIP files and re-import independently in **Reconstruction**.
@@ -78,7 +78,7 @@ Open **http://127.0.0.1:8767**. The browser uses the same C++20 kernels compiled
 ### 3. Run a reproducible experiment
 
 ```bash
-python -m fragmentlab run data/examples/straight_texture.png \
+python -m shardelix run data/examples/straight_texture.png \
   --cut grid --pieces 256 --rotations --profile balanced \
   --seed 42 --out outputs/grid
 ```
@@ -86,7 +86,7 @@ python -m fragmentlab run data/examples/straight_texture.png \
 This creates anonymous shuffled PNG fragments, reconstructs them without the original image and evaluates the prediction separately. For existing fragments:
 
 ```bash
-python -m fragmentlab solve --case path/to/case --out outputs/blind
+python -m shardelix solve --case path/to/case --out outputs/blind
 ```
 
 The case directory contains public `case.json` geometry and a `pieces/` directory. No evaluation directory is needed to solve.
@@ -143,7 +143,7 @@ These are **protective resource ceilings**, not measured capacity or accuracy gu
 
 ## Benchmarks
 
-The V13 hybrid core accelerates exact mask contour tracing, edge descriptor extraction, sparse 2×2 cycle voting and seam re-ranking in C++20. The Python reference remains available (`FRAGMENTLAB_CORE=python`); the same C ABI is used by the native shared library and WebAssembly. See [V13 changes and evidence](docs/V13_RESULTS.md) for actual parity tests and benchmark methodology.
+The V13 hybrid core accelerates exact mask contour tracing, edge descriptor extraction, sparse 2×2 cycle voting and seam re-ranking in C++20. The Python reference remains available (`SHARDELIX_CORE=python`); the same C ABI is used by the native shared library and WebAssembly. See [V13 changes and evidence](docs/V13_RESULTS.md) for actual parity tests and benchmark methodology.
 
 | Uniform grid | Python reference | Native C++ hybrid | Solver speedup |
 |:--|--:|--:|--:|
@@ -179,7 +179,7 @@ The historical V12 numerical evidence includes difficult and failed cases. It do
 ## Python API
 
 ```python
-from fragmentlab import Solver
+from shardelix import Solver
 
 solver = Solver(profile="balanced")
 result = solver.solve(
@@ -202,7 +202,7 @@ See [Framework API](docs/FRAMEWORK_API.md) and [coordinates](docs/COORDINATE_CON
 ```text
 fragmentlab-official/
 ├── cpp/                 # Portable C++20 kernels
-├── src/fragmentlab/     # Solver, geometry, CLI and Studio
+├── src/shardelix/     # Solver, geometry, CLI and Studio
 ├── web/                # Browser WebAssembly worker
 ├── data/examples/      # Generated, shareable synthetic fixtures
 ├── examples/           # Python integration

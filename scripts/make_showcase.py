@@ -37,7 +37,7 @@ def main():
         root = Path(tmp)
         source = source_image()
         source.save(root/"source.png")
-        subprocess.run([sys.executable, "-m", "fragmentlab", "run", str(root/"source.png"),
+        subprocess.run([sys.executable, "-m", "shardelix", "run", str(root/"source.png"),
                         "--cut", "jigsaw", "--pieces", "64", "--rotations", "--seed", "42",
                         "--profile", "balanced", "--out", str(root/"run")], check=True,
                        stdout=subprocess.DEVNULL)
@@ -45,7 +45,7 @@ def main():
         pieces = sorted((root/"run/case/pieces").glob("*.png"))
         preview = Image.new("RGB", (1440, 600), "#101b2c")
         d = ImageDraw.Draw(preview)
-        d.text((45,26), "FRAGMENTLAB  /  RECONSTRUCTION IN PRACTICE", font=font(22,True), fill="#a9c9ff")
+        d.text((45,26), "SHARDELIX  /  RECONSTRUCTION IN PRACTICE", font=font(22,True), fill="#a9c9ff")
         d.text((45,68), "From scrambled pieces to a reconstructed image",font=font(34,True),fill="#f6f9ff")
         cards=[("01  Original input", "Used only to generate and evaluate"),
                ("02  Scrambled fragments", "25 of 64 rotated pieces shown"),

@@ -3,10 +3,10 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 from scipy.ndimage import gaussian_filter
-from fragmentlab import Fragment,Pose,Solver
-from fragmentlab.reconstruction.recovery12 import anchor_irregular_frame,solve_multigap_strips
-from fragmentlab.reconstruction.evaluation import canvas_align
-from fragmentlab.workflow12 import run_job,case_configs,inspect_uploads,WEB_COUNT
+from shardelix import Fragment,Pose,Solver
+from shardelix.reconstruction.recovery12 import anchor_irregular_frame,solve_multigap_strips
+from shardelix.reconstruction.evaluation import canvas_align
+from shardelix.workflow12 import run_job,case_configs,inspect_uploads,WEB_COUNT
 
 def image(h,w,seed=17,sigmax=2):
     a=np.random.default_rng(seed).normal(size=(h,w,3))
@@ -48,9 +48,9 @@ class V12Tests(unittest.TestCase):
         self.assertEqual(d["anchor_translation_slack"],[0,12])
         self.assertEqual(out,poses)
     def test_unknown_width_continuous_document_geometry(self):
-        from fragmentlab.reconstruction.pose9 import rotate_raster
-        from fragmentlab.reconstruction.document12 import normalize_document_strips
-        from fragmentlab.reconstruction.cli import solve_external_document
+        from shardelix.reconstruction.pose9 import rotate_raster
+        from shardelix.reconstruction.document12 import normalize_document_strips
+        from shardelix.reconstruction.cli import solve_external_document
         widths=[7,13,20,32,41,52];angles=[-16,77,154,-112,41,9];H=240
         a=image(H,sum(widths),seed=454);pieces=[];x=0
         with tempfile.TemporaryDirectory() as t:

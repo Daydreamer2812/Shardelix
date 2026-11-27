@@ -1,4 +1,4 @@
-"""FragmentLab blind-only public API."""
+"""Shardelix blind-only public API."""
 from .reconstruction.common import Fragment, Pose
 
 from .api import Solver, ReconstructionResult
