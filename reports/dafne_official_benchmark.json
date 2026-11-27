@@ -1,0 +1,1597 @@
+{
+  "source": "https://vision.unipv.it/DAFchallenge/DAFNE_dataset/dataset_download.html",
+  "engine_commit": "46e801d8623bfd34b3a92cc777388ac573d73af5",
+  "retrieved": "2026-11-27",
+  "protocol": "Reference-assisted, same-resolution original artwork; no ML, no ground-truth coordinates during matching. Absolute pose tolerance 10 pixels and 10 degrees; no global alignment.",
+  "inventory_archives": 65,
+  "full_zip_archives": 37,
+  "remote_directory_archives": 28,
+  "total_cases": 1119,
+  "total_fragment_instances": 760171,
+  "preflight_eligible": 170,
+  "preflight_unsupported": 949,
+  "exact_run_status": {
+    "not_run_resource_limit": 946,
+    "completed": 25,
+    "not_run_pending": 145,
+    "error_actual_db2": 3
+  },
+  "measured": {
+    "cases": 25,
+    "inputs": 3350,
+    "genuine": 2874,
+    "correct": 2873,
+    "distractors": 476,
+    "distractors_rejected": 467,
+    "false_accepted": 9,
+    "strict_passes": 17,
+    "median_solver_wall_s": 120.11758264899981
+  },
+  "resurrection": {
+    "cases": 18,
+    "inputs": 2430,
+    "genuine": 2197,
+    "correct": 2197,
+    "distractors": 233,
+    "distractors_rejected": 231,
+    "false_accepted": 2,
+    "strict_passes": 16,
+    "median_solver_wall_s": 118.29695555049966
+  },
+  "db2_actual_runs": [
+    {
+      "id": 62,
+      "input_count": 600,
+      "protocol": "reference-assisted, no ML",
+      "commit": "46e801d",
+      "status": "error",
+      "error": "Scan mode supports up to 256 detected pieces; separate speckle and use smaller sets.",
+      "elapsed_seconds": 4.54674963600155
+    },
+    {
+      "id": 66,
+      "input_count": 2045,
+      "protocol": "reference-assisted, no ML",
+      "commit": "46e801d",
+      "status": "error",
+      "error": "Scan mode supports up to 256 detected pieces; separate speckle and use smaller sets.",
+      "elapsed_seconds": 3.9772436799994466
+    },
+    {
+      "id": 64,
+      "input_count": 1188,
+      "protocol": "reference-assisted, no ML",
+      "commit": "46e801d",
+      "status": "error",
+      "error": "Scan mode supports up to 256 detected pieces; separate speckle and use smaller sets.",
+      "elapsed_seconds": 4.8870394229998055
+    }
+  ],
+  "per_archive": [
+    {
+      "id": 0,
+      "name": "Tarquinia, Etruscan art, Three musicians",
+      "db": "DB1",
+      "inventory": "downloaded-zip",
+      "cases": 18,
+      "total_fragments": 5808,
+      "preflight_eligible": 1,
+      "run_status": {
+        "not_run_resource_limit": 17,
+        "completed": 1
+      },
+      "measured": {
+        "cases": 1,
+        "inputs": 107,
+        "genuine": 65,
+        "correct": 64,
+        "distractors": 42,
+        "distractors_rejected": 42,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": 319.3392516549993
+      }
+    },
+    {
+      "id": 1,
+      "name": "Giotto, Adoration of the Magi",
+      "db": "DB1",
+      "inventory": "downloaded-zip",
+      "cases": 18,
+      "total_fragments": 5224,
+      "preflight_eligible": 4,
+      "run_status": {
+        "not_run_resource_limit": 14,
+        "not_run_pending": 4
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 2,
+      "name": "Giotto, Entry into Jerusalem",
+      "db": "DB1",
+      "inventory": "downloaded-zip",
+      "cases": 18,
+      "total_fragments": 5175,
+      "preflight_eligible": 4,
+      "run_status": {
+        "not_run_resource_limit": 14,
+        "not_run_pending": 4
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 3,
+      "name": "Giotto, Kiss of Judas",
+      "db": "DB1",
+      "inventory": "http-range",
+      "cases": 18,
+      "total_fragments": 25892,
+      "preflight_eligible": 0,
+      "run_status": {
+        "not_run_resource_limit": 18
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 4,
+      "name": "Giotto, Lamentation of the Death of Christ",
+      "db": "DB1",
+      "inventory": "downloaded-zip",
+      "cases": 18,
+      "total_fragments": 5505,
+      "preflight_eligible": 4,
+      "run_status": {
+        "not_run_resource_limit": 14,
+        "not_run_pending": 4
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 5,
+      "name": "Giotto, Massacre of the Innocents",
+      "db": "DB1",
+      "inventory": "http-range",
+      "cases": 18,
+      "total_fragments": 20398,
+      "preflight_eligible": 0,
+      "run_status": {
+        "not_run_resource_limit": 18
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 6,
+      "name": "Giotto, Raising of Lazarus",
+      "db": "DB1",
+      "inventory": "downloaded-zip",
+      "cases": 18,
+      "total_fragments": 5531,
+      "preflight_eligible": 1,
+      "run_status": {
+        "not_run_resource_limit": 17,
+        "completed": 1
+      },
+      "measured": {
+        "cases": 1,
+        "inputs": 153,
+        "genuine": 110,
+        "correct": 110,
+        "distractors": 43,
+        "distractors_rejected": 43,
+        "false_accepted": 0,
+        "strict_passes": 1,
+        "median_solver_wall_s": 281.80872317300054
+      }
+    },
+    {
+      "id": 7,
+      "name": "Giotto, Ascension of St. John",
+      "db": "DB1",
+      "inventory": "http-range",
+      "cases": 18,
+      "total_fragments": 16425,
+      "preflight_eligible": 0,
+      "run_status": {
+        "not_run_resource_limit": 18
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 8,
+      "name": "Barna da Siena, The Annunciation",
+      "db": "DB1",
+      "inventory": "http-range",
+      "cases": 18,
+      "total_fragments": 40996,
+      "preflight_eligible": 0,
+      "run_status": {
+        "not_run_resource_limit": 18
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 9,
+      "name": "Barna da Siena, The Annunciation — detail",
+      "db": "DB1",
+      "inventory": "http-range",
+      "cases": 18,
+      "total_fragments": 14347,
+      "preflight_eligible": 0,
+      "run_status": {
+        "not_run_resource_limit": 18
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 10,
+      "name": "Andrea di Bonaiuto, Allegory of the Active and Triumphant Church and the Dominican order",
+      "db": "DB1",
+      "inventory": "http-range",
+      "cases": 18,
+      "total_fragments": 37923,
+      "preflight_eligible": 0,
+      "run_status": {
+        "not_run_resource_limit": 18
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 11,
+      "name": "Giovanni da Modena, The Appearance of the Star",
+      "db": "DB1",
+      "inventory": "downloaded-zip",
+      "cases": 18,
+      "total_fragments": 3175,
+      "preflight_eligible": 18,
+      "run_status": {
+        "not_run_pending": 18
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 12,
+      "name": "Giovanni da Modena, The Return of the Magi",
+      "db": "DB1",
+      "inventory": "downloaded-zip",
+      "cases": 18,
+      "total_fragments": 3031,
+      "preflight_eligible": 18,
+      "run_status": {
+        "not_run_pending": 17,
+        "completed": 1
+      },
+      "measured": {
+        "cases": 1,
+        "inputs": 131,
+        "genuine": 113,
+        "correct": 113,
+        "distractors": 18,
+        "distractors_rejected": 17,
+        "false_accepted": 1,
+        "strict_passes": 0,
+        "median_solver_wall_s": 90.62756214199908
+      }
+    },
+    {
+      "id": 13,
+      "name": "Giovanni da Modena, Journey of the Magi",
+      "db": "DB1",
+      "inventory": "downloaded-zip",
+      "cases": 18,
+      "total_fragments": 5651,
+      "preflight_eligible": 3,
+      "run_status": {
+        "not_run_resource_limit": 15,
+        "not_run_pending": 2,
+        "completed": 1
+      },
+      "measured": {
+        "cases": 1,
+        "inputs": 152,
+        "genuine": 104,
+        "correct": 104,
+        "distractors": 48,
+        "distractors_rejected": 47,
+        "false_accepted": 1,
+        "strict_passes": 0,
+        "median_solver_wall_s": 364.9812605419993
+      }
+    },
+    {
+      "id": 14,
+      "name": "Masolino da Panicale, The healing of the cripple and Raising of Tabitha",
+      "db": "DB1",
+      "inventory": "downloaded-zip",
+      "cases": 18,
+      "total_fragments": 9025,
+      "preflight_eligible": 0,
+      "run_status": {
+        "not_run_resource_limit": 18
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 15,
+      "name": "Masaccio, The Tribute Money",
+      "db": "DB1",
+      "inventory": "downloaded-zip",
+      "cases": 18,
+      "total_fragments": 10784,
+      "preflight_eligible": 0,
+      "run_status": {
+        "not_run_resource_limit": 18
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 16,
+      "name": "Masaccio, St. Peter Healing the Sick with His Shadow",
+      "db": "DB1",
+      "inventory": "downloaded-zip",
+      "cases": 18,
+      "total_fragments": 5364,
+      "preflight_eligible": 4,
+      "run_status": {
+        "not_run_resource_limit": 14,
+        "not_run_pending": 4
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 17,
+      "name": "Masaccio, Baptism of the neophytes",
+      "db": "DB1",
+      "inventory": "http-range",
+      "cases": 18,
+      "total_fragments": 8862,
+      "preflight_eligible": 0,
+      "run_status": {
+        "not_run_resource_limit": 18
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 18,
+      "name": "Masaccio, Raising of the Son of Teophilus and St. Peter Enthroned",
+      "db": "DB1",
+      "inventory": "downloaded-zip",
+      "cases": 18,
+      "total_fragments": 5908,
+      "preflight_eligible": 0,
+      "run_status": {
+        "not_run_resource_limit": 18
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 19,
+      "name": "Pisanello, Saint George and the Princess",
+      "db": "DB1",
+      "inventory": "downloaded-zip",
+      "cases": 18,
+      "total_fragments": 6678,
+      "preflight_eligible": 2,
+      "run_status": {
+        "not_run_resource_limit": 16,
+        "not_run_pending": 2
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 20,
+      "name": "Fra Angelico, Mocking of Christ",
+      "db": "DB1",
+      "inventory": "http-range",
+      "cases": 18,
+      "total_fragments": 23284,
+      "preflight_eligible": 0,
+      "run_status": {
+        "not_run_resource_limit": 18
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 21,
+      "name": "Fra Angelico, Presentation of Jesus at the Temple",
+      "db": "DB1",
+      "inventory": "http-range",
+      "cases": 18,
+      "total_fragments": 25626,
+      "preflight_eligible": 0,
+      "run_status": {
+        "not_run_resource_limit": 18
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 22,
+      "name": "Fra Angelico, Transfiguration",
+      "db": "DB1",
+      "inventory": "http-range",
+      "cases": 18,
+      "total_fragments": 27512,
+      "preflight_eligible": 0,
+      "run_status": {
+        "not_run_resource_limit": 18
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 23,
+      "name": "Fra Angelico, The Annunciation",
+      "db": "DB1",
+      "inventory": "http-range",
+      "cases": 18,
+      "total_fragments": 23016,
+      "preflight_eligible": 0,
+      "run_status": {
+        "not_run_resource_limit": 18
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 24,
+      "name": "Piero della Francesca, Resurrection",
+      "db": "DB1",
+      "inventory": "downloaded-zip",
+      "cases": 18,
+      "total_fragments": 2430,
+      "preflight_eligible": 18,
+      "run_status": {
+        "completed": 18
+      },
+      "measured": {
+        "cases": 18,
+        "inputs": 2430,
+        "genuine": 2197,
+        "correct": 2197,
+        "distractors": 233,
+        "distractors_rejected": 231,
+        "false_accepted": 2,
+        "strict_passes": 16,
+        "median_solver_wall_s": 118.29695555049966
+      }
+    },
+    {
+      "id": 25,
+      "name": "Piero della Francesca, Exaltation of the Cross",
+      "db": "DB1",
+      "inventory": "downloaded-zip",
+      "cases": 18,
+      "total_fragments": 6376,
+      "preflight_eligible": 4,
+      "run_status": {
+        "not_run_resource_limit": 14,
+        "not_run_pending": 4
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 26,
+      "name": "Piero della Francesca, Exaltation of the Cross — detail",
+      "db": "DB1",
+      "inventory": "downloaded-zip",
+      "cases": 18,
+      "total_fragments": 6941,
+      "preflight_eligible": 1,
+      "run_status": {
+        "not_run_resource_limit": 17,
+        "not_run_pending": 1
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 27,
+      "name": "Benozzo Gozzoli, Procession of the Youngest King",
+      "db": "DB1",
+      "inventory": "downloaded-zip",
+      "cases": 18,
+      "total_fragments": 7286,
+      "preflight_eligible": 2,
+      "run_status": {
+        "not_run_resource_limit": 16,
+        "not_run_pending": 2
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 28,
+      "name": "Andrea Mantegna, The Martyrdom and transporting the body of Saint Christopher",
+      "db": "DB1",
+      "inventory": "http-range",
+      "cases": 18,
+      "total_fragments": 16464,
+      "preflight_eligible": 0,
+      "run_status": {
+        "not_run_resource_limit": 18
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 29,
+      "name": "Andrea Mantegna, Camera picta",
+      "db": "DB1",
+      "inventory": "downloaded-zip",
+      "cases": 18,
+      "total_fragments": 8469,
+      "preflight_eligible": 0,
+      "run_status": {
+        "not_run_resource_limit": 18
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 30,
+      "name": "Sandro Botticcelli, Punishment of the Rebels",
+      "db": "DB1",
+      "inventory": "http-range",
+      "cases": 18,
+      "total_fragments": 14955,
+      "preflight_eligible": 0,
+      "run_status": {
+        "not_run_resource_limit": 18
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 31,
+      "name": "Filippo Lippi, Disputation in the Synagogue",
+      "db": "DB1",
+      "inventory": "downloaded-zip",
+      "cases": 18,
+      "total_fragments": 4854,
+      "preflight_eligible": 6,
+      "run_status": {
+        "not_run_resource_limit": 12,
+        "not_run_pending": 6
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 32,
+      "name": "Filippino Lippi, Disputation with Simon Magus and Crucifixion of St. Peter",
+      "db": "DB1",
+      "inventory": "downloaded-zip",
+      "cases": 18,
+      "total_fragments": 10204,
+      "preflight_eligible": 0,
+      "run_status": {
+        "not_run_resource_limit": 18
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 33,
+      "name": "Filippino Lippi e Masaccio, Saint Peter sitting in his chair",
+      "db": "DB1",
+      "inventory": "downloaded-zip",
+      "cases": 18,
+      "total_fragments": 9782,
+      "preflight_eligible": 1,
+      "run_status": {
+        "not_run_resource_limit": 17,
+        "not_run_pending": 1
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 34,
+      "name": "Pietro Perugino, Christ Handing the Keys to Saint Peter",
+      "db": "DB1",
+      "inventory": "http-range",
+      "cases": 18,
+      "total_fragments": 14660,
+      "preflight_eligible": 0,
+      "run_status": {
+        "not_run_resource_limit": 18
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 35,
+      "name": "Pietro Perugino, Baptism of Christ",
+      "db": "DB1",
+      "inventory": "http-range",
+      "cases": 18,
+      "total_fragments": 14315,
+      "preflight_eligible": 0,
+      "run_status": {
+        "not_run_resource_limit": 18
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 36,
+      "name": "Domenico Ghirlandaio, Slaughter of the Innocents",
+      "db": "DB1",
+      "inventory": "http-range",
+      "cases": 18,
+      "total_fragments": 23218,
+      "preflight_eligible": 0,
+      "run_status": {
+        "not_run_resource_limit": 18
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 37,
+      "name": "Leonardo da Vinci, The last supper",
+      "db": "DB1",
+      "inventory": "http-range",
+      "cases": 18,
+      "total_fragments": 12481,
+      "preflight_eligible": 0,
+      "run_status": {
+        "not_run_resource_limit": 18
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 38,
+      "name": "Luca Signorelli, The Conversion of Saint Paul",
+      "db": "DB1",
+      "inventory": "downloaded-zip",
+      "cases": 18,
+      "total_fragments": 7315,
+      "preflight_eligible": 2,
+      "run_status": {
+        "not_run_resource_limit": 16,
+        "not_run_pending": 2
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 39,
+      "name": "Luca Signorelli, Benedict Drives the Devil out of a Stone — detail",
+      "db": "DB1",
+      "inventory": "http-range",
+      "cases": 18,
+      "total_fragments": 12190,
+      "preflight_eligible": 0,
+      "run_status": {
+        "not_run_resource_limit": 18
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 40,
+      "name": "Luca Signorelli, The Damned Cast into Hell",
+      "db": "DB1",
+      "inventory": "downloaded-zip",
+      "cases": 18,
+      "total_fragments": 4683,
+      "preflight_eligible": 8,
+      "run_status": {
+        "not_run_resource_limit": 10,
+        "not_run_pending": 7,
+        "completed": 1
+      },
+      "measured": {
+        "cases": 1,
+        "inputs": 134,
+        "genuine": 88,
+        "correct": 88,
+        "distractors": 46,
+        "distractors_rejected": 44,
+        "false_accepted": 2,
+        "strict_passes": 0,
+        "median_solver_wall_s": 118.19177534899973
+      }
+    },
+    {
+      "id": 41,
+      "name": "Michelangelo, The Deluge — detail",
+      "db": "DB1",
+      "inventory": "http-range",
+      "cases": 18,
+      "total_fragments": 26991,
+      "preflight_eligible": 0,
+      "run_status": {
+        "not_run_resource_limit": 18
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 42,
+      "name": "Michelangelo, Ezekiel",
+      "db": "DB1",
+      "inventory": "http-range",
+      "cases": 18,
+      "total_fragments": 15681,
+      "preflight_eligible": 0,
+      "run_status": {
+        "not_run_resource_limit": 18
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 43,
+      "name": "Michelangelo, The creation of Adam",
+      "db": "DB1",
+      "inventory": "downloaded-zip",
+      "cases": 18,
+      "total_fragments": 6978,
+      "preflight_eligible": 2,
+      "run_status": {
+        "not_run_resource_limit": 16,
+        "not_run_pending": 2
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 44,
+      "name": "Michelangelo, The Last Judgement",
+      "db": "DB1",
+      "inventory": "http-range",
+      "cases": 18,
+      "total_fragments": 37035,
+      "preflight_eligible": 0,
+      "run_status": {
+        "not_run_resource_limit": 18
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 45,
+      "name": "Tiziano, The Healing of the Wrathful Son",
+      "db": "DB1",
+      "inventory": "downloaded-zip",
+      "cases": 18,
+      "total_fragments": 7075,
+      "preflight_eligible": 2,
+      "run_status": {
+        "not_run_resource_limit": 16,
+        "not_run_pending": 2
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 46,
+      "name": "Raffaello Sanzio, The School of Athens",
+      "db": "DB1",
+      "inventory": "downloaded-zip",
+      "cases": 18,
+      "total_fragments": 6539,
+      "preflight_eligible": 1,
+      "run_status": {
+        "not_run_resource_limit": 17,
+        "not_run_pending": 1
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 47,
+      "name": "Raffaello Sanzio, The Triumph of Galatea",
+      "db": "DB1",
+      "inventory": "http-range",
+      "cases": 18,
+      "total_fragments": 10736,
+      "preflight_eligible": 0,
+      "run_status": {
+        "not_run_resource_limit": 18
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 48,
+      "name": "Bernardino Lanzani, Saint Anthony protects the city of Pavia during the siege of the French in 1522",
+      "db": "DB1",
+      "inventory": "http-range",
+      "cases": 18,
+      "total_fragments": 19613,
+      "preflight_eligible": 0,
+      "run_status": {
+        "not_run_resource_limit": 18
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 49,
+      "name": "Giorgio Vasari, Paul III Farnese Directing the Continuance of St Peter’s",
+      "db": "DB1",
+      "inventory": "downloaded-zip",
+      "cases": 18,
+      "total_fragments": 4914,
+      "preflight_eligible": 5,
+      "run_status": {
+        "not_run_resource_limit": 13,
+        "not_run_pending": 4,
+        "completed": 1
+      },
+      "measured": {
+        "cases": 1,
+        "inputs": 115,
+        "genuine": 85,
+        "correct": 85,
+        "distractors": 30,
+        "distractors_rejected": 28,
+        "false_accepted": 2,
+        "strict_passes": 0,
+        "median_solver_wall_s": 142.23182864400042
+      }
+    },
+    {
+      "id": 50,
+      "name": "Giorgio Vasari, Birth of Venus",
+      "db": "DB1",
+      "inventory": "http-range",
+      "cases": 18,
+      "total_fragments": 17202,
+      "preflight_eligible": 0,
+      "run_status": {
+        "not_run_resource_limit": 18
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 51,
+      "name": "Giorgio Vasari, Capture of Porto Ercole",
+      "db": "DB1",
+      "inventory": "http-range",
+      "cases": 18,
+      "total_fragments": 14767,
+      "preflight_eligible": 0,
+      "run_status": {
+        "not_run_resource_limit": 18
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 52,
+      "name": "Paolo Veronese, Figures behind the Parapet",
+      "db": "DB1",
+      "inventory": "downloaded-zip",
+      "cases": 18,
+      "total_fragments": 3152,
+      "preflight_eligible": 18,
+      "run_status": {
+        "not_run_pending": 17,
+        "completed": 1
+      },
+      "measured": {
+        "cases": 1,
+        "inputs": 128,
+        "genuine": 112,
+        "correct": 112,
+        "distractors": 16,
+        "distractors_rejected": 15,
+        "false_accepted": 1,
+        "strict_passes": 0,
+        "median_solver_wall_s": 113.81832793600006
+      }
+    },
+    {
+      "id": 53,
+      "name": "Paolo Veronese, Landscape",
+      "db": "DB1",
+      "inventory": "downloaded-zip",
+      "cases": 18,
+      "total_fragments": 3227,
+      "preflight_eligible": 18,
+      "run_status": {
+        "not_run_pending": 18
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 54,
+      "name": "Luca Longhi, Wedding at Cana",
+      "db": "DB1",
+      "inventory": "http-range",
+      "cases": 18,
+      "total_fragments": 7795,
+      "preflight_eligible": 0,
+      "run_status": {
+        "not_run_resource_limit": 18
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 55,
+      "name": "Cesare Nebbia, Pilgrimage of Charles to Turin to worship the Shroud and meeting with the dukes of Savoy",
+      "db": "DB1",
+      "inventory": "downloaded-zip",
+      "cases": 18,
+      "total_fragments": 6436,
+      "preflight_eligible": 2,
+      "run_status": {
+        "not_run_resource_limit": 16,
+        "not_run_pending": 2
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 56,
+      "name": "Cesare Nebbia, Relocation of the Holy Bodies",
+      "db": "DB1",
+      "inventory": "http-range",
+      "cases": 18,
+      "total_fragments": 13538,
+      "preflight_eligible": 0,
+      "run_status": {
+        "not_run_resource_limit": 18
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 57,
+      "name": "Cesare Nebbia, The Plague of Milan",
+      "db": "DB1",
+      "inventory": "downloaded-zip",
+      "cases": 18,
+      "total_fragments": 7270,
+      "preflight_eligible": 1,
+      "run_status": {
+        "not_run_resource_limit": 17,
+        "not_run_pending": 1
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 58,
+      "name": "Federico Zuccari, The Cardinal's hat conferred on Saint Charles Borromeo",
+      "db": "DB1",
+      "inventory": "http-range",
+      "cases": 18,
+      "total_fragments": 15452,
+      "preflight_eligible": 0,
+      "run_status": {
+        "not_run_resource_limit": 18
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 59,
+      "name": "Giovanni Battista Tiepolo, The Institution of the Rosary",
+      "db": "DB1",
+      "inventory": "downloaded-zip",
+      "cases": 18,
+      "total_fragments": 5791,
+      "preflight_eligible": 1,
+      "run_status": {
+        "not_run_resource_limit": 17,
+        "not_run_pending": 1
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 60,
+      "name": "Giovanni Battista Tiepolo, The Institution of the Rosary — detail",
+      "db": "DB1",
+      "inventory": "downloaded-zip",
+      "cases": 18,
+      "total_fragments": 3292,
+      "preflight_eligible": 15,
+      "run_status": {
+        "not_run_pending": 15,
+        "not_run_resource_limit": 3
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 61,
+      "name": "Giovanni Battista Tiepolo, The Banquet of Cleopatra",
+      "db": "DB1",
+      "inventory": "downloaded-zip",
+      "cases": 18,
+      "total_fragments": 5091,
+      "preflight_eligible": 4,
+      "run_status": {
+        "not_run_resource_limit": 14,
+        "not_run_pending": 4
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 62,
+      "name": "Domenichino, The Virgin and the Unicorn",
+      "db": "DB2",
+      "inventory": "downloaded-zip",
+      "cases": 1,
+      "total_fragments": 600,
+      "preflight_eligible": 0,
+      "run_status": {
+        "error_actual_db2": 1
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 64,
+      "name": "Federico Zuccari, The Cardinal's hat conferred on Saint Charles Borromeo",
+      "db": "DB2",
+      "inventory": "downloaded-zip",
+      "cases": 1,
+      "total_fragments": 1188,
+      "preflight_eligible": 0,
+      "run_status": {
+        "error_actual_db2": 1
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    },
+    {
+      "id": 66,
+      "name": "Andrea di Bonaiuto, Allegory of the Active and Triumphant Church and the Dominican order",
+      "db": "DB2",
+      "inventory": "downloaded-zip",
+      "cases": 1,
+      "total_fragments": 2045,
+      "preflight_eligible": 0,
+      "run_status": {
+        "error_actual_db2": 1
+      },
+      "measured": {
+        "cases": 0,
+        "inputs": 0,
+        "genuine": 0,
+        "correct": 0,
+        "distractors": 0,
+        "distractors_rejected": 0,
+        "false_accepted": 0,
+        "strict_passes": 0,
+        "median_solver_wall_s": null
+      }
+    }
+  ],
+  "important": "Inventory is complete; actual reconstruction results are partial. Pending rows have no inferred accuracy. Concurrent wall-clock runtimes are not single-thread speed benchmarks."
+}
