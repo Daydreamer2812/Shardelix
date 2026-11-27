@@ -50,7 +50,7 @@ python -m shardelix studio
 
 In Reconstruction enable **Use original image for matching (optional)**. Upload a single-case official ZIP (its `frag_eroded/` folder is recognized, not the intact artwork or annotations), or ZIP the PNGs of one DB1 case. Separately select the official original artwork as **Matching reference image**. Use Balanced first (indexed plus bounded automatic rescue); High accuracy enables broader experimental deep micro-fragment search. An archive with several DB1 configurations requires choosing a case, not mixing them. For batch testing use the script below.
 
-Native guardrails: 8192 fragments, 64 MP reference, 330 MP decoded input. Browser: 4096 fragments, 8 MP reference, 24 MP decoded input, 32 MiB upload. Native upload limit: 200 MiB. These are guards, not certified throughput; RAM and real browser runtime can constrain lower. The largest verified case here is 2045 pieces. Original-scale input must be preserved. Native is recommended for DB2. The unified framework now integrates reference-assisted and blind workflows in main.
+Native guardrails: 8192 fragments, 64 MP reference, 330 MP decoded input. Browser: 4096 fragments, 8 MP reference, 24 MP decoded input, 32 MiB upload. Native Studio upload limit is estimated from available disk and parser RAM. These are guards, not certified throughput; RAM and real browser runtime can constrain lower. The largest verified case here is 2045 pieces. Original-scale input must be preserved. Native is recommended for DB2. The unified framework now integrates reference-assisted and blind workflows in main.
 
 ## Reproduce
 

@@ -72,7 +72,7 @@ If the available fragments do not uniquely determine the original arrangement, S
 
 Shardelix (formerly FragmentLab) brings **fragment generation, blind reconstruction, optional reference-assisted registration, geometric verification and reproducible benchmarking** into a single research framework.
 
-- **Beyond rectangular puzzles:** supports grids, vertical and horizontal strips, jagged, wavy, jigsaw and mixed irregular digital cuts. Metadata-free irregular import uses sparse lattice/SE(2) matching with up to 4,096 native / 1,024 browser pieces; large damaged physical scans remain experimental. [Scaling evidence](docs/IRREGULAR_SCALE.md).
+- **Beyond rectangular puzzles:** supports grids, vertical and horizontal strips, jagged, wavy, jigsaw and mixed irregular digital cuts. Metadata-free irregular import uses sparse lattice/SE(2) matching with adaptive memory-aware native matching (outer ZIP ceiling 262,144; browser ceiling 4,096) and no fixed 4,096-piece scan-algorithm ceiling. Large damaged physical scans remain experimental. [Resource measurements](docs/RESOURCE_SCALING.md).
 - **Unknown poses and incomplete inputs:** handles independent quarter-turns, experimental continuous in-plane rotations and missing fragments, subject to observable constraints.
 - **Classical, explainable matching:** combines complementary boundary geometry, appearance continuity, sparse candidate graphs and consistency checks without neural training.
 - **Scalable CPU-first implementation:** selected computational kernels are accelerated in C++20, with a Python reference backend and WebAssembly deployment.
@@ -184,9 +184,10 @@ Batch benchmark repeats the same workflow with selected cut families, counts, ro
 | Resource guard | Native | Browser |
 |:--|--:|--:|
 | Uniform grid fragments | 262,144 | 4,096 |
-| Strips / irregular fragments | 8,192 / 4,096 | 4,096 |
-| Canvas pixels | 110 million | 8 million |
-| Upload size (Studio) | 200 MiB | 32 MiB |
+| Generated / known-canvas strips and irregular fragments | 8,192 / 4,096 | 4,096 |
+| Metadata-free irregular / scan import | Adaptive; outer ceiling 262,144 | 4,096 |
+| Canvas pixels | 110 million digital; adaptive scan route | 8 million |
+| Upload size (Studio) | Adaptive disk/RAM | 32 MiB |
 | Batch cases | 64 | 24 |
 
 These are **protective resource ceilings**, not measured capacity or accuracy guarantees. Browser capacity depends on device memory and input geometry. PDF input is optional and native-only (`pip install -e ".[pdf]"`).

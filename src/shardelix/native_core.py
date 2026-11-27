@@ -26,6 +26,10 @@ if _mode!="python":
                 lib.fl_profiles.argtypes=[ptr,I,I,I,ptr];lib.fl_profiles.restype=I
                 lib.fl_loop_votes.argtypes=[ptr,I,I,ptr];lib.fl_loop_votes.restype=I
                 lib.fl_rerank.argtypes=[ptr,ptr,ptr,ptr,ptr,I,I,I,I,I,ptr];lib.fl_rerank.restype=I
+                if hasattr(lib,"fl_arc_votes"):
+                    lib.fl_arc_votes.argtypes=[ptr,I,I,I,I,I,I];lib.fl_arc_votes.restype=ptr
+                if hasattr(lib,"fl_lattice_contact"):
+                    lib.fl_lattice_contact.argtypes=[ptr,I,I,ptr,I,I,I,I,I,ptr];lib.fl_lattice_contact.restype=I
                 _lib=lib;break
             except OSError:pass
 def backend():
@@ -96,3 +100,38 @@ def profiles(pieces):
                     row.append((edge[:,:3],edge[:,3:]))
                 result[i]=row
     return [edge for p in result for edge in p]
+
+def arc_votes(packed,k,bucket,shards,record_cap,vote_cap):
+    """Compact exact chain-code votes; None means kernel not available."""
+    a=np.ascontiguousarray(packed,dtype=np.int32)
+    if _lib is not None and hasattr(_lib,"fl_arc_votes"):
+        p=_lib.fl_arc_votes(_ptr(a),a.size,k,bucket,shards,record_cap,vote_cap)
+        if not p:raise MemoryError("Arc index exceeded its allocated record/vote budget")
+        try:
+            n=C.c_int32.from_address(p).value
+            return np.ctypeslib.as_array((C.c_int32*n).from_address(p))[1:].reshape(-1,6).copy()
+        finally:_lib.fl_free(p)
+    if _bridge is not None and hasattr(_bridge,"arcVotes"):
+        result=_bridge.arcVotes(_js(a),a.size,k,bucket,shards,record_cap,vote_cap)
+        raw=_array(result,np.int32) if result is not None else np.empty(0,np.int32)
+        if not raw.size:raise MemoryError("Arc index exceeded its allocated record/vote budget")
+        return raw[1:].reshape(-1,6)
+    return None
+
+def arc_votes_available():
+    return bool((_lib is not None and hasattr(_lib,"fl_arc_votes")) or
+                (_bridge is not None and hasattr(_bridge,"arcVotes")))
+
+def lattice_contact(a,b,r,t):
+    """Return (contact count, median RGB error, p80 error), False if invalid."""
+    if _lib is not None and hasattr(_lib,"fl_lattice_contact"):
+        A=np.ascontiguousarray(a,dtype=np.uint8);B=np.ascontiguousarray(b,dtype=np.uint8)
+        out=np.empty(3,np.float64)
+        valid=_lib.fl_lattice_contact(_ptr(A),*A.shape[:2],_ptr(B),*B.shape[:2],
+                                      int(r),int(t[0]),int(t[1]),_ptr(out))
+        return tuple(map(float,out)) if valid else False
+    if _bridge is not None and hasattr(_bridge,"latticeContact"):
+        A=np.ascontiguousarray(a,dtype=np.uint8);B=np.ascontiguousarray(b,dtype=np.uint8)
+        raw=_array(_bridge.latticeContact(_js(A),*A.shape[:2],_js(B),*B.shape[:2],int(r),int(t[0]),int(t[1])),np.float64)
+        return tuple(map(float,raw)) if raw.size else False
+    return None

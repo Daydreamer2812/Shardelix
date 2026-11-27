@@ -10,7 +10,8 @@ from collections import defaultdict
 import math
 import numpy as np
 
-from .geometry import R, propose
+from .geometry import R, propose, contours
+from .resource_budget import resource_budget
 
 
 def _integer_parts(p, q, r, t):
@@ -31,20 +32,26 @@ def _overlap_slice(a,b,x,y):
 
 def _exact_contact(p,q,r,t,votes):
     """Verify zero mask collision and observed four-neighbor color continuity."""
-    a,b,x,y=_integer_parts(p,q,r,t)
-    region=_overlap_slice(a,b,x,y)
-    if region is not None and np.any((region[0][...,3]>0)&(region[1][...,3]>0)):
-        return None
-    errors=[]
-    for dx,dy in ((1,0),(-1,0),(0,1),(0,-1)):
-        region=_overlap_slice(a,b,x+dx,y+dy)
-        if region is None:continue
-        aa,bb=region;m=(aa[...,3]>0)&(bb[...,3]>0)
-        if m.any():
-            errors.append(np.mean(np.abs(aa[m,:3].astype(np.int16)-bb[m,:3]),axis=1))
-    if not errors:return None
-    errors=np.concatenate(errors)
-    length=len(errors);med=float(np.median(errors));upper=float(np.percentile(errors,80))
+    from ..native_core import lattice_contact
+    native=lattice_contact(p.rgba,q.rgba,r,t)
+    if native is False:return None
+    if native is not None:
+        length,med,upper=native
+    else:
+        a,b,x,y=_integer_parts(p,q,r,t)
+        region=_overlap_slice(a,b,x,y)
+        if region is not None and np.any((region[0][...,3]>0)&(region[1][...,3]>0)):
+            return None
+        errors=[]
+        for dx,dy in ((1,0),(-1,0),(0,1),(0,-1)):
+            region=_overlap_slice(a,b,x+dx,y+dy)
+            if region is None:continue
+            aa,bb=region;m=(aa[...,3]>0)&(bb[...,3]>0)
+            if m.any():
+                errors.append(np.mean(np.abs(aa[m,:3].astype(np.int16)-bb[m,:3]),axis=1))
+        if not errors:return None
+        errors=np.concatenate(errors)
+        length=len(errors);med=float(np.median(errors));upper=float(np.percentile(errors,80))
     # Exact shape votes are necessary but not sufficient. Short repeated
     # patterns and high seam discontinuity are not reliable large-scale joins.
     if length<12 or votes<3 or med>32 or upper>55:return None
@@ -55,38 +62,86 @@ def _exact_contact(p,q,r,t,votes):
                   "seam_bend_rms":0.0,"votes":int(votes),"exact_lattice":True}
 
 
-def lattice_candidates(pieces, update=lambda _:None, *, degree=12):
-    """Get sparse rigid translations from complementary integer boundary arcs.
+def _packed_contours(pieces,budget):
+    # Grow one contiguous byte buffer and expose it as a NumPy view. A list
+    # of individual arrays followed by concatenate held *two* complete
+    # contour streams and became the bottleneck on 100k fragments.
+    data=bytearray()
+    # A browser needs temporary bridge copies, but not a fixed third of RAM:
+    # reserve raster storage and bridge copies first, then use the remaining
+    # budget for index shards and votes.
+    browser_pack_limit=max(0,(budget.memory_bytes-sum(p.rgba.nbytes for p in pieces)-16*1024**2)//4) if budget.browser else None
+    for i,p in enumerate(pieces):
+        for v,d in contours(p.mask):
+            row=np.empty(2+3*len(d),np.int32)
+            row[:2]=i,len(d);row[2:].reshape(-1,3)[:,:2]=v;row[4::3]=d
+            needed=len(data)+row.nbytes
+            # Account for bytearray growth; WASM additionally transfers the
+            # whole contiguous stream to its separate linear memory.
+            if (needed>browser_pack_limit if budget.browser else needed*1.15>budget.packed_bytes):
+                raise MemoryError("Packed contours exceed available memory budget; reduce scan resolution or use a larger-memory runner")
+            data.extend(memoryview(row).cast("B"))
+    return np.frombuffer(data,dtype=np.int32)
 
-    Bounded arc buckets suppress frequent nondistinctive patterns. Votes from
-    long and short windows are combined by maximum, not double-counted.
-    """
+
+def lattice_candidates(pieces, update=lambda _:None, *, degree=12, budget=None):
+    """Compact sparse exact boundary votes; bounded memory and degree."""
+    from ..native_core import arc_votes,arc_votes_available
+    budget=budget or resource_budget()
     median=float(np.median([min(p.rgba.shape[:2]) for p in pieces]))
     windows=(32,20) if median>=36 else (24,14)
-    hypotheses={}
+    native=arc_votes_available()
+    record_cap,vote_cap=budget.arc_records,budget.vote_entries
+    if native:
+        packed=_packed_contours(pieces,budget)
+        if budget.browser:
+            remain=budget.memory_bytes-sum(p.rgba.nbytes for p in pieces)-3*packed.nbytes-24*1024**2
+            if remain<8*1024**2:raise MemoryError("Browser contour transfer leaves insufficient memory for the arc index")
+            record_cap=max(1024,min(record_cap,int(remain*.45)//48))
+            vote_cap=max(1024,min(vote_cap,int(remain*.45)//72))
+        shards=max(1,math.ceil((len(packed)/3)/(record_cap*.85)))
+    elif sum(2*sum(p.rgba.shape[:2]) for p in pieces)*224>budget.memory_bytes//2:
+        raise MemoryError("Python arc index would exceed the memory budget; build the native core or reduce input resolution")
+    results=[];passes=[]
     for k in windows:
         update(f"Indexing exact torn edges (arc window {k})")
-        for votes,i,j,r,tx,ty in propose(pieces,k,True,max_bucket=6):
-            if votes<3:break
-            key=(i,j,r,tx,ty)
-            hypotheses[key]=max(hypotheses.get(key,0),votes)
-    # Bound verification to top incident hypotheses on *either* endpoint;
-    # otherwise a large neighbor can starve a small fragment of candidates.
-    top=defaultdict(list)
-    for key,v in hypotheses.items():
-        i,j,*_=key
-        top[i].append((v,key));top[j].append((v,key))
-    chosen={key for near in top.values() for _,key in sorted(near,reverse=True)[:degree]}
+        if native and len(packed):
+            for cap,sh in ((6,shards),(6,2*shards),(4,2*shards),(3,2*shards),(2,2*shards)):
+                try:
+                    rows=arc_votes(packed,k,cap,sh,record_cap,vote_cap);break
+                except MemoryError:continue
+            else:raise MemoryError("Exact arc index exhausted its adaptive record/vote budget")
+            passes.append({"window":k,"shards":sh,"bucket":cap,"record_cap":record_cap,"vote_cap":vote_cap})
+        elif native:
+            rows=np.empty((0,6),np.int32)
+        else:
+            rows=np.asarray([q for q in propose(pieces,k,True,max_bucket=6) if q[0]>=3],np.int32).reshape(-1,6)
+        results.append(rows)
+    rows=np.concatenate(results)
+    if len(rows):
+        # Preserve deterministic legacy ordering, including top-degree ties.
+        order=np.lexsort((-rows[:,0],rows[:,5],rows[:,4],rows[:,3],rows[:,2],rows[:,1]))
+        rows=rows[order];rows=rows[np.r_[True,np.any(rows[1:,1:]!=rows[:-1,1:],axis=1)]]
+        owners=np.r_[rows[:,1],rows[:,2]]
+        ids=np.tile(np.arange(len(rows),dtype=np.int32),2)
+        order=np.lexsort((-ids,-rows[ids,0],owners))
+        owner=owners[order];idx=np.arange(len(order))
+        starts=np.maximum.accumulate(np.where(np.r_[True,owner[1:]!=owner[:-1]],idx,0))
+        chosen=np.unique(ids[order[idx-starts<degree]])
+        chosen=chosen[np.lexsort((chosen,-rows[chosen,0]))]
+    else:chosen=np.empty(0,np.int32)
     candidates=[]
-    for key in sorted(chosen,key=lambda key:(-hypotheses[key],key)):
-        i,j,r,tx,ty=key
+    for idx in chosen:
+        votes,i,j,r,tx,ty=map(int,rows[idx])
         t=np.array([tx,ty],float)
-        match=_exact_contact(pieces[i],pieces[j],r,t,hypotheses[key])
+        match=_exact_contact(pieces[i],pieces[j],r,t,votes)
         if match:
             score,info=match
             candidates.append((score,i,j,R[r].astype(float),t,info))
-    return candidates,{"arc_windows":list(windows),"voted_poses":len(hypotheses),
-                       "verified_poses":len(chosen),"verified_pairs":len({key[:2] for key in chosen}),"accepted_candidates":len(candidates)}
+    verified_pairs=len(np.unique(rows[chosen,1:3],axis=0))
+    return candidates,{"arc_windows":list(windows),"arc_backend":"compact-native" if native else "python",
+                       "arc_passes":passes,"packed_contour_bytes":packed.nbytes if native else None,"voted_poses":len(rows),"verified_poses":len(chosen),
+                       "verified_pairs":verified_pairs,"accepted_candidates":len(candidates)}
 
 
 def lattice_color_rescue(pieces,existing,update=lambda _:None,*,degree=12):
@@ -259,3 +314,81 @@ def merge_spatial(shapes,candidates,overlap,*,strict=False):
         if len(groups)==1:break
     result=sorted(groups.values(),key=lambda g:(-len(g),-sum(shapes[k].fragment.mask.sum() for k in g)))
     return result,joins,{"spatial_overlap_tests":checks,"collision_rejections":rejected}
+
+
+def _rot(r,x,y):
+    return ((x,y),(-y,x),(-x,-y),(y,-x))[r]
+
+
+def _quarter(matrix):
+    x,y=matrix[0,0],matrix[1,0]
+    return 0 if x>.5 else 1 if y>.5 else 2 if x<-.5 else 3
+
+
+def lattice_box(piece,pose):
+    r,x,y=pose;h,w=piece.rgba.shape[:2]
+    a,b,c,d=((0,0,w,h),(-h,0,0,w),(-w,-h,0,0),(0,-w,h,0))[r]
+    return x+a,y+b,x+c,y+d
+
+
+def merge_lattice(pieces,candidates,*,pixel_cap=None):
+    """Integer SE(2), union by size, exact overlap; allocate spatial bins lazily."""
+    n=len(pieces);owners=list(range(n));groups={i:{i:(0,0,0)} for i in range(n)}
+    cell=max(8,int(np.median([min(p.rgba.shape[:2]) for p in pieces])))
+    boxes=[lattice_box(p,(0,0,0)) for p in pieces]
+    extents=dict(enumerate(boxes))
+    indices={};large_boxes={}
+    joins=[];checks=0;rejected=0;canvas_rejections=0
+    def cells(b):
+        x,y,u,v=b;x//=cell;y//=cell;u=(u-1)//cell;v=(v-1)//cell
+        if (u-x+1)*(v-y+1)>256:return None
+        return [(a,b) for a in range(x,u+1) for b in range(y,v+1)]
+    def add(owner,k,b):
+        keys=cells(b)
+        if keys is None:large_boxes.setdefault(owner,[]).append(k)
+        else:
+            for key in keys:indices[owner].setdefault(key,[]).append(k)
+    for score,i,j,rr,tt,info in sorted(candidates,key=lambda c:-c[0]):
+        x,y=owners[i],owners[j]
+        if x==y:continue
+        A,B=groups[x],groups[y];ri,xi,yi=A[i];rj,xj,yj=B[j]
+        q=(ri+_quarter(rr)-rj)%4
+        u,v=_rot(ri,int(round(tt[0])),int(round(tt[1])));a,b=_rot(q,xj,yj);u+=xi-a;v+=yi-b
+        if len(A)<len(B):
+            x,y=y,x;A,B=B,A;q=(-q)%4;u,v=_rot(q,-u,-v)
+        mapped={}
+        for k,(r,px,py) in B.items():
+            ax,ay=_rot(q,px,py);mapped[k]=((q+r)%4,ax+u,ay+v)
+        bb={k:lattice_box(pieces[k],pose) for k,pose in mapped.items()}
+        E=extents[x]
+        extent=(min(E[0],min(b[0] for b in bb.values())),min(E[1],min(b[1] for b in bb.values())),max(E[2],max(b[2] for b in bb.values())),max(E[3],max(b[3] for b in bb.values())))
+        if pixel_cap is not None and (extent[2]-extent[0]+6)*(extent[3]-extent[1]+6)>pixel_cap:
+            canvas_rejections+=1;continue
+        if x not in indices:
+            indices[x]={}
+            for k in A:add(x,k,boxes[k])
+        collision=False
+        for l,box in bb.items():
+            keys=cells(box)
+            if keys is None:hits=A
+            else:
+                hits=set(large_boxes.get(x,()))
+                for key in keys:hits.update(indices[x].get(key,()))
+            for k in hits:
+                old=boxes[k]
+                lft,top=max(box[0],old[0]),max(box[1],old[1]);rt,bot=min(box[2],old[2]),min(box[3],old[3])
+                if lft>=rt or top>=bot:continue
+                checks+=1
+                ma=np.rot90(pieces[k].rgba[...,3],-A[k][0]%4)[top-old[1]:bot-old[1],lft-old[0]:rt-old[0]]
+                mb=np.rot90(pieces[l].rgba[...,3],-mapped[l][0]%4)[top-box[1]:bot-box[1],lft-box[0]:rt-box[0]]
+                if np.any((ma>0)&(mb>0)):collision=True;break
+            if collision:break
+        if collision:rejected+=1;continue
+        A.update(mapped);extents[x]=extent
+        for k,b in bb.items():boxes[k]=b;add(x,k,b);owners[k]=x
+        del groups[y];del extents[y];indices.pop(y,None);large_boxes.pop(y,None)
+        joins.append({"a":pieces[i].id,"b":pieces[j].id,"score":float(score),**info})
+        if len(groups)==1:break
+    result=sorted(groups.values(),key=lambda g:(-len(g),-sum(np.count_nonzero(pieces[k].rgba[...,3]) for k in g)))
+    result=[{k:(R[r].astype(float),np.array([x,y],float)) for k,(r,x,y) in g.items()} for g in result]
+    return result,joins,{"spatial_overlap_tests":checks,"collision_rejections":rejected,"canvas_budget_rejections":canvas_rejections,"integer_merge":True}

@@ -211,7 +211,7 @@ def reconstruct_files(fragments, output, *, matching_reference=None, ground_trut
     """
     import shutil
     import tempfile
-    from .workflow12 import IMAGE_EXT, MAX_UPLOAD, run_job
+    from .workflow12 import IMAGE_EXT, native_upload_limit, run_job
 
     if profile not in {"fast", "balanced", "accurate"}:
         raise ValueError("Choose fast, balanced or accurate")
@@ -235,7 +235,7 @@ def reconstruct_files(fragments, output, *, matching_reference=None, ground_trut
             (("matching_reference", matching_reference), ("truth", ground_truth)) if p is not None]
     if any(not p.is_file() for _, p in refs):
         raise ValueError("Reference/evaluation file does not exist")
-    if sum(p.stat().st_size for p in files + [p for _, p in refs]) > MAX_UPLOAD:
+    if sum(p.stat().st_size for p in files + [p for _, p in refs]) > native_upload_limit():
         raise ValueError("Combined input exceeds native upload budget")
     output = Path(output)
     if output.exists() and (not output.is_dir() or any(output.iterdir())):

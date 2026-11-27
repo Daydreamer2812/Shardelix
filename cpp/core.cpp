@@ -4,6 +4,9 @@
 #include <cstdint>
 #include <cstdlib>
 #include <limits>
+#include <array>
+#include <new>
+#include <tuple>
 #include <unordered_map>
 #include <vector>
 #if defined(_WIN32)
@@ -54,6 +57,118 @@ FL_EXPORT int32_t* fl_contours(const uint8_t* mask,int h,int w) {
     out[0]=int32_t(out.size());
     auto* p=static_cast<int32_t*>(std::malloc(out.size()*sizeof(int32_t)));
     if(p)std::copy(out.begin(),out.end(),p);return p;
+}
+// Exact complementary chain-code voting. Each 2-bit direction difference
+// is lossless under quarter-turns. Canonical hash shards retain BOTH sides of
+// every possible match, so a smaller index budget changes memory, not recall.
+FL_EXPORT int32_t* fl_arc_votes(const int32_t* packed,int size,int k,int bucket,
+                               int shards,int record_cap,int vote_cap) {
+    if(!packed||size<2||k<6||k>32||bucket<1||shards<1||record_cap<1||vote_cap<1)return nullptr;
+    struct Loop{int i,n;const int32_t* p;};
+    struct Arc{uint64_t code,rev;int i,x,y,bx,by;uint8_t da,db;};
+    using Vote=std::array<int32_t,5>;
+    struct Hash{size_t operator()(const Vote& q)const{
+        uint64_t h=0x9e3779b97f4a7c15ULL;
+        for(auto v:q)h^=uint32_t(v)+0x9e3779b97f4a7c15ULL+(h<<6)+(h>>2);
+        return size_t(h);
+    }};
+    try {
+        std::vector<Loop> loops;
+        for(int p=0;p<size;){
+            if(size-p<2)return nullptr;
+            const int i=packed[p++],n=packed[p++];
+            if(i<0||n<4||int64_t(n)*3>size-p)return nullptr;
+            if(n>k)loops.push_back({i,n,packed+p});
+            p+=3*n;
+        }
+        const int m=k-1,shift=2*(m-1);
+        const uint64_t mask=(uint64_t(1)<<(2*m))-1;
+        std::unordered_map<Vote,int32_t,Hash> votes;
+        auto mix=[](uint64_t q){q^=q>>30;q*=0xbf58476d1ce4e5b9ULL;q^=q>>27;q*=0x94d049bb133111ebULL;return q^(q>>31);};
+        for(int shard=0;shard<shards;++shard){
+            std::vector<Arc> arcs;
+            // A truly allocated bound prevents an underestimated shard from
+            // turning into an unbounded memory allocation.
+            arcs.reserve(std::min(record_cap, std::max(1024,size/3/shards)));
+            for(const auto& l:loops){
+                auto d=[&](int z){return l.p[3*(z%l.n)+2];};
+                uint64_t f=0,r=0;int changes=0;
+                auto turn=[&](int z){return mod4(d(z+1)-d(z));};
+                for(int z=0;z<m;++z){int v=turn(z);f=(f<<2)|v;r=(r>>2)|(uint64_t(mod4(-v))<<shift);changes+=v!=0;}
+                for(int s=0;s<l.n;++s){
+                    if(changes>=4&&int(mix(std::min(f,r))%uint64_t(shards))==shard){
+                        if(int(arcs.size())>=record_cap)return nullptr;
+                        if(arcs.size()==arcs.capacity())arcs.reserve(std::min<size_t>(record_cap,std::max<size_t>(1024,arcs.capacity()*2)));
+                        const int a=3*s,b=3*((s+k)%l.n);
+                        arcs.push_back({f,r,l.i,l.p[a],l.p[a+1],l.p[b],l.p[b+1],uint8_t(d(s)),uint8_t(mod4(d(s+k-1)+2))});
+                    }
+                    int old=turn(s),next=turn(s+m);
+                    changes+=(next!=0)-(old!=0);f=((f<<2)|next)&mask;
+                    r=(r>>2)|(uint64_t(mod4(-next))<<shift);
+                }
+            }
+            std::sort(arcs.begin(),arcs.end(),[](const Arc& a,const Arc& b){return a.code<b.code;});
+            for(size_t a=0;a<arcs.size();){
+                size_t b=a+1;while(b<arcs.size()&&arcs[b].code==arcs[a].code)++b;
+                if(b-a<=size_t(bucket)){
+                    // For a fixed normalized direction chain, the reversed
+                    // complementary chain is unique.
+                    auto it=std::lower_bound(arcs.begin(),arcs.end(),arcs[a].rev,[](const Arc& q,uint64_t v){return q.code<v;});
+                    auto end=it;while(end!=arcs.end()&&end->code==arcs[a].rev&&end-it<=bucket)++end;
+                    if(end-it<=bucket)for(size_t z=a;z<b;++z)for(auto jt=it;jt!=end;++jt){
+                        const Arc&A=arcs[z];const Arc&B=*jt;if(A.i>=B.i)continue;
+                        int rr=mod4(A.da-B.db),x=B.bx,y=B.by;
+                        int xx=rr==0?x:rr==1?-y:rr==2?-x:y;
+                        int yy=rr==0?y:rr==1?x:rr==2?-y:-x;
+                        Vote v{A.i,B.i,rr,A.x-xx,A.y-yy};
+                        auto [where,fresh]=votes.try_emplace(v,0);
+                        if(fresh&&int(votes.size())>vote_cap)return nullptr;
+                        ++where->second;
+                    }
+                }
+                a=b;
+            }
+        }
+        std::vector<std::array<int32_t,6>> result;
+        for(const auto& [q,v]:votes)if(v>=3)result.push_back({v,q[0],q[1],q[2],q[3],q[4]});
+        std::sort(result.begin(),result.end(),[](const auto&a,const auto&b){return a[0]!=b[0]?a[0]>b[0]:a<b;});
+        int64_t n=1+6*int64_t(result.size());if(n>std::numeric_limits<int32_t>::max())return nullptr;
+        auto* out=static_cast<int32_t*>(std::malloc(size_t(n)*sizeof(int32_t)));if(!out)return nullptr;
+        out[0]=int32_t(n);int32_t* p=out+1;
+        for(const auto&q:result){std::copy(q.begin(),q.end(),p);p+=6;}
+        return out;
+    }catch(const std::bad_alloc&){return nullptr;}
+}
+// Exact integer raster adjacency and overlap. 766-bin RGB absolute-colour
+// histogram gives exact median and linear 80th percentile without copies.
+FL_EXPORT int fl_lattice_contact(const uint8_t* a,int h,int w,const uint8_t* b,int bh,int bw,
+                                 int r,int tx,int ty,double* out) {
+    if(!a||!b||!out||h<=0||w<=0||bh<=0||bw<=0||r<0||r>3)return 0;
+    const int X=tx-(r==1?bh:r==2?bw:0),Y=ty-(r==2?bh:r==3?bw:0);
+    const int W=r%2?bh:bw,H=r%2?bw:bh;
+    auto get=[&](int x,int y){
+        int u=r==0?x:r==1?y:r==2?bw-1-x:bw-1-y;
+        int v=r==0?y:r==1?bh-1-x:r==2?bh-1-y:x;
+        return b+4*(int64_t(v)*bw+u);
+    };
+    auto visit=[&](int x,int y,auto fn){
+        for(int y0=std::max(0,y);y0<std::min(h,y+H);++y0)
+            for(int x0=std::max(0,x);x0<std::min(w,x+W);++x0){
+                const uint8_t* p=a+4*(int64_t(y0)*w+x0);
+                if(!p[3])continue;
+                const uint8_t* q=get(x0-x,y0-y);
+                if(q[3]&&!fn(p,q))return false;
+            }
+        return true;
+    };
+    if(!visit(X,Y,[](auto,auto){return false;}))return 0;
+    std::array<int64_t,766> hist{};int64_t length=0;
+    auto add=[&](const uint8_t*p,const uint8_t*q){int error=0;for(int c=0;c<3;++c)error+=std::abs(int(p[c])-q[c]);++hist[error];++length;return true;};
+    for(int d=0;d<4;++d)visit(X+dx[d],Y+dy[d],add);
+    if(length<12)return 0;
+    auto value=[&](int64_t rank){int64_t cum=0;for(int z=0;z<766;++z){cum+=hist[z];if(cum>rank)return z;}return 765;};
+    auto quantile=[&](double q){double pos=q*(length-1);int64_t i=int64_t(pos);double f=pos-i;return ((1-f)*value(i)+f*value(std::min(i+1,length-1)))/3.;};
+    out[0]=double(length);out[1]=quantile(.5);out[2]=quantile(.8);return 1;
 }
 // Batch edge descriptors: only boundary and inward pixels, not whole RGB images.
 FL_EXPORT int fl_profiles(const uint8_t* rgba,int n,int h,int w,float* out) {

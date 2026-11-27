@@ -40,7 +40,8 @@ class Pose:
 
 def json_write(path: Path, value) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(value, indent=2, allow_nan=False), encoding="utf-8")
+    with path.open("w",encoding="utf-8") as f:
+        json.dump(value,f,indent=2,allow_nan=False)
 
 
 def read_source(path: Path, max_side: int = 0, page: int = 1) -> np.ndarray:

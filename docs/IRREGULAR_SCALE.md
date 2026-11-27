@@ -9,25 +9,27 @@ OCR, trained model, filenames encoding order, or evaluation labels are used.
 
 | Stage | Previous | Current resource guard |
 |---|---:|---:|
-| Native irregular / physical import | 256 | 4,096 detected pieces |
-| Browser irregular / physical import | 256 | 1,024 detected pieces |
-| Gap-aware recovery | 128 | 512 (sparse above 128, Balanced / High accuracy) |
+| Native irregular / physical import | 4,096 | Adaptive RAM/pixels; outer archive ceiling 262,144 |
+| Browser irregular / physical import | 1,024 | 4,096 outer archive ceiling; 256 MiB solver budget estimate |
+| Gap-aware recovery | 512 sparse | Estimated descriptor workspace and pair budget (sparse above 128) |
 | Deep spectral and pictorial continuation | 128 | 128 |
 | Physical document strips | 128 | 128 |
 
 Counts are resource guards, not certified accuracy or throughput. Browser
 memory, upload and canvas budgets also apply. For up to 256 input rasters,
-the working pixel budget is 4 MP. Larger sets use 12 MP in the browser and
-48 MP in native Studio; every scan side remains capped at 1,600 pixels and
+the previous 4 MP processing target is retained; larger sets use the adaptive
+working-pixel budget. Every scan side remains capped at 1,600 pixels and
 the same scaling factor is applied to all pieces. Preserving the native
 lattice where feasible is especially important for intact digitally cut masks.
+See [current measured resource scaling](RESOURCE_SCALING.md); the historical
+benchmarks below are retained for comparison.
 
 ### Sparse assembly
 
 1. Preprocess alpha, sidecar masks, keyed or matte scan backgrounds. Preserve
    disconnected islands within declared piece rasters.
 2. Above 128 pieces use complementary integer boundary hashes at two arc
-   lengths. Rare shape votes nominate local quarter-turn/translation poses.
+   lengths, with a compact C++ rolling chain code and memory-bounded shards. Rare shape votes nominate local quarter-turn/translation poses.
    Verify overlap and observed adjacent RGB continuity without a known canvas.
    For sufficiently large but fragmented lattice evidence, retrieve additional
    appearance-matched exact arcs. If an exact zero-overlap component contains at
@@ -45,8 +47,8 @@ lattice where feasible is especially important for intact digitally cut masks.
    interior and full-mask sampled occupancy. No disconnected groups are
    packed into a supposed original canvas.
 5. If the exact route is sparse, the bounded gap fallback searches independent
-   descriptors and distributed per-piece vote budgets. At 129–512 pieces,
-   Balanced nominates up to six pairs per piece; High accuracy nominates eight.
+   descriptors and distributed per-piece vote budgets. Above 128 pieces,
+   Balanced nominates up to six pairs per piece; High accuracy nominates up to eight; the actual degree is reduced to fit the resource budget.
    The union of incoming/outgoing nominations is retained. Cap each pair at six
    poses before geometric and photometric verification. The previous deep
    solver remains available for up to 128 pieces.

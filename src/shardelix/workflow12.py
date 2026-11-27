@@ -15,6 +15,18 @@ WEB_BATCH_OUTPUT_BYTES=192*1024**2
 NATIVE_BATCH=64
 DOWNLOADS={"assembly.png","assembly_with_cuts.png","assembly_reference_aligned.png","assembly_reference_aligned_with_cuts.png","cut_lines.png","placements.json","unanchored_components.json","component_placements.json","ambiguity.json","diagnostics.json","metrics.json","source.png","result.zip","fragments.zip","benchmark.csv","benchmark.json","fragments_preview.png","ground_truth.zip","comparison.json","scan_report.json"}
 
+def native_upload_limit(path=None, *, multipart=False):
+    """Disk-headroom limit; additionally reserve RAM for Studio's MIME parser."""
+    import tempfile
+    from .reconstruction.resource_budget import available_memory
+    try:limit=shutil.disk_usage(path or tempfile.gettempdir()).free//8
+    except OSError:limit=MAX_UPLOAD
+    if multipart:
+        available=available_memory()
+        limit=min(limit,available//12 if available is not None else MAX_UPLOAD)
+    return max(0,int(limit))
+
+
 # Auxiliary views and truth are never counted as fragments. Unknown nested
 # layouts are accepted only when one primary image directory is unambiguous.
 _MASK_DIRS={"bg_mask","bg_mask_vis","masks","mask","mask_vis","foreground_masks","alpha_masks","segmentation_masks"}
@@ -54,7 +66,7 @@ def safe_zip(source:Path,case:Path,*,browser=False,extract=True,inspect_geometry
     if extract:target.mkdir(parents=True,exist_ok=True)
     meta=None;meta_seen=False;metadata_warning=None;names=set();groups={};mask_entries={};size=0
     limit=WEB_COUNT if browser else GRID_MAX
-    byte_limit=WEB_UPLOAD*3 if browser else MAX_UPLOAD*2
+    byte_limit=WEB_UPLOAD*3 if browser else native_upload_limit(source.parent)*2
     with zipfile.ZipFile(source) as z:
         entries=z.infolist()
         if len(entries)>3*limit+100:raise ValueError("Too many archive entries")
@@ -214,7 +226,8 @@ def _pixel_budget(files,limit):
 
 def _check_preview(files,browser):
     if not files:raise ValueError("Select input files first")
-    if sum(p.stat().st_size for p in files)>(WEB_UPLOAD if browser else MAX_UPLOAD):raise ValueError("Upload exceeds byte budget")
+    if sum(p.stat().st_size for p in files)>(WEB_UPLOAD if browser else native_upload_limit(files[0].parent)):
+        raise ValueError("Upload exceeds browser byte budget" if browser else "Upload exceeds available disk byte budget")
     if len(files)>(WEB_COUNT if browser else GRID_MAX):raise ValueError("Too many fragments")
 
 def _inspect_rasters(openers,count,browser,**kwargs):
@@ -366,6 +379,8 @@ def _scan_single(root,files,conf,update,browser=False,truth_dir=None):
     from .reconstruction.scan import preprocess,reconstruct,MAX_SCAN_PIECES,WEB_SCAN_PIECES
     from .reconstruction.common import json_write
     from .native_core import backend
+    from .reconstruction.resource_budget import resource_budget
+    memory_budget=resource_budget(browser=browser)
     started=time.perf_counter()
     case=root/"case";out=root/"result";out.mkdir(parents=True,exist_ok=True)
     piece_rasters=False
@@ -397,12 +412,17 @@ def _scan_single(root,files,conf,update,browser=False,truth_dir=None):
     pieces,report=preprocess(paths,case/"pieces",pixel_limit=WEB_INPUT_PIXELS if browser else MAX_PIXELS*3,
                              preserve_opaque=conf.get("auto_preserve_opaque",False),piece_rasters=piece_rasters,
                              max_pieces=WEB_SCAN_PIECES if browser else MAX_SCAN_PIECES,
-                             work_pixels=4_000_000 if len(paths)<=256 else 12_000_000 if browser else 48_000_000)
-    d=reconstruct(pieces,out,report,update,pixel_cap=WEB_PIXELS if browser else MAX_PIXELS,
+                             work_pixels=min(memory_budget.working_pixels,4_000_000 if len(paths)<=256 else WEB_INPUT_PIXELS if browser else MAX_PIXELS*3))
+    d=reconstruct(pieces,out,report,update,pixel_cap=WEB_PIXELS if browser else min(MAX_PIXELS*3,memory_budget.canvas_pixels),
                   gap_recovery=conf.get("gap_recovery",True),deep_recovery=conf.get("deep_recovery","always" if conf.get("profile")=="accurate" else conf.get("profile")!="fast"),
-                  profile=conf.get("profile") or "balanced")
+                  profile=conf.get("profile") or "balanced",memory_budget=memory_budget)
     _public_archive(case,out)
+    try:
+        import resource,sys
+        peak_rss=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss/(1048576 if sys.platform=="darwin" else 1024)
+    except (ImportError,AttributeError,OSError):peak_rss=None
     d.update(compute_backend=backend(),workflow_elapsed_seconds=time.perf_counter()-started,performance_profile="scan-auto",
+             process_peak_rss_mib=peak_rss,
              input_detection={"route":"irregular","evidence":conf.get("input_evidence",{}),"warning":conf.get("metadata_warning")})
     json_write(out/"diagnostics.json",d)
     if truth_dir is not None and truth_dir.exists() and any(truth_dir.iterdir()):

@@ -31,7 +31,7 @@ main{max-width:1640px;margin:auto;padding:24px clamp(16px,3.8vw,56px) 30px}.eyeb
 <label class="drop" id="drop"><span class="upload-icon">↑</span><strong id="prompt">Choose image or PDF</strong><small id="fileLabel">Drop a file or click to browse</small><input id="upload" type="file" accept="image/*,.pdf"></label>
 <button class="quiet" type="button" id="sample">Use a synthetic sample</button>
 <div id="inputModeWrap" hidden><label class="label" for="inputMode">Input type</label><select id="inputMode"><option value="auto" selected>Automatic detection</option><option value="digital">Digital fragments</option><option value="scan">Irregular fragments / physical scans (experimental)</option></select><p class="hint">Automatic detection selects the solver from the fragments. Override only if needed.</p></div>
-<div id="scanHelp" class="callout" hidden><strong>Irregular fragments / physical scans · experimental</strong><p class="hint">Upload PNG/JPEG scans or a ZIP. Use transparent PNGs, color-keyed digital fragments, or a flat matte contrasting background with common DPI/scale, margins and non-touching pieces. Multiple pieces per image are supported. Up to 1,024 irregular pieces in browser or 4,096 in native Studio (resource limits apply); 128 scanned strips. Large intact tears use sparse lattice and contour matching; damaged-edge fallback is bounded to 512 pieces. No grid, source size or angle needed. Perspective, curled paper and overlapping pieces are not corrected. A complete placement is not a verified match.</p></div>
+<div id="scanHelp" class="callout" hidden><strong>Irregular fragments / physical scans · experimental</strong><p class="hint">Upload PNG/JPEG scans or a ZIP. Use transparent PNGs, color-keyed digital fragments, or a flat matte contrasting background with common DPI/scale, margins and non-touching pieces. Multiple pieces per image are supported. Browser accepts up to 4,096 uploaded/detected pieces; native uses adaptive RAM and pixel budgets (outer archive ceiling 262,144); 128 scanned strips. Large intact tears use compact sparse lattice and contour matching; damaged-edge fallback uses an adaptive descriptor and candidate budget. No grid, source size or angle needed. Perspective, curled paper and overlapping pieces are not corrected. A complete placement is not a verified match.</p></div>
 <div id="metadataWrap" hidden><label class="check"><input id="useMeta" type="checkbox" checked> Automatic setup (recommended)</label><p class="hint">Upload fragments, then run. The engine detects the grid or reads archive metadata. Uncheck only to override the geometry.</p><div id="metadataInfo" class="callout">Select fragments or ZIP.</div></div>
 <div id="geometryFields">
 <label class="label" for="cut">Cut family</label><select id="cut"><option value="grid">Rectangular grid</option><option value="strips">Vertical strips</option><option value="horizontal-strips">Horizontal strips</option><option value="jagged">Jagged</option><option value="wavy">Wavy</option><option value="jigsaw">Jigsaw</option><option value="random">Mixed irregular</option><option value="document" hidden>Document strips (unknown width)</option></select>
@@ -103,7 +103,7 @@ const cuts=["grid","strips","horizontal-strips","jagged","wavy","jigsaw","random
 let genOutput=null,truthFile=null,genURLs=[],inputPreviewURL=null,tabStates={},resultStage={demo:"Ready to generate",blind:"Ready for fragments"};
 let task="demo",files=[],metadata=null,metadataPending=false,busy=false,last=null,worker=null,requestId=0,pending=new Map(),poll=null,runId=0,urls=[];
 const caps={grid:262144,strips:8192,"horizontal-strips":8192,jagged:4096,wavy:4096,jigsaw:4096,random:4096,document:1024};
-const maxCount=cut=>Math.min(caps[cut]||0,native?262144:4096),batchLimit=native?64:24,uploadLimit=(native?200:32)*1024*1024;
+const maxCount=cut=>Math.min(caps[cut]||0,native?262144:4096),batchLimit=native?64:24,uploadLimit=native?Number("__NATIVE_UPLOAD_BYTES__"):32*1024*1024;
 $("engineBadge").textContent=native?"Native CPU":"Browser · WASM";
 $("foot").textContent=native?"Local Python engine":"Browser engine · first run downloads dependencies";
 function ensureWorker(){
@@ -201,7 +201,7 @@ function config(){
 function validate(x){
   if(!files.length)throw Error("Select an input file to start.");
   if(metadataPending)throw Error("Reading archive metadata…");
-  if(files.reduce((s,f)=>s+f.size,0)+(task==="blind"&&!isScanMode()?(truthFile?.size||0):0)+(isReferenceMode()?($("matchReferenceUpload").files[0]?.size||0):0)>uploadLimit)throw Error("Input exceeds "+(native?200:32)+" MiB");
+  if(files.reduce((s,f)=>s+f.size,0)+(task==="blind"&&!isScanMode()?(truthFile?.size||0):0)+(isReferenceMode()?($("matchReferenceUpload").files[0]?.size||0):0)>uploadLimit)throw Error("Input exceeds "+Math.floor(uploadLimit/1024/1024)+" MiB upload budget");
   if(task==="demo"){
     if(files.length!==1)throw Error("Select one source image.");
     if(!native&&files[0].name.toLowerCase().endsWith(".pdf"))throw Error("Convert the PDF page to PNG, or use native Studio.");

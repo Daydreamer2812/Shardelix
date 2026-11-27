@@ -18,10 +18,13 @@ from scipy.spatial import cKDTree
 
 from .common import Fragment, json_write, save_rgba
 from .geometry import contours
-from .eroded import MAX_GAP_PIECES, MAX_SPARSE_GAP_PIECES
+from .eroded import MAX_GAP_PIECES
 
-MAX_SCAN_PIECES = 4096
-WEB_SCAN_PIECES = 1024
+from .limits import GRID_MAX
+from .resource_budget import resource_budget
+
+MAX_SCAN_PIECES = GRID_MAX
+WEB_SCAN_PIECES = 4096
 MAX_SCAN_SIDE = 1600
 MAX_WORK_PIXELS = 4_000_000
 
@@ -56,6 +59,8 @@ def preprocess(paths, target: Path, *, pixel_limit=24_000_000, preserve_opaque=F
         raise ValueError("Decoded scans exceed pixel budget; scan at lower DPI or use native Studio.")
     scale = 1. if preserve_scale else min(1., MAX_SCAN_SIDE/max(max(s) for s in sizes), math.sqrt(work_pixels/total))
     pieces, scans, warnings = [], [], []
+    if scale<1:
+        warnings.append(f"All scans were resized to a common scale of {scale:.4f} to fit the processing budget. Resampling can destroy exact digital edge complementarity; use original-scale pieces on a larger-memory native runner for exact matching.")
     for path in paths:
         with Image.open(path) as im:
             im = ImageOps.exif_transpose(im).convert("RGBA")
@@ -451,7 +456,16 @@ def _render(shapes, poses, out, pixel_cap, *, lattice=False):
         if min(shape)<=0:continue
         offset=swap@(P.T@(np.array([x0+.5,y0+.5])-p)-.5)
         matrix=swap@P.T@swap
-        warped=np.stack([ndi.affine_transform(frag.rgba[:,:,k],matrix,offset,output_shape=shape,order=0,prefilter=False) for k in range(4)],axis=2)
+        if lattice:
+            from .large_scan import _quarter
+            warped=np.rot90(frag.rgba,-_quarter(P)%4)
+            # Pixel bounds include the complete raster; clipping is possible
+            # only for transparent padding outside the foreground extent.
+            base=np.floor(corners.min(axis=0)).astype(int)
+            ox,oy=x0-base[0],y0-base[1]
+            warped=warped[oy:oy+shape[0],ox:ox+shape[1]]
+        else:
+            warped=np.stack([ndi.affine_transform(frag.rgba[:,:,k],matrix,offset,output_shape=shape,order=0,prefilter=False) for k in range(4)],axis=2)
         m=warped[:,:,3]>0
         region=labels[y0:y1,x0:x1];collision+=int((m&(region>=0)).sum())
         keep=m&(region<0);canvas[y0:y1,x0:x1][keep]=warped[keep];region[keep]=i
@@ -464,12 +478,18 @@ def _render(shapes, poses, out, pixel_cap, *, lattice=False):
     different=labels[1:,:]!=labels[:-1,:]
     boundary[1:,:]|=different;boundary[:-1,:]|=different
     boundary[[0,-1],:]=True;boundary[:,[0,-1]]=True
-    boundary&=labels>=0
+    del different
+    occupied=labels>=0;coverage=float(occupied.mean())
+    boundary&=occupied
+    del labels,occupied
     cut=np.zeros_like(canvas);cut[boundary]=[220,30,40,255]
-    overlay=canvas.copy();overlay[boundary]=[220,30,40,255]
-    save_rgba(out/"assembly_with_cuts.png",overlay);save_rgba(out/"cut_lines.png",cut)
+    save_rgba(out/"cut_lines.png",cut);del cut
+    # assembly.png has already been saved. Reuse the canvas rather than
+    # holding a second full RGBA overlay at peak memory.
+    canvas[boundary]=[220,30,40,255]
+    save_rgba(out/"assembly_with_cuts.png",canvas)
     json_write(out/"placements.json",result)
-    return collision,float((labels>=0).mean()),[w,h]
+    return collision,coverage,[w,h]
 
 
 def _indexed_pairs(shapes, forward, reverse, scales, *, keep=10, component_owner=None):
@@ -522,6 +542,11 @@ def _indexed_pairs(shapes, forward, reverse, scales, *, keep=10, component_owner
                 a,inv=np.unique(friend,return_inverse=True)
                 totals=np.bincount(inv,weights=best)/max(1,len(f))*(scale/12)**.5
                 for j,value in zip(a,totals):votes[i][int(j)]+=float(value)
+            # For very large continuous sets retain only competitive outgoing
+            # votes after each scale. This bounds Python hash-table memory.
+            if n>512 and len(votes[i])>4*keep:
+                best=sorted(votes[i],key=lambda j:(-votes[i][j],j))[:4*keep]
+                votes[i]=defaultdict(float,((j,votes[i][j]) for j in best))
     # Each direction contributes its score once. Sparse symmetric adjacency.
     scores=[defaultdict(float) for _ in range(n)]
     for i,near in enumerate(votes):
@@ -534,15 +559,18 @@ def _indexed_pairs(shapes, forward, reverse, scales, *, keep=10, component_owner
     return sorted(pairs)
 
 
-def reconstruct(pieces,out:Path,report,update=lambda _:None,*,pixel_cap=8_000_000,gap_recovery=True,deep_recovery=True,profile="balanced",large_threshold=128):
+def reconstruct(pieces,out:Path,report,update=lambda _:None,*,pixel_cap=8_000_000,gap_recovery=True,deep_recovery=True,profile="balanced",large_threshold=128,memory_budget=None):
     started=time.perf_counter()
     n=len(pieces)
+    memory_budget=memory_budget or resource_budget()
+    pixel_cap=min(pixel_cap,memory_budget.canvas_pixels)
+    report['resource_budget']=memory_budget.describe()
     large=n>large_threshold
     # Preserve the existing small-scan quality; larger sets retain several
     # samples per small tear instead of collapsing to twelve polygon points.
     budget=16000 if not large else max(80000,n*64)
     step=max(2.,sum(2*sum(p.rgba.shape[:2]) for p in pieces)/budget)
-    shapes=[_shape(p,step) for p in pieces]
+    shapes=None
     scales=[12,20,32] if not large else [5,9,14,22]
     candidates=[];tol=max(2.7,step*1.35)
     lattice={"attempted":False,"selected":False}
@@ -550,28 +578,42 @@ def reconstruct(pieces,out:Path,report,update=lambda _:None,*,pixel_cap=8_000_00
     indexed=n>64
     pairs=[]
     lattice_only=False
+    # Bound expensive fallbacks by their estimated descriptor and candidate
+    # working sets, rather than treating a fragment count as a RAM estimate.
+    perimeter=sum(2*sum(p.rgba.shape[:2]) for p in pieces)
+    contour_samples=max(n*12,int(perimeter/step))
+    continuous_bytes=contour_samples*2200+n*64000
+    gap_degree=min(8 if profile=='accurate' else 6,memory_budget.gap_pair_budget//max(1,n))
+    gap_allowed=(n<=MAX_GAP_PIECES or (profile!='fast' and gap_degree>=2 and contour_samples*1800 < memory_budget.memory_bytes//2))
     if large:
-        from .large_scan import lattice_candidates,lattice_color_rescue,merge_spatial,filter_continuous
-        exact,stats=lattice_candidates(pieces,update,degree=10 if profile=="fast" else 16)
-        eg,ej,spatial=merge_spatial(shapes,exact,_overlap,strict=True)
+        from .large_scan import lattice_candidates,lattice_color_rescue,merge_spatial,merge_lattice,filter_continuous
+        exact,stats=lattice_candidates(pieces,update,degree=10 if profile=="fast" else 16,budget=memory_budget)
+        eg,ej,spatial=merge_lattice(pieces,exact,pixel_cap=pixel_cap)
         lattice.update(stats,attempted=True,largest_component=len(eg[0]))
         # Additional appearance-index search helps repeated, smoother tears;
         # skip it if geometry provides effectively no lattice evidence (e.g.
         # continuously rotated or physically eroded scans).
         update(f"Exact lattice: {len(exact)} verified seams, largest group {len(eg[0])}/{n}")
-        if len(eg[0])<.90*n and len(exact)>=max(4,.01*n) and profile!="fast":
+        if len(eg[0])<.90*n and len(exact)>=max(4,.01*n) and profile!="fast" and perimeter*540 < memory_budget.memory_bytes//3:
             extra,detail=lattice_color_rescue(pieces,exact,update)
             exact+=extra
-            eg,ej,spatial=merge_spatial(shapes,exact,_overlap,strict=True)
+            eg,ej,spatial=merge_lattice(pieces,exact,pixel_cap=pixel_cap)
             lattice["appearance_rescue"]=detail
             lattice["largest_component"]=len(eg[0])
             update(f"Appearance rescue: largest exact group {len(eg[0])}/{n}")
         # Exact, non-overlapping lattice joins bypass expensive approximate
         # continuous matching only when the evidence connects most fragments.
         lattice_only=len(eg[0])>=max(2,math.ceil(.90*n))
+        canvas_bound=spatial.get("canvas_budget_rejections",0)>0 and len(exact)>.5*n
+        if not lattice_only and (continuous_bytes>memory_budget.memory_bytes//2 or canvas_bound):
+            lattice_only=True
+            reason="Exact assembly reached the canvas pixel budget" if canvas_bound else "Estimated contour descriptor/vote workspace exceeds the adaptive memory budget"
+            lattice["continuous_fallback_skipped"]=reason
+            report["warnings"].append(reason+"; returning verified lattice components instead of guessing their arrangement.")
         if lattice_only:
             candidates=exact;groups,joins=eg,ej;lattice["selected"]=True
     if not lattice_only:
+        shapes=[_shape(p,step) for p in pieces]
         forward=[[_descriptor(s.points,k) for k in scales] for s in shapes]
         reverse=[[_descriptor(s.points,k,True) for k in scales] for s in shapes]
         component_owner=None
@@ -600,6 +642,9 @@ def reconstruct(pieces,out:Path,report,update=lambda _:None,*,pixel_cap=8_000_00
             groups,joins,spatial=merge_spatial(shapes,candidates,_overlap,strict=True)
         else:
             groups,joins=_merge(shapes,candidates)
+    if shapes is None:
+        from types import SimpleNamespace
+        shapes=[_shape(p,step) for p in pieces] if gap_recovery and gap_allowed and (gap_recovery=='always' or len(groups[0])<max(2,math.ceil(.60*n))) else [SimpleNamespace(fragment=p) for p in pieces]
     exact_size=len(groups[0])
     contact_model="exact-lattice" if lattice_only else "sparse-hybrid-se2" if large else "exact-contact"
     recovery={"attempted":False,"selected":False,"exact_largest_component":exact_size}
@@ -614,11 +659,10 @@ def reconstruct(pieces,out:Path,report,update=lambda _:None,*,pixel_cap=8_000_00
                               for q in joins)
     requested = gap_recovery=="always"
     sparse_gap=n>MAX_GAP_PIECES
-    gap_cap=MAX_SPARSE_GAP_PIECES if profile!="fast" else MAX_GAP_PIECES
-    if gap_recovery and 2<=n<=gap_cap and (requested or weak_small or exact_size<max(2,math.ceil(.60*n))):
+    if gap_recovery and 2<=n and gap_allowed and (requested or weak_small or exact_size<max(2,math.ceil(.60*n))):
         from .eroded import gap_candidates, rank_components, refine_components
         update("Recovering abraded seams and incomplete components")
-        recovered,stats=gap_candidates(shapes,update,sparse_degree=(8 if profile=="accurate" else 6) if sparse_gap else None)
+        recovered,stats=gap_candidates(shapes,update,sparse_degree=gap_degree if sparse_gap else None,pair_budget=memory_budget.gap_pair_budget)
         recovery.update(stats,attempted=True,trigger="always" if requested else "weak-small" if weak_small else "sparse-exact")
         if recovered:
             if sparse_gap:
@@ -641,7 +685,7 @@ def reconstruct(pieces,out:Path,report,update=lambda _:None,*,pixel_cap=8_000_00
                 recovery["selected"]=True
             else:
                 alternative=(ggroups,gjoins,"gap-aware")
-    if gap_recovery and n>gap_cap:recovery["reason"]=f"gap search capped at {gap_cap} pieces for this profile"
+    if gap_recovery and not gap_allowed:recovery["reason"]="Estimated gap descriptor / verification workspace exceeds the profile resource budget"
     report["gap_recovery"]=recovery
     assembly_model="gap-aware" if recovery["selected"] else contact_model
     deep={"attempted":False,"selected":False}
@@ -671,7 +715,7 @@ def reconstruct(pieces,out:Path,report,update=lambda _:None,*,pixel_cap=8_000_00
     main=groups[0]
     if len(groups)>1:
         report["warnings"].append(f"Only the selected connected group ({len(main)}/{n} fragments) is rendered in the main image. Remaining groups are unanchored; missing material or distractors may prevent reliable joins.")
-    collision,coverage,wh=_render(shapes,main,out,pixel_cap,lattice=lattice_only)
+    collision,coverage,wh=_render(shapes,main,out,pixel_cap,lattice=lattice_only and not recovery["selected"] and not deep["selected"])
     json_write(out/"unanchored_components.json",[[shapes[i].fragment.id for i in g] for g in groups[1:]])
     def component_records(gs,js):
         records=[]
@@ -723,6 +767,6 @@ def reconstruct(pieces,out:Path,report,update=lambda _:None,*,pixel_cap=8_000_00
        "available_piece_recovery":len(main)/len(pieces),"runtime_seconds":time.perf_counter()-started,
        "accuracy_verified":False,"orientation_ambiguous":True,
        "scan":{"kind":"irregular-fragments","gap_recovery":recovery,"deep_recovery":deep,"input_images":report["input_images"],"detected_pieces":len(pieces),"components":len(groups),"lattice":lattice,"spatial_merge":spatial,"pair_search":report["pair_search"],"searched_pairs":searched,"possible_pairs":n*(n-1)//2,
-               "warnings":report["warnings"],"common_scale":report["common_scale"],"accuracy_verified":False}}
+               "warnings":report["warnings"],"common_scale":report["common_scale"],"resource_budget":memory_budget.describe(),"accuracy_verified":False}}
     json_write(out/"diagnostics.json",d)
     return d

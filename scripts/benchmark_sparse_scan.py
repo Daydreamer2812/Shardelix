@@ -49,7 +49,16 @@ def trial(count, tile=44, cut="jagged", seed=827, missing=0., browser=False, pro
         report=json.loads((out/"scan_report.json").read_text())
         poses=json.loads((out/"placements.json").read_text())
         entries={p["id"]:p for p in report["pieces"]}
-        if report["common_scale"]!=1.:raise ValueError("Benchmark requires shared original scale; use smaller fixture")
+        if report["common_scale"]!=1.:
+            # Ground truth is in original pixels. Do not label resized
+            # geometry as an exact pose failure/success using that gauge.
+            return {"generated":count,"observed":len(truth),"detected":diag["piece_count"],"placed":diag["placed"],
+                    "status":"resampled-input; exact original-pixel pose evaluation unavailable",
+                    "common_scale":report["common_scale"],"exact_global_poses":None,
+                    "collision_pixels":diag["render_collision_pixels"],"seconds":round(wall,3),
+                    "solver_seconds":diag["runtime_seconds"],"scan":diag["scan"],"angle_mode":angle_mode,
+                    "erosion_px":erosion,"seed":seed,"tile":tile,"cut":cut,"missing":missing,
+                    "browser_limits":browser,"profile":profile}
         def truth_affine(fid):
             row=entries[fid];name=Path(row["file"]).stem
             t=truth[name];x,y=row["crop_xy"]

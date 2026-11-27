@@ -19,7 +19,7 @@ This is an experimental extension, not a claim of a solved DAFNE benchmark.
 3. If the largest exact-contact component contains less than 60% of the input
    pieces, or a small irregular set (up to 16 pieces) has weak local contact
    evidence, attempt bounded gap-aware recovery (2–128 legacy full search;
-   129–512 sparse bounded recovery in Balanced/High accuracy).
+   above 128, adaptive sparse recovery in Balanced/High accuracy).
    The workflow configuration accepts `gap_recovery: false` to disable this
    stage, or `gap_recovery: "always"` to search it regardless of the trigger.
    The latter does not guarantee selection over the exact-contact model.
@@ -57,8 +57,7 @@ joins and 3/87 primary poses on the severe DAFNE case; it did not solve it.
 
 Global orientation remains ambiguous without additional information. Counts
 and coverage are not accuracy. The deep spectral solver remains bounded to
-128 pieces; sparse gap recovery supports up to 512. The physical import cap
-is now 4,096 native / 1,024 browser. See [scaling evidence](IRREGULAR_SCALE.md).
+128 pieces; sparse gap recovery uses a descriptor/pair memory estimate. The physical import route uses adaptive memory with the outer archive ceilings of 262,144 native / 4,096 browser. See [scaling evidence](RESOURCE_SCALING.md).
 There is no claim of 65,000-piece support for irregular eroded data.
 
 ## Evaluation

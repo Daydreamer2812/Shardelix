@@ -1,0 +1,819 @@
+{
+  "baseline_commit": "66190b4c1aceecbf3e3d2cf1d7036933b950a23b",
+  "protocol": "Independent Linux process per size; exact quarter-turn synthetic torn masks of fixed 36px nominal tile; no metadata/reference/GT used by inference; truth only after assembly.",
+  "host_total_ram_mib": 9967.3,
+  "in_memory_cases": [
+    {
+      "status": "completed",
+      "scope": "blind exact lattice solver, in-memory (not ZIP/PNG or physical scan)",
+      "count": 8192,
+      "tile": 36,
+      "seed": 827,
+      "input_pixels": 17215494,
+      "source_wh": [
+        3276,
+        3276
+      ],
+      "placed": 8192,
+      "exact_global_poses": 8192,
+      "correct_relative_joins": 8191,
+      "accepted_joins": 8191,
+      "components": 1,
+      "fixture_seconds": 4.792,
+      "match_seconds": 10.186,
+      "merge_seconds": 1.634,
+      "solver_seconds": 11.82,
+      "peak_rss_mib": 446.0,
+      "budget": {
+        "source": "available-host-memory",
+        "memory_budget_mib": 3790.0,
+        "available_memory_mib": 6890.8,
+        "working_pixels": 220781158,
+        "canvas_pixels": 165585868,
+        "arc_records_per_shard": 27597644,
+        "vote_entries": 18398429,
+        "gap_pair_budget": 30319
+      },
+      "index": {
+        "arc_windows": [
+          32,
+          20
+        ],
+        "arc_backend": "compact-native",
+        "arc_passes": [
+          {
+            "window": 32,
+            "shards": 1,
+            "bucket": 6
+          },
+          {
+            "window": 20,
+            "shards": 1,
+            "bucket": 6
+          }
+        ],
+        "voted_poses": 176998,
+        "verified_poses": 77110,
+        "verified_pairs": 77028,
+        "accepted_candidates": 16207
+      },
+      "merge": {
+        "spatial_overlap_tests": 32225,
+        "collision_rejections": 0,
+        "canvas_budget_rejections": 0,
+        "integer_merge": true
+      }
+    },
+    {
+      "status": "completed",
+      "scope": "blind exact lattice solver, in-memory (not ZIP/PNG or physical scan)",
+      "count": 16384,
+      "tile": 36,
+      "seed": 827,
+      "input_pixels": 34442462,
+      "source_wh": [
+        4608,
+        4608
+      ],
+      "placed": 16384,
+      "exact_global_poses": 16384,
+      "correct_relative_joins": 16383,
+      "accepted_joins": 16383,
+      "components": 1,
+      "fixture_seconds": 9.785,
+      "match_seconds": 22.709,
+      "merge_seconds": 2.539,
+      "solver_seconds": 25.248,
+      "peak_rss_mib": 826.9,
+      "budget": {
+        "source": "available-host-memory",
+        "memory_budget_mib": 3712.1,
+        "available_memory_mib": 6749.2,
+        "working_pixels": 216243768,
+        "canvas_pixels": 162182826,
+        "arc_records_per_shard": 27030471,
+        "vote_entries": 18020314,
+        "gap_pair_budget": 29696
+      },
+      "index": {
+        "arc_windows": [
+          32,
+          20
+        ],
+        "arc_backend": "compact-native",
+        "arc_passes": [
+          {
+            "window": 32,
+            "shards": 1,
+            "bucket": 6
+          },
+          {
+            "window": 20,
+            "shards": 1,
+            "bucket": 6
+          }
+        ],
+        "voted_poses": 319943,
+        "verified_poses": 154277,
+        "verified_pairs": 154195,
+        "accepted_candidates": 32520
+      },
+      "merge": {
+        "spatial_overlap_tests": 64770,
+        "collision_rejections": 0,
+        "canvas_budget_rejections": 0,
+        "integer_merge": true
+      }
+    },
+    {
+      "status": "completed",
+      "scope": "blind exact lattice solver, in-memory (not ZIP/PNG or physical scan)",
+      "count": 32768,
+      "tile": 36,
+      "seed": 827,
+      "input_pixels": 68993499,
+      "source_wh": [
+        6552,
+        6516
+      ],
+      "placed": 32768,
+      "exact_global_poses": 32768,
+      "correct_relative_joins": 32767,
+      "accepted_joins": 32767,
+      "components": 1,
+      "fixture_seconds": 19.144,
+      "match_seconds": 49.39,
+      "merge_seconds": 6.008,
+      "solver_seconds": 55.397,
+      "peak_rss_mib": 1569.0,
+      "budget": {
+        "source": "available-host-memory",
+        "memory_budget_mib": 3768.6,
+        "available_memory_mib": 6852.0,
+        "working_pixels": 219537737,
+        "canvas_pixels": 164653303,
+        "arc_records_per_shard": 27442217,
+        "vote_entries": 18294811,
+        "gap_pair_budget": 30148
+      },
+      "index": {
+        "arc_windows": [
+          32,
+          20
+        ],
+        "arc_backend": "compact-native",
+        "arc_passes": [
+          {
+            "window": 32,
+            "shards": 1,
+            "bucket": 6
+          },
+          {
+            "window": 20,
+            "shards": 1,
+            "bucket": 6
+          }
+        ],
+        "voted_poses": 636311,
+        "verified_poses": 307662,
+        "verified_pairs": 307583,
+        "accepted_candidates": 65187
+      },
+      "merge": {
+        "spatial_overlap_tests": 129986,
+        "collision_rejections": 0,
+        "canvas_budget_rejections": 0,
+        "integer_merge": true
+      }
+    },
+    {
+      "status": "completed",
+      "scope": "blind exact lattice solver, in-memory (not ZIP/PNG or physical scan)",
+      "count": 65536,
+      "tile": 36,
+      "seed": 827,
+      "input_pixels": 138005633,
+      "source_wh": [
+        9216,
+        9216
+      ],
+      "placed": 65536,
+      "exact_global_poses": 65536,
+      "correct_relative_joins": 65535,
+      "accepted_joins": 65535,
+      "components": 1,
+      "fixture_seconds": 47.274,
+      "match_seconds": 101.773,
+      "merge_seconds": 11.852,
+      "solver_seconds": 113.625,
+      "peak_rss_mib": 2383.9,
+      "budget": {
+        "source": "available-host-memory",
+        "memory_budget_mib": 3495.0,
+        "available_memory_mib": 6354.5,
+        "working_pixels": 203596299,
+        "canvas_pixels": 152697224,
+        "arc_records_per_shard": 25449537,
+        "vote_entries": 16966358,
+        "gap_pair_budget": 27959
+      },
+      "index": {
+        "arc_windows": [
+          32,
+          20
+        ],
+        "arc_backend": "compact-native",
+        "arc_passes": [
+          {
+            "window": 32,
+            "shards": 2,
+            "bucket": 6
+          },
+          {
+            "window": 20,
+            "shards": 2,
+            "bucket": 6
+          }
+        ],
+        "voted_poses": 1278007,
+        "verified_poses": 617615,
+        "verified_pairs": 617526,
+        "accepted_candidates": 130581
+      },
+      "merge": {
+        "spatial_overlap_tests": 260610,
+        "collision_rejections": 0,
+        "canvas_budget_rejections": 0,
+        "integer_merge": true
+      }
+    },
+    {
+      "status": "completed",
+      "scope": "blind exact lattice solver, in-memory (not ZIP/PNG or physical scan)",
+      "count": 100000,
+      "tile": 36,
+      "seed": 827,
+      "input_pixels": 210687293,
+      "source_wh": [
+        11412,
+        11376
+      ],
+      "placed": 100000,
+      "exact_global_poses": 100000,
+      "correct_relative_joins": 99999,
+      "accepted_joins": 99999,
+      "components": 1,
+      "fixture_seconds": 64.158,
+      "match_seconds": 154.877,
+      "merge_seconds": 22.441,
+      "solver_seconds": 177.318,
+      "peak_rss_mib": 2664.1,
+      "budget": {
+        "source": "available-host-memory",
+        "memory_budget_mib": 3723.6,
+        "available_memory_mib": 6770.1,
+        "working_pixels": 216913100,
+        "canvas_pixels": 162684825,
+        "arc_records_per_shard": 27114137,
+        "vote_entries": 18076091,
+        "gap_pair_budget": 29788
+      },
+      "index": {
+        "arc_windows": [
+          32,
+          20
+        ],
+        "arc_backend": "compact-native",
+        "arc_passes": [
+          {
+            "window": 32,
+            "shards": 3,
+            "bucket": 6
+          },
+          {
+            "window": 20,
+            "shards": 3,
+            "bucket": 6
+          }
+        ],
+        "voted_poses": 1879952,
+        "verified_poses": 942831,
+        "verified_pairs": 942745,
+        "accepted_candidates": 199382
+      },
+      "merge": {
+        "spatial_overlap_tests": 398104,
+        "collision_rejections": 0,
+        "canvas_budget_rejections": 0,
+        "integer_merge": true
+      }
+    }
+  ],
+  "workflow_8192": {
+    "status": "completed",
+    "scope": "end-to-end blind ZIP import, scan normalization, exact solver and PNG/ZIP export",
+    "count": 8192,
+    "tile": 36,
+    "seed": 827,
+    "upload_bytes": 31037677,
+    "detected": 8192,
+    "placed": 8192,
+    "exact_global_poses": 8192,
+    "collision_pixels": 0,
+    "solver_seconds": 37.590450945001066,
+    "workflow_seconds": 58.093,
+    "peak_rss_mib": 468.1,
+    "scan": {
+      "kind": "irregular-fragments",
+      "gap_recovery": {
+        "attempted": false,
+        "selected": false,
+        "exact_largest_component": 8192
+      },
+      "deep_recovery": {
+        "attempted": false,
+        "selected": false,
+        "reason": "deep continuation capped at 128 pieces"
+      },
+      "input_images": 8192,
+      "detected_pieces": 8192,
+      "components": 1,
+      "lattice": {
+        "attempted": true,
+        "selected": true,
+        "arc_windows": [
+          32,
+          20
+        ],
+        "arc_backend": "compact-native",
+        "arc_passes": [
+          {
+            "window": 32,
+            "shards": 1,
+            "bucket": 6
+          },
+          {
+            "window": 20,
+            "shards": 1,
+            "bucket": 6
+          }
+        ],
+        "voted_poses": 176998,
+        "verified_poses": 77171,
+        "verified_pairs": 77097,
+        "accepted_candidates": 16207,
+        "largest_component": 8192
+      },
+      "spatial_merge": {
+        "spatial_overlap_tests": 32225,
+        "collision_rejections": 0,
+        "canvas_budget_rejections": 0,
+        "integer_merge": true
+      },
+      "pair_search": "exact-lattice",
+      "searched_pairs": 77097,
+      "possible_pairs": 33550336,
+      "warnings": [
+        "Preserved disconnected foreground islands within 8192 declared piece rasters.",
+        "Fragment contact sheet shows the first 256 pieces; all normalized pieces remain in fragments.zip."
+      ],
+      "common_scale": 1.0,
+      "resource_budget": {
+        "source": "available-host-memory",
+        "memory_budget_mib": 2409.5,
+        "available_memory_mib": 4381.0,
+        "working_pixels": 140365710,
+        "canvas_pixels": 105274282,
+        "arc_records_per_shard": 17545713,
+        "vote_entries": 11697142,
+        "gap_pair_budget": 19276
+      },
+      "accuracy_verified": false
+    }
+  },
+  "workflow_same_fixture_4096": {
+    "previous_solver_seconds": 80.230226751999,
+    "previous_exact_global_poses": 4093,
+    "current": {
+      "generated": 4096,
+      "observed": 4096,
+      "detected": 4096,
+      "placed": 4093,
+      "correct_global_poses_5px_3deg": 4093,
+      "exact_global_poses": 4093,
+      "collision_pixels": 0,
+      "seconds": 28.542,
+      "solver_seconds": 18.0624043429998,
+      "scan": {
+        "kind": "irregular-fragments",
+        "gap_recovery": {
+          "attempted": false,
+          "selected": false,
+          "exact_largest_component": 4093
+        },
+        "deep_recovery": {
+          "attempted": false,
+          "selected": false,
+          "reason": "deep continuation capped at 128 pieces"
+        },
+        "input_images": 4096,
+        "detected_pieces": 4096,
+        "components": 4,
+        "lattice": {
+          "attempted": true,
+          "selected": true,
+          "arc_windows": [
+            32,
+            20
+          ],
+          "arc_backend": "compact-native",
+          "arc_passes": [
+            {
+              "window": 32,
+              "shards": 1,
+              "bucket": 6
+            },
+            {
+              "window": 20,
+              "shards": 1,
+              "bucket": 6
+            }
+          ],
+          "voted_poses": 51257,
+          "verified_poses": 38128,
+          "verified_pairs": 38031,
+          "accepted_candidates": 7628,
+          "largest_component": 4093
+        },
+        "spatial_merge": {
+          "spatial_overlap_tests": 33313,
+          "collision_rejections": 0,
+          "canvas_budget_rejections": 0,
+          "integer_merge": true
+        },
+        "pair_search": "exact-lattice",
+        "searched_pairs": 38031,
+        "possible_pairs": 8386560,
+        "warnings": [
+          "Preserved disconnected foreground islands within 4066 declared piece rasters.",
+          "Only the selected connected group (4093/4096 fragments) is rendered in the main image. Remaining groups are unanchored; missing material or distractors may prevent reliable joins.",
+          "Fragment contact sheet shows the first 256 pieces; all normalized pieces remain in fragments.zip."
+        ],
+        "common_scale": 1.0,
+        "resource_budget": {
+          "source": "available-host-memory",
+          "memory_budget_mib": 2809.1,
+          "available_memory_mib": 5107.4,
+          "working_pixels": 163640513,
+          "canvas_pixels": 122730385,
+          "arc_records_per_shard": 20455064,
+          "vote_entries": 13636709,
+          "gap_pair_budget": 22472
+        },
+        "accuracy_verified": false
+      },
+      "relative_joins_10px_10deg": {
+        "correct": 4092,
+        "accepted": 4092
+      },
+      "alternatives": {},
+      "angle_mode": "quarter",
+      "erosion_px": 0,
+      "seed": 827,
+      "tile": 36,
+      "cut": "jagged",
+      "missing": 0.0,
+      "browser_limits": false,
+      "profile": "balanced"
+    }
+  },
+  "physical_style_eroded_regression": {
+    "previous_solver_seconds": 56.0377145450002,
+    "previous_relative_joins": {
+      "correct": 0,
+      "accepted": 8
+    },
+    "current": {
+      "generated": 144,
+      "observed": 137,
+      "detected": 137,
+      "placed": 2,
+      "correct_global_poses_5px_3deg": 1,
+      "exact_global_poses": 1,
+      "collision_pixels": 23,
+      "seconds": 52.7,
+      "solver_seconds": 51.85711232799804,
+      "scan": {
+        "kind": "irregular-fragments",
+        "gap_recovery": {
+          "attempted": true,
+          "selected": false,
+          "exact_largest_component": 2,
+          "sparse_degree": 6,
+          "gap_limit_px": 32.9,
+          "retrieved_pairs": 565,
+          "evaluated": 3366,
+          "verified_hypotheses": 0,
+          "corroborated_hypotheses": 0,
+          "cycle_supported": 0,
+          "trigger": "sparse-exact"
+        },
+        "deep_recovery": {
+          "attempted": false,
+          "selected": false,
+          "reason": "deep continuation capped at 128 pieces"
+        },
+        "input_images": 137,
+        "detected_pieces": 137,
+        "components": 129,
+        "lattice": {
+          "attempted": true,
+          "selected": false,
+          "arc_windows": [
+            32,
+            20
+          ],
+          "arc_backend": "compact-native",
+          "arc_passes": [
+            {
+              "window": 32,
+              "shards": 1,
+              "bucket": 6
+            },
+            {
+              "window": 20,
+              "shards": 1,
+              "bucket": 6
+            }
+          ],
+          "voted_poses": 1805,
+          "verified_poses": 1256,
+          "verified_pairs": 1061,
+          "accepted_candidates": 0,
+          "largest_component": 1,
+          "continuous_candidates": {
+            "before_confidence": 4422,
+            "after_confidence": 10
+          }
+        },
+        "spatial_merge": {
+          "spatial_overlap_tests": 9,
+          "collision_rejections": 1
+        },
+        "pair_search": "sparse-hybrid-se2",
+        "searched_pairs": 1112,
+        "possible_pairs": 9316,
+        "warnings": [
+          "Preserved disconnected foreground islands within 113 declared piece rasters.",
+          "Only the selected connected group (2/137 fragments) is rendered in the main image. Remaining groups are unanchored; missing material or distractors may prevent reliable joins."
+        ],
+        "common_scale": 1.0,
+        "resource_budget": {
+          "source": "available-host-memory",
+          "memory_budget_mib": 2883.1,
+          "available_memory_mib": 5242.0,
+          "working_pixels": 167954249,
+          "canvas_pixels": 125965687,
+          "arc_records_per_shard": 20994281,
+          "vote_entries": 13996187,
+          "gap_pair_budget": 23065
+        },
+        "accuracy_verified": false
+      },
+      "relative_joins_10px_10deg": {
+        "correct": 0,
+        "accepted": 8
+      },
+      "alternatives": {},
+      "angle_mode": "continuous",
+      "erosion_px": 2,
+      "seed": 827,
+      "tile": 70,
+      "cut": "random",
+      "missing": 0.05,
+      "browser_limits": false,
+      "profile": "balanced"
+    }
+  },
+  "resource_probe_131072": {
+    "count": 131072,
+    "tile": 36,
+    "status": "preflight-memory-budget",
+    "estimated_input_pixels": 277348352,
+    "budget": {
+      "source": "available-host-memory",
+      "memory_budget_mib": 3791.6,
+      "available_memory_mib": 6893.7,
+      "working_pixels": 220874399,
+      "canvas_pixels": 165655799,
+      "arc_records_per_shard": 27609299,
+      "vote_entries": 18406199,
+      "gap_pair_budget": 30332
+    }
+  },
+  "initial_100000_probe": {
+    "status": "adaptive-memory-guard",
+    "phase": "packed contour stream",
+    "reason": "Old list+concatenate implementation needed two complete copies; MemoryError: Packed contours exceed available memory budget."
+  },
+  "notes": [
+    "Rows through 65536 were obtained before eliminating the full duplicate contour buffer.",
+    "The 131072 probe was stopped by the resource preflight, not an OS out-of-memory event.",
+    "No browser runtime, real physical-scan large-scale accuracy, or SOTA claim.",
+    "At 100000 pieces the one-buffer contour refactor allowed the run to complete; 210.7 MP input used 97.1% of the 216.9 MP working-input estimate; measured peak RSS remained below the 3723.6 MiB budget.",
+    "Browser-budget runs used native C++ with browser preflight settings, not a live WebAssembly worker. Compact fixture passed; large bounding-box fixture was resampled to 0.79116 and only 3 pieces joined."
+  ],
+  "tests": {
+    "native": 122,
+    "native_passed": 122,
+    "workflow": 2,
+    "workflow_passed": 2,
+    "wasm_runtime": "not run locally (no Emscripten/browser)",
+    "python_reference_passed": 117,
+    "python_reference_skipped": 5,
+    "python_reference_total": 122,
+    "native_kernel_budget_post_refactor_passed": 5,
+    "browser_smoke_added": "150-piece ambiguous input exercises compact arc kernel; actual Playwright/WASM CI not run locally"
+  },
+  "browser_budget_compact_4096": {
+    "status": "completed",
+    "scope": "end-to-end blind ZIP import, scan normalization, exact solver and PNG/ZIP export",
+    "count": 4096,
+    "tile": 36,
+    "seed": 827,
+    "browser_limits": true,
+    "upload_bytes": 15486286,
+    "detected": 4096,
+    "placed": 4096,
+    "exact_global_poses": 4096,
+    "collision_pixels": 0,
+    "solver_seconds": 13.949218993999239,
+    "workflow_seconds": 22.195,
+    "peak_rss_mib": 221.1,
+    "scan": {
+      "kind": "irregular-fragments",
+      "gap_recovery": {
+        "attempted": false,
+        "selected": false,
+        "exact_largest_component": 4096,
+        "reason": "Estimated gap descriptor / verification workspace exceeds the profile resource budget"
+      },
+      "deep_recovery": {
+        "attempted": false,
+        "selected": false,
+        "reason": "deep continuation capped at 128 pieces"
+      },
+      "input_images": 4096,
+      "detected_pieces": 4096,
+      "components": 1,
+      "lattice": {
+        "attempted": true,
+        "selected": true,
+        "arc_windows": [
+          32,
+          20
+        ],
+        "arc_backend": "compact-native",
+        "arc_passes": [
+          {
+            "window": 32,
+            "shards": 3,
+            "bucket": 6,
+            "record_cap": 1053233,
+            "vote_cap": 702155
+          },
+          {
+            "window": 20,
+            "shards": 3,
+            "bucket": 6,
+            "record_cap": 1053233,
+            "vote_cap": 702155
+          }
+        ],
+        "packed_contour_bytes": 32199720,
+        "voted_poses": 92746,
+        "verified_poses": 38277,
+        "verified_pairs": 38206,
+        "accepted_candidates": 8064,
+        "largest_component": 4096
+      },
+      "spatial_merge": {
+        "spatial_overlap_tests": 16002,
+        "collision_rejections": 0,
+        "canvas_budget_rejections": 0,
+        "integer_merge": true
+      },
+      "pair_search": "exact-lattice",
+      "searched_pairs": 38206,
+      "possible_pairs": 8386560,
+      "warnings": [
+        "Preserved disconnected foreground islands within 4096 declared piece rasters.",
+        "Fragment contact sheet shows the first 256 pieces; all normalized pieces remain in fragments.zip."
+      ],
+      "common_scale": 1.0,
+      "resource_budget": {
+        "source": "browser-worker-budget",
+        "memory_budget_mib": 256.0,
+        "available_memory_mib": null,
+        "working_pixels": 14913080,
+        "canvas_pixels": 11184810,
+        "arc_records_per_shard": 1864135,
+        "vote_entries": 1242756,
+        "gap_pair_budget": 2048
+      },
+      "accuracy_verified": false
+    }
+  },
+  "browser_budget_large_bbox_4096": {
+    "generated": 4096,
+    "observed": 4096,
+    "detected": 4096,
+    "placed": 3,
+    "status": "resampled-input; exact original-pixel pose evaluation unavailable",
+    "common_scale": 0.7911584873497179,
+    "exact_global_poses": null,
+    "collision_pixels": 0,
+    "seconds": 12.564,
+    "solver_seconds": 3.193491420002829,
+    "scan": {
+      "kind": "irregular-fragments",
+      "gap_recovery": {
+        "attempted": false,
+        "selected": false,
+        "exact_largest_component": 3,
+        "reason": "Estimated gap descriptor / verification workspace exceeds the profile resource budget"
+      },
+      "deep_recovery": {
+        "attempted": false,
+        "selected": false,
+        "reason": "deep continuation capped at 128 pieces"
+      },
+      "input_images": 4096,
+      "detected_pieces": 4096,
+      "components": 3976,
+      "lattice": {
+        "attempted": true,
+        "selected": true,
+        "arc_windows": [
+          32,
+          20
+        ],
+        "arc_backend": "compact-native",
+        "arc_passes": [
+          {
+            "window": 32,
+            "shards": 2,
+            "bucket": 6
+          },
+          {
+            "window": 20,
+            "shards": 2,
+            "bucket": 6
+          }
+        ],
+        "voted_poses": 23614,
+        "verified_poses": 23311,
+        "verified_pairs": 23266,
+        "accepted_candidates": 121,
+        "largest_component": 3,
+        "continuous_fallback_skipped": "Estimated contour descriptor/vote workspace exceeds the adaptive memory budget"
+      },
+      "spatial_merge": {
+        "spatial_overlap_tests": 125,
+        "collision_rejections": 1,
+        "canvas_budget_rejections": 0,
+        "integer_merge": true
+      },
+      "pair_search": "exact-lattice",
+      "searched_pairs": 23266,
+      "possible_pairs": 8386560,
+      "warnings": [
+        "All scans were resized to a common scale of 0.7912 to fit the processing budget. Resampling can destroy exact digital edge complementarity; use original-scale pieces on a larger-memory native runner for exact matching.",
+        "Preserved disconnected foreground islands within 4068 declared piece rasters.",
+        "Estimated contour descriptor/vote workspace exceeds the adaptive memory budget; returning verified lattice components instead of guessing their arrangement.",
+        "Only the selected connected group (3/4096 fragments) is rendered in the main image. Remaining groups are unanchored; missing material or distractors may prevent reliable joins.",
+        "Fragment contact sheet shows the first 256 pieces; all normalized pieces remain in fragments.zip."
+      ],
+      "common_scale": 0.7911584873497179,
+      "resource_budget": {
+        "source": "browser-worker-budget",
+        "memory_budget_mib": 256.0,
+        "available_memory_mib": null,
+        "working_pixels": 14913080,
+        "canvas_pixels": 11184810,
+        "arc_records_per_shard": 1864135,
+        "vote_entries": 1242756,
+        "gap_pair_budget": 2048
+      },
+      "accuracy_verified": false
+    },
+    "angle_mode": "quarter",
+    "erosion_px": 0,
+    "seed": 827,
+    "tile": 36,
+    "cut": "jagged",
+    "missing": 0.0,
+    "browser_limits": true,
+    "profile": "balanced"
+  }
+}

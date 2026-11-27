@@ -84,8 +84,8 @@ Upper guards: grid 262,144, strips 8,192, irregular 4,096. These are not
 accuracy or latency SLAs. Canvas 110M pixels, decoded crop 330M pixels.
 Full raster export may require additional ~1–2 GB for large canvases;
 the large-grid stress script saves only bounded predicted previews.
-Studio has a separate 200 MiB upload cap; CLI/in-memory API is recommended
-for large datasets. Avoid holding multiple full frames at once. No real
+Studio estimates a separate upload limit from available disk and multipart-parser RAM; file inputs use available disk. CLI/in-memory API is recommended
+for large datasets. Metadata-free scan import uses an adaptive working-set budget; see [resource measurements](RESOURCE_SCALING.md). Avoid holding multiple full frames at once. No real
 physical-fragment guarantee. Refer to V12_RESULTS.md for current measured conditions; historical V10
 262,144-piece stress is not a V12 measurement.
 

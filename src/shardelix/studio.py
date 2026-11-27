@@ -21,7 +21,7 @@ from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
 from urllib.parse import urlparse,parse_qs
 from .reconstruction.limits import GRID_MAX,MAX_PIXELS
 
-from .workflow12 import MAX_UPLOAD, DOWNLOADS, run_job, inspect_uploads, safe_zip
+from .workflow12 import native_upload_limit, DOWNLOADS, run_job, inspect_uploads, safe_zip
 def atomic_json(path,value):
     tmp=path.with_suffix(".tmp");tmp.write_text(json.dumps(value,allow_nan=False),encoding="utf-8");tmp.replace(path)
 
@@ -96,7 +96,7 @@ def serve(port=8765,open_browser=True):
                 if not self.local_host():self.send_error(403);return
                 u=urlparse(self.path)
                 if u.path=="/":
-                    html=Path(__file__).with_name("studio.html").read_text().replace("__SESSION_TOKEN__",state.token).encode()
+                    html=Path(__file__).with_name("studio.html").read_text().replace("__SESSION_TOKEN__",state.token).replace("__NATIVE_UPLOAD_BYTES__",str(native_upload_limit(state.root,multipart=True))).encode()
                     self.send_response(200);self.send_header("Content-Type","text/html; charset=utf-8");self.send_header("Content-Length",str(len(html)));self.end_headers();self.wfile.write(html)
                 elif u.path=="/api/status":self.reply(state.status())
                 elif u.path=="/api/file":
@@ -112,7 +112,8 @@ def serve(port=8765,open_browser=True):
                     if self.path=="/api/cancel":state.cancel();self.reply(state.status());return
                     if self.path not in {"/api/start","/api/inspect"}:self.send_error(404);return
                     size=int(self.headers.get("Content-Length",0))
-                    if not 0<size<=MAX_UPLOAD:self.reply({"error":"Upload exceeds 200 MiB or is empty"},413);return
+                    limit=native_upload_limit(state.root,multipart=True)
+                    if not 0<size<=limit:self.reply({"error":f"Upload exceeds currently available Studio budget ({limit//1024**2} MiB) or is empty"},413);return
                     if "multipart/form-data" not in self.headers.get("Content-Type",""):raise ValueError("Expected multipart form")
                     payload=self.rfile.read(size)
                     message=BytesParser(policy=default).parsebytes(("Content-Type: "+self.headers["Content-Type"]+"\r\nMIME-Version: 1.0\r\n\r\n").encode()+payload)

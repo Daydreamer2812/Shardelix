@@ -60,9 +60,9 @@ working state and downloads stay in the browser worker; CDN requests load code o
 | | Browser | Native Studio |
 |---|---|---|
 | Input | Raster image or zipped/image fragments | Raster, optional PDF (PyMuPDF), fragments |
-| ZIP/input bytes | 32 MiB | 200 MiB |
+| ZIP/input bytes | 32 MiB | Adaptive disk and multipart-parser RAM |
 | Fragment cap | 4,096 (lower per family where applicable) | Per-family native ResourceLimits |
-| Canvas | 8 million pixels | Up to 110 million pixels |
+| Canvas | 8 million pixels | 110 MP digital; adaptive scan route |
 | Decoded input | 24 million pixels | Up to 330 million pixels |
 | Batch cases | 24 | 64 |
 | Batch retained export | 192 MiB | Native guards |
@@ -144,19 +144,20 @@ required in physical mode.
   processing report, reconstruction PNG, boundary overlay and affine poses.
   Poses are local cropped working-pixel vertex coordinates → output canvas;
   crop offsets and common scale are in the report.
-- Metadata-free physical/irregular mode accepts up to **4,096 detected pieces
-  in native Studio, 1,024 in browser** (not accuracy or throughput guarantees).
-  Scans share one scale; the working budget is 4 MP for up to 256 input rasters,
-  12 MP for larger browser sets and 48 MP for larger native sets, and each scan
-  side is capped at 1,600 px. Preserving resolution within those budgets avoids
-  destroying complementary pixel boundaries. Up to 64 pieces use all pairs;
-  above that, contour/color retrieval is sparse. Above 128 pieces, intact
-  lattice arcs can bypass continuous search; otherwise sparse SE(2) proposals
-  undergo ambiguity, cycle and spatial collision checks. The special sparse
-  gap fallback searches up to 512 damaged fragments in Balanced/High accuracy;
-  deep spectral continuation remains capped at 128. The mask contact sheet
-  previews at most 256 pieces, and the complete normalized raster ZIP and
-  component poses remain available. See [scaling evidence](IRREGULAR_SCALE.md).
+- Metadata-free physical/irregular mode now uses adaptive native memory
+  estimates, with an outer archive ceiling of **262,144** native / **4,096**
+  browser fragments (not accuracy guarantees). Browser solver memory uses a
+  conservative 256 MiB estimate; actual browser/OS memory is not exposed.
+  Native takes 55% of estimated available RAM, with a configurable lower
+  `SHARDELIX_MEMORY_MIB` budget. The 4 MP small-set resolution target and 1,600
+  px per-scan-side bound remain; larger sets use the adaptive working-pixel
+  budget. Above 128 pieces, compact C++ lattice matching and integer spatial
+  assembly bypass continuous search when appropriate. Sparse continuous and
+  gap fallbacks estimate their descriptor and verification workspace; if the
+  budget is insufficient, independent components remain explicit. Deep
+  spectral continuation remains capped at 128. The mask contact sheet previews
+  at most 256 pieces; all normalized rasters and component poses remain in the
+  output. See [measured resource scaling](RESOURCE_SCALING.md).
   All processing is local.
 - Paper touching the scan edge, overlapping/stacked pieces, near-identical
   foreground/background, strong shadows, nonplanarity, perspective and

@@ -139,6 +139,20 @@ const {execFileSync}=require('node:child_process');
   assert.equal(largeScan.pair_search,'indexed-contour-color');
   assert.ok(largeScan.searched_pairs<=1020);
   assert.equal(await page.locator('#dpa').textContent(),'—');
+  // Exercise the newly exported compact arc kernel in a real WASM worker.
+  // Repeated ellipses are deliberately ambiguous: test successful bounded
+  // execution and backend selection, not a fictitious correct placement.
+  const latticeArchive=path.join('/tmp','shardelix-keyed-lattice-150.zip');
+  execFileSync(process.env.PYTHON||'python',['-c','import sys,zipfile,json,base64; z=zipfile.ZipFile(sys.argv[1],"w"); [(z.writestr(f"pieces/part_{i}.png",base64.b64decode(v))) for i,v in enumerate(json.load(sys.stdin))]; z.close()',latticeArchive],{input:JSON.stringify(keyed.concat(keyed.slice(0,48)))});
+  await page.locator('#profile').selectOption('fast');
+  await page.locator('#upload').setInputFiles(latticeArchive);
+  await page.waitForFunction(()=>document.querySelector('#scanHelp').hidden===false&&document.querySelector('#metadataInfo').textContent.includes('150'),{},{timeout:30000});
+  await page.locator('#run').click();await done('Reconstruction exported');
+  const latticeDiag=JSON.parse(await page.locator('#diagnostics').textContent()).diagnostics.scan;
+  assert.equal(latticeDiag.detected_pieces,150);
+  assert.equal(latticeDiag.lattice.attempted,true);
+  if(process.env.EXPECT_CPP)assert.equal(latticeDiag.lattice.arc_backend,'compact-native');
+  await page.locator('#profile').selectOption('balanced');
   // Opaque unequal-width image strips: no matte segmentation or invented grid.
   const colorStrips=await page.evaluate(()=>{
     const c=document.createElement('canvas');c.width=60;c.height=150;

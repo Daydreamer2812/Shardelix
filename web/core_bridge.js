@@ -14,6 +14,16 @@ async function initShardelixCore(){
         const p=m._fl_contours(copy(a,ps),h,w);if(!p)throw Error("Contour allocation failed");
         try{return m.HEAPU8.slice(p,p+4*m.HEAP32[p>>>2])}finally{m._fl_free(p)}
       }),
+      arcVotes:(a,n,k,bucket,shards,recordCap,voteCap)=>withPtrs(ps=>{
+        const p=m._fl_arc_votes(copy(a,ps),n,k,bucket,shards,recordCap,voteCap);
+        if(!p)return new Uint8Array(0);
+        try{return m.HEAPU8.slice(p,p+4*m.HEAP32[p>>>2])}finally{m._fl_free(p)}
+      }),
+      latticeContact:(a,h,w,b,bh,bw,r,tx,ty)=>withPtrs(ps=>{
+        const p=copy(a,ps),q=copy(b,ps),o=alloc(24,ps);
+        if(!m._fl_lattice_contact(p,h,w,q,bh,bw,r,tx,ty,o))return new Uint8Array(0);
+        return m.HEAPU8.slice(o,o+24);
+      }),
       profiles:(a,n,h,w)=>withPtrs(ps=>{const p=copy(a,ps),sz=n*2*(h+w)*6*4,o=alloc(sz,ps);if(!m._fl_profiles(p,n,h,w,o))throw Error("Invalid edge descriptors");return m.HEAPU8.slice(o,o+sz)}),
       loopVotes:(a,n,k)=>withPtrs(ps=>{const p=copy(a,ps),o=alloc(n*k*4,ps);if(!m._fl_loop_votes(p,n,k,o))throw Error("Invalid graph");return m.HEAPU8.slice(o,o+n*k*4)}),
       rerank:(e,g,f,h,j,n,t,k,L,s)=>withPtrs(ps=>{const p=[e,g,f,h,j].map(a=>copy(a,ps)),o=alloc(n*k*4,ps);if(!m._fl_rerank(...p,n,t,k,L,s,o))throw Error("Invalid seam buffers");return m.HEAPU8.slice(o,o+n*k*4)})

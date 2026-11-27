@@ -115,7 +115,7 @@ def _windows(profiles, half, reverse=False, extension=5.):
     return tuple(np.concatenate(q) for q in (feats, ids, centers, directions, indices))
 
 
-def _hypotheses(profiles, max_gap, update, *, sparse_degree=None):
+def _hypotheses(profiles, max_gap, update, *, sparse_degree=None, vote_budget=MAX_GLOBAL_MATCHES):
     """Global nearest-neighbour retrieval followed by quantized SE(2) voting.
 
     A pose maps fragment j to fragment i.  No all-pairs raster correlation
@@ -142,14 +142,32 @@ def _hypotheses(profiles, max_gap, update, *, sparse_degree=None):
             # Coarse descriptor subset followed by full-distance verification.
             # Query batches keep temporary arrays independent of the total N.
             cols=[1,3,6,8,10,11,12,13,17,18,19,23,24,25,29,32,38]
-            tree=cKDTree(fb[:,cols]);aa=[];bb=[];dd=[]
+            tree=cKDTree(fb[:,cols]);per_source={}
+            limit=max(1,vote_budget//(3*len(profiles)))
             for start in range(0,len(fa),512):
                 f=fa[start:start+512]
                 _,nb=tree.query(f[:,cols],k=k,eps=.2)
                 distance=np.linalg.norm(f[:,None,:]-fb[nb],axis=2)
                 row,slot=np.nonzero((ia[start:start+len(f),None]!=ib[nb])&(distance<.70))
-                aa.append(row+start);bb.append(nb[row,slot]);dd.append(distance[row,slot])
-            a,b,dis=map(np.concatenate,(aa,bb,dd))
+                if not len(row):continue
+                ar,br,dr=row+start,nb[row,slot],distance[row,slot]
+                # A source arc occurs in exactly one batch. Deduplicate here
+                # and retain its source fragment's strongest bounded votes
+                # before concatenation, not after accumulating all matches.
+                order=np.lexsort((dr,ib[br],ar))
+                ar,br,dr=ar[order],br[order],dr[order]
+                first=np.r_[True,(ar[1:]!=ar[:-1])|(ib[br[1:]]!=ib[br[:-1]])]
+                ar,br,dr=ar[first],br[first],dr[first]
+                owners=ia[ar]
+                bounds=np.r_[0,np.flatnonzero(owners[1:]!=owners[:-1])+1,len(owners)]
+                for lo,hi in zip(bounds[:-1],bounds[1:]):
+                    owner=int(owners[lo]);part=(ar[lo:hi],br[lo:hi],dr[lo:hi])
+                    if owner in per_source:
+                        part=tuple(np.concatenate((x,y)) for x,y in zip(per_source[owner],part))
+                    keep=np.argsort(part[2],kind="stable")[:limit]
+                    per_source[owner]=tuple(v[keep] for v in part)
+            if not per_source:continue
+            a,b,dis=map(np.concatenate,zip(*per_source.values()))
         if not len(a):
             continue
         # At most one neighbour from the same piece at a particular anchor;
@@ -161,7 +179,7 @@ def _hypotheses(profiles, max_gap, update, *, sparse_degree=None):
         if sparse_degree is not None:
             # Divvy the global vote budget among source fragments so large
             # perimeters and repetitive textures cannot starve small pieces.
-            limit=max(24,MAX_GLOBAL_MATCHES//(3*len(profiles)))
+            limit=max(1,vote_budget//(3*len(profiles)))
             order=np.lexsort((dis,ia[a]))
             starts=np.r_[0,np.flatnonzero(ia[a[order]][1:]!=ia[a[order]][:-1])+1,len(order)]
             take=np.concatenate([order[l:min(r,l+limit)] for l,r in zip(starts[:-1],starts[1:])])
@@ -429,16 +447,18 @@ def _consistent_candidates(shapes, candidates):
     return output
 
 
-def gap_candidates(shapes, update=lambda _:None, *, sparse_degree=None):
+def gap_candidates(shapes, update=lambda _:None, *, sparse_degree=None, pair_budget=None):
     """Return independently corroborated hypotheses and search diagnostics."""
-    if len(shapes) < 2 or len(shapes) > (MAX_SPARSE_GAP_PIECES if sparse_degree is not None else MAX_GAP_PIECES):
+    limit=(pair_budget//max(1,sparse_degree) if pair_budget is not None else MAX_SPARSE_GAP_PIECES) if sparse_degree is not None else MAX_GAP_PIECES
+    if len(shapes) < 2 or len(shapes) > limit:
         return [], {"reason":"piece budget", "evaluated":0}
     profiles = _profiles(shapes)
     median_side = float(np.median([min(sh.fragment.mask.shape) for sh in shapes]))
     if sum(float(np.percentile(p.texture,80))>=4. for p in profiles)<2:
         return [], {"reason":"insufficient pictorial texture","evaluated":0}
     max_gap = min(36., max(5., median_side*.35))
-    hyps = _hypotheses(profiles,max_gap,update,sparse_degree=sparse_degree)
+    hyps = _hypotheses(profiles,max_gap,update,sparse_degree=sparse_degree,
+                       vote_budget=max(MAX_GLOBAL_MATCHES,24*3*len(shapes)) if pair_budget is not None and sparse_degree is not None else MAX_GLOBAL_MATCHES)
     pairs = defaultdict(list)
     for i,j,angle,t,votes,dist in hyps:
         pairs[i,j].append((angle,t,votes,dist))
