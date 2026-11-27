@@ -102,6 +102,26 @@ const {execFileSync}=require('node:child_process');
   assert.equal(await page.locator('#placed').textContent(),'4 / 4');
   assert.match(await page.locator('#diagnostics').textContent(),/physical-document-foreground-multiscale/);
   assert.equal(await page.locator('#dpa').textContent(),'—');
+  // Metadata-free irregular RGB keyed images: automatic geometry works even
+  // after a digital transfer left Input type set to Digital fragments.
+  const keyed=await page.evaluate(()=>Array.from({length:102},(_,i)=>{
+    const c=document.createElement('canvas');c.width=22+(i%3);c.height=24;
+    const ctx=c.getContext('2d');ctx.fillStyle='#ff00ff';ctx.fillRect(0,0,c.width,c.height);
+    ctx.fillStyle=`rgb(${20+(i*37)%200},${20+(i*73)%200},${20+(i*13)%200})`;
+    ctx.beginPath();ctx.ellipse(c.width/2,c.height/2,7,9,i%3*.3,0,2*Math.PI);ctx.fill();
+    return c.toDataURL('image/png').split(',')[1];
+  }));
+  const keyedArchive=path.join('/tmp','shardelix-keyed-102.zip');
+  execFileSync(process.env.PYTHON||'python',['-c','import sys,zipfile,json,base64; z=zipfile.ZipFile(sys.argv[1],"w"); [(z.writestr(f"collection/fragment_{i}.png",base64.b64decode(v))) for i,v in enumerate(json.load(sys.stdin))]; z.writestr("collection/source_metadata.json","{\"ground_truth\":\"not used\"}"); z.close()',keyedArchive],{input:JSON.stringify(keyed)});
+  await page.locator('#inputMode').selectOption('digital');
+  await page.locator('#upload').setInputFiles(keyedArchive);
+  await page.waitForFunction(()=>document.querySelector('#scanHelp').hidden===false&&document.querySelector('#metadataInfo').textContent.includes('102'),{},{timeout:30000});
+  await page.locator('#run').click();await done('Reconstruction exported');
+  const largeScan=JSON.parse(await page.locator('#diagnostics').textContent()).diagnostics.scan;
+  assert.equal(largeScan.detected_pieces,102);
+  assert.equal(largeScan.pair_search,'indexed-contour-color');
+  assert.ok(largeScan.searched_pairs<=1020);
+  assert.equal(await page.locator('#dpa').textContent(),'—');
   // English text scan fixture: exercise actual local Tesseract/WASM + TSV bridge.
   const textStrips=await page.evaluate(()=>{
     const c=document.createElement('canvas');c.width=350;c.height=480;

@@ -19,9 +19,23 @@ from scipy.spatial import cKDTree
 from .common import Fragment, json_write, save_rgba
 from .geometry import contours
 
-MAX_SCAN_PIECES = 64
+MAX_SCAN_PIECES = 128
 MAX_SCAN_SIDE = 1600
 MAX_WORK_PIXELS = 4_000_000
+
+
+def chroma_mask(a):
+    """Detect magenta sentinel backgrounds with a mostly uniform outer rim.
+
+    Preserve exact silhouettes rather than applying morphological closing to
+    digitally keyed fragments. Return None for ordinary photographs/tiles.
+    """
+    rgb=np.asarray(a)[...,:3]
+    key=(rgb[:,:,0]>=250)&(rgb[:,:,1]<=5)&(rgb[:,:,2]>=250)
+    rim=np.r_[key[0],key[-1],key[:,0],key[:,-1]]
+    if rim.mean()>=.90 and .02<=float((~key).mean())<=.95:
+        return ~key
+    return None
 
 
 def preprocess(paths, target: Path, *, pixel_limit=24_000_000):
@@ -39,6 +53,10 @@ def preprocess(paths, target: Path, *, pixel_limit=24_000_000):
     for path in paths:
         with Image.open(path) as im:
             im = ImageOps.exif_transpose(im).convert("RGBA")
+            # Convert chroma key to alpha before resampling so the sentinel
+            # color cannot bleed into the foreground boundary.
+            keyed=chroma_mask(np.asarray(im)) if im.getchannel("A").getextrema()[0]>=128 else None
+            if keyed is not None:im.putalpha(Image.fromarray(keyed.astype(np.uint8)*255))
             if scale < 1:
                 im = im.resize(tuple(max(1, round(v*scale)) for v in im.size), Image.Resampling.LANCZOS)
             a = np.array(im)
@@ -51,7 +69,12 @@ def preprocess(paths, target: Path, *, pixel_limit=24_000_000):
         method = "alpha"
         bg = None
         threshold = None
-        if np.any(a[:,:,3]<128):
+        if keyed is not None:
+            method="magenta-chroma-key"
+            mask=a[:,:,3]>=128
+            bg=np.array([255,0,255])
+            threshold=5
+        elif np.any(a[:,:,3]<128):
             mask = a[:,:,3]>=128
         else:
             method = "border-background"
@@ -346,6 +369,53 @@ def _render(shapes, poses, out, pixel_cap):
     return collision,float((labels>=0).mean()),[w,h]
 
 
+def _indexed_pairs(shapes, forward, reverse, scales, *, keep=10):
+    """Retrieve sparse plausible partners using global multiscale arc evidence.
+
+    The full rigid-pose, overlap and continuity checks still run for each
+    shortlisted pair. Keep both incoming/outgoing nominations to avoid
+    dropping a small fragment just because its neighbor is much larger.
+    """
+    n=len(shapes)
+    votes=np.zeros((n,n),np.float64)
+    for k,scale in enumerate(scales):
+        def features(shape, desc, direction):
+            if desc is None or not len(desc[0]):return None
+            ids, geom, _=desc
+            offsets=np.rint(np.linspace(0,scale,3)).astype(int)*direction
+            rgb=shape.color[(ids[:,None]+offsets)%len(shape.points)].reshape(len(ids),-1)
+            return np.concatenate([geom,.40*rgb/255.],axis=1)
+        fs=[features(sh,forward[i][k],1) for i,sh in enumerate(shapes)]
+        rs=[features(sh,reverse[i][k],-1) for i,sh in enumerate(shapes)]
+        valid=[i for i,r in enumerate(rs) if r is not None]
+        if not valid:continue
+        pool=np.concatenate([rs[i] for i in valid])
+        owners=np.concatenate([np.full(len(rs[i]),i,dtype=np.int32) for i in valid])
+        tree=cKDTree(pool)
+        neighbors=min(24,len(pool))
+        for i,f in enumerate(fs):
+            if f is None:continue
+            d,ix=tree.query(f,k=neighbors)
+            if neighbors==1:d=d[:,None];ix=ix[:,None]
+            owner=owners[ix]
+            good=(owner!=i)&(d<.65)
+            # A single arc can vote for many near-identical windows of the
+            # same piece. Retain at most its strongest vote for each owner.
+            best=np.zeros((len(f),n))
+            row=np.broadcast_to(np.arange(len(f))[:,None],owner.shape)
+            np.maximum.at(best,(row[good],owner[good]),np.exp(-3*d[good]))
+            votes[i]+=best.sum(0)/max(1,len(f))*(scale/12)**.5
+    # Shortlist a bounded number per fragment. Neighbors with no evidence
+    # are not invented merely to fill the quota.
+    pairs=set()
+    for i in range(n):
+        score=votes[i]+votes[:,i]
+        score[i]=0
+        for j in np.argsort(-score,kind="stable")[:keep]:
+            if score[j]>0:pairs.add((min(i,int(j)),max(i,int(j))))
+    return sorted(pairs)
+
+
 def reconstruct(pieces,out:Path,report,update=lambda _:None,*,pixel_cap=8_000_000):
     started=time.perf_counter()
     # Fixed sampling budget for all pieces, not per-piece rescaling.
@@ -355,17 +425,25 @@ def reconstruct(pieces,out:Path,report,update=lambda _:None,*,pixel_cap=8_000_00
     forward=[[_descriptor(s.points,k) for k in scales] for s in shapes]
     reverse=[[_descriptor(s.points,k,True) for k in scales] for s in shapes]
     candidates=[];tol=max(2.7,step*1.35)
-    for i,a in enumerate(shapes):
-        update(f"Matching scan contours {i+1}/{len(shapes)}")
-        for j in range(i+1,len(shapes)):
-            b=shapes[j]
-            for c in _pair(a,b,forward[i],reverse[j],tol):candidates.append((c[0],i,j,*c[1:]))
+    n=len(shapes)
+    indexed=n>64
+    if indexed:
+        update("Indexing multiscale scan contours and colors")
+        pairs=_indexed_pairs(shapes,forward,reverse,scales)
+    else:
+        pairs=[(i,j) for i in range(n) for j in range(i+1,n)]
+    for z,(i,j) in enumerate(pairs):
+        if z%max(1,len(pairs)//100)==0:
+            update(f"Matching scan contours {z+1}/{len(pairs)} candidate pairs")
+        for c in _pair(shapes[i],shapes[j],forward[i],reverse[j],tol):candidates.append((c[0],i,j,*c[1:]))
     groups,joins=_merge(shapes,candidates)
     update("Rendering scan reconstruction")
     main=groups[0]
+    if len(groups)>1:
+        report["warnings"].append(f"Only the largest connected group ({len(main)}/{n} fragments) is rendered in the main image. Remaining groups are unanchored; missing material or distractors may prevent reliable joins.")
     collision,coverage,wh=_render(shapes,main,out,pixel_cap)
     json_write(out/"unanchored_components.json",[[shapes[i].fragment.id for i in g] for g in groups[1:]])
-    report.update({"candidate_poses":len(candidates),"candidate_pairs":len({(c[1],c[2]) for c in candidates}),"accepted_joins":joins,"component_sizes":[len(g) for g in groups],
+    report.update({"pair_search":"indexed-contour-color" if indexed else "all-pairs","searched_pairs":len(pairs),"possible_pairs":n*(n-1)//2,"candidate_poses":len(candidates),"candidate_pairs":len({(c[1],c[2]) for c in candidates}),"accepted_joins":joins,"component_sizes":[len(g) for g in groups],
                    "canvas_wh":wh,"orientation_ambiguous":True,"accuracy_verified":False,
                    "coverage_definition":"occupied fraction of estimated bounding box, not recovered original area"})
     # Contact sheet gives an immediate visual check of segmentation quality.
@@ -380,7 +458,7 @@ def reconstruct(pieces,out:Path,report,update=lambda _:None,*,pixel_cap=8_000_00
     d={"algorithm":"physical-scan-se2-experimental","status":"unverified" if len(main)==len(pieces) else "partial",
        "placed":len(main),"piece_count":len(pieces),"coverage":coverage,"render_collision_pixels":collision,
        "available_piece_recovery":len(main)/len(pieces),"runtime_seconds":time.perf_counter()-started,
-       "scan":{"input_images":report["input_images"],"detected_pieces":len(pieces),"components":len(groups),
+       "scan":{"kind":"irregular-fragments","input_images":report["input_images"],"detected_pieces":len(pieces),"components":len(groups),"pair_search":report["pair_search"],"searched_pairs":len(pairs),"possible_pairs":n*(n-1)//2,
                "warnings":report["warnings"],"common_scale":report["common_scale"],"accuracy_verified":False}}
     json_write(out/"diagnostics.json",d)
     return d

@@ -71,7 +71,7 @@ These are protective caps, not verified WebAssembly capacity or performance
 guarantees. Use modest cases first. Mobile memory may be tighter. Cancel
 terminates a browser worker and the next run reloads it. The native app starts
 its own cancellable subprocess. Download before starting another run.
-External fragment ZIPs do not need case.json. Automatic setup is enabled on every new import: upload and click Run. The engine uses public archive metadata when available; otherwise, for equal-sized opaque tiles, it recomputes the geometry at solve time and chooses the layout closest to a conventional 4:3 landscape aspect. Stale manual values never override this automatic mode. Disable Automatic setup to choose another layout or override the geometry. The original shape and rotation cannot be determined from the count alone: choose a different factor pair or edit the dimensions manually, especially for portrait images or missing fragments. For the Digital fragments override, irregular/unequal-sized pieces still require public canvas constraints. The default Input type also tries the physical scan route for metadata-free unequal-size or alpha-masked pieces and single images. The inspection never uses a reference or the filenames as pose labels.
+External fragment ZIPs do not need case.json. Automatic setup is enabled on every new import: upload and click Run. The engine uses public archive metadata when available; otherwise, for equal-sized opaque tiles, it recomputes the geometry at solve time and chooses the layout closest to a conventional 4:3 landscape aspect. Stale manual values never override this automatic mode. Disable Automatic setup to choose another layout or override the geometry. The original shape and rotation cannot be determined from the count alone: choose a different factor pair or edit the dimensions manually, especially for portrait images or missing fragments. When Automatic setup is enabled, metadata-free irregular or unequal-sized pieces fall back to the geometry-based scan solver even when Digital fragments is selected. Equal-size magenta-keyed fragments are recognized as masks rather than opaque grid tiles. The default Input type also tries the physical scan route for single images. To force a known digital canvas, disable Automatic setup and enter geometry. The inspection never uses a reference or the filenames as pose labels.
 
 The generator treats Resolution as a preferred maximum side. It can resize the working canvas to fit the requested exact count and resource limits (including sampling), then reports the actual canvas and grid. Uniform rectangular cuts may require snapping each dimension to a cell multiple. Thin cells have limited texture; infeasible counts return a descriptive error rather than silently changing the count.
 
@@ -95,7 +95,7 @@ required in physical mode.
 - The system applies EXIF orientation, one common resolution scale, robust
   border color / optional planar illumination estimation, adaptive mask
   thresholding (including JPEG ringing suppression), morphology, connected
-  components and speckle filtering. Transparent PNG alpha is supported.
+  components and speckle filtering. Transparent PNG alpha and high-confidence magenta chroma-key backgrounds are supported (the key is converted to alpha before resampling).
 - It matches complementary, resampled contour arcs at multiple lengths,
   estimates continuous SE(2) transforms, checks opposed tangents and seam
   color, retains alternative poses, then joins components with interior
@@ -104,9 +104,9 @@ required in physical mode.
   processing report, reconstruction PNG, boundary overlay and affine poses.
   Poses are local cropped working-pixel vertex coordinates → output canvas;
   crop offsets and common scale are in the report.
-- Physical mode has an experimental cap of 64 detected pieces, working scans
+- Physical/irregular mode has an experimental cap of 128 detected pieces, working scans
   downscaled uniformly to at most 1,600 px per side and ~4 million total input
-  pixels. Pairwise matching scales quadratically. All processing is local.
+  pixels. For up to 64 pieces, all pairs are tested. For 65–128 pieces, a global multiscale contour/color index shortlists up to 10 neighbors per piece before rigid-pose and collision verification. All processing is local.
 - Paper touching the scan edge, overlapping/stacked pieces, near-identical
   foreground/background, strong shadows, nonplanarity, perspective and
   inconsistent DPI can cause segmentation or alignment failures. Missing
@@ -123,7 +123,7 @@ after a common rigid gauge (the first placed piece defines the gauge).
 [AutoMosaic / OpenSoft14](https://github.com/raltgz/OpenSoft14), not redistributed
 here. Both were fully connected (6/6 and 5/5), with visually plausible text and
 art alignment, but no independent ground-truth poses or pixel accuracy claim.
-The real examples have residual visible seam gaps and small raster overlaps.
+The real examples have residual visible seam gaps and small raster overlaps. In eroded or distractor-heavy artwork datasets, connected groups may remain small; the result exports all detected masks plus unanchored group membership, not fabricated full-page positions.
 
 ### Folder-wrapped scanned strip archives
 

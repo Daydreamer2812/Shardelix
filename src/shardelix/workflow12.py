@@ -168,6 +168,14 @@ def _suggest_grid(openers, count, browser):
             if im.size!=tile:return None
             if ("A" in im.getbands() or "transparency" in im.info) and im.convert("RGBA").getchannel("A").getextrema()[0]==0:
                 return None
+            # Equal-size opaque color-key canvases are masks, not grid tiles.
+            # Check the magenta rim before decoding the entire image.
+            rgb=im.convert("RGB") if im.mode=="P" else im
+            corners=[rgb.getpixel((x,y))[:3] for x,y in ((0,0),(im.width-1,0),(0,im.height-1),(im.width-1,im.height-1))] if rgb.mode in ("RGB","RGBA") else []
+            if sum(r>=250 and g<=5 and b>=250 for r,g,b in corners)>=3:
+                import numpy as np
+                from .reconstruction.scan import chroma_mask
+                if chroma_mask(np.asarray(im.convert("RGB"))) is not None:return None
     if not tile or total>(WEB_PIXELS if browser else MAX_PIXELS):return None
     tw,th=tile
     # Rank factor pairs by common landscape aspect. Pixels/count alone do not
@@ -366,9 +374,10 @@ def _single(root,files,conf,update,browser=False,truth_dir=None):
         if mode not in ("digital","auto","scan"):raise ValueError("Unknown reconstruction input mode")
         if mode=="scan":
             return _scan_single(root,files,conf,update,browser,truth_dir)
-        if mode=="auto" and conf.get("auto_layout",False):
+        if conf.get("auto_layout",False):
             info=inspect_uploads(files,browser)
-            if not info["metadata"] and (not info["suggested_grid"] or info["observed_count"]==1):
+            if not info["metadata"] and (not info["suggested_grid"] or (mode=="auto" and info["observed_count"]==1)):
+                update("Detected irregular fragments — selecting geometry-based reconstruction")
                 return _scan_single(root,files,conf,update,browser,truth_dir)
     from .reconstruction.generator import generate,dimensions
     from .reconstruction.cli import solve_case,evaluate_case,solve_external_document
@@ -407,7 +416,7 @@ def _single(root,files,conf,update,browser=False,truth_dir=None):
                 paths=sorted((case/"pieces").iterdir())
                 suggestion=_suggest_grid((lambda p=p:p.open("rb") for p in paths),n,browser)
                 if not suggestion:
-                    raise ValueError("Automatic setup cannot determine the canvas for irregular or unequal-size fragments without metadata. Turn off Automatic setup to enter the known canvas/cut (or use Document strips).")
+                    raise ValueError("Fragment geometry changed between inspection and extraction; reselect the archive.")
                 layout=suggestion["layouts"][0]
                 # Unknown square-tile orientation is resolved by quarter-turn
                 # matching; there is no need to specify a rotation mode.
