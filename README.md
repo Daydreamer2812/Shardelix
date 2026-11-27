@@ -288,10 +288,14 @@ The new branch segments separate paper pieces from a contrasting matte backgroun
 and estimates continuous rigid poses from complementary torn contours.
 It supports multiple non-touching pieces on one sheet, folder-wrapped scan ZIPs,
 and same-size binary foreground mask PNG sidecars (including scanned document strips).
+For text-bearing strips, default optional local English OCR scores words crossing
+candidate seams and helps resolve upright direction. If OCR is unavailable or
+insufficient, the pixel-only result remains available. It is slower and experimental.
 It exports mask previews,
 preprocessed PNGs, affine poses and an honest scan diagnostics report.
 Test results (including two public physical scan sets) are in
 [`reports/scan_simulation.json`](reports/scan_simulation.json) and
-[`reports/scan_real.json`](reports/scan_real.json).
+[`reports/scan_real.json`](reports/scan_real.json), and
+[`reports/scan_strip_ocr.json`](reports/scan_strip_ocr.json) (native OCR strip benchmark).
 No ground truth is used in matching; full placement is not verified accuracy.
 See [physical scan limitations](docs/WEB.md#physical-paper-scans-and-photos-experimental).

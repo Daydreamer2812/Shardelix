@@ -102,6 +102,30 @@ const {execFileSync}=require('node:child_process');
   assert.equal(await page.locator('#placed').textContent(),'4 / 4');
   assert.match(await page.locator('#diagnostics').textContent(),/physical-document-foreground-multiscale/);
   assert.equal(await page.locator('#dpa').textContent(),'—');
+  // English text scan fixture: exercise actual local Tesseract/WASM + TSV bridge.
+  const textStrips=await page.evaluate(()=>{
+    const c=document.createElement('canvas');c.width=350;c.height=480;
+    const ctx=c.getContext('2d');ctx.fillStyle='white';ctx.fillRect(0,0,c.width,c.height);
+    ctx.font='22px Arial';ctx.fillStyle='black';
+    for(let y=27;y<470;y+=30)ctx.fillText(y%60===27?'document reconstruction test':'matching paper fragments',4,y);
+    return [2,4,1,3,0].map(i=>{
+      const tile=document.createElement('canvas');tile.width=70;tile.height=480;
+      tile.getContext('2d').drawImage(c,i*70,0,70,480,0,0,70,480);
+      return tile.toDataURL('image/png').split(',')[1];
+    });
+  });
+  await page.locator('#inputMode').selectOption('scan');
+  assert.ok(await page.locator('#scanOCR').isChecked());
+  await page.locator('#upload').setInputFiles(textStrips.map((v,i)=>({name:'ocr-'+i+'.png',mimeType:'image/png',buffer:Buffer.from(v,'base64')})));
+  await page.locator('#run').click();await done('Reconstruction exported');
+  const ocr=JSON.parse(await page.locator('#diagnostics').textContent()).diagnostics.scan.ocr;
+  assert.ok(ocr&&['applied','insufficient_evidence'].includes(ocr.status),JSON.stringify(ocr));
+  assert.equal(ocr.candidate_pairs,20);
+  assert.equal(await page.locator('#placed').textContent(),'5 / 5');
+  assert.equal(await page.locator('#dpa').textContent(),'—');
+  // Disable the optional stage to preserve the basic offline scan route.
+  await page.locator('#scanOCR').uncheck();await page.locator('#run').click();await done('Reconstruction exported');
+  assert.equal(JSON.parse(await page.locator('#diagnostics').textContent()).diagnostics.scan.ocr,undefined);
   for(const width of [1024,768,390,320]){
    await page.setViewportSize({width,height:844});
    const mobile=await page.evaluate(()=>({viewport:window.innerWidth,scroll:document.documentElement.scrollWidth,overflow:[...document.querySelectorAll('body *')].filter(e=>{const r=e.getBoundingClientRect();return r.width>0&&r.right>window.innerWidth+1}).slice(0,20).map(e=>[e.tagName,e.id,String(e.className),Math.round(e.getBoundingClientRect().right)])}));

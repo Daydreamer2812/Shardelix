@@ -1,0 +1,92 @@
+{
+  "dataset": "DocDataset, physical stripes",
+  "source": "https://people.tamu.edu/~xinli/DocReassembly/data/DocDataset.zip",
+  "seed": 624,
+  "protocol": "Anonymized scan pixels and foreground masks only; truth read after both solutions. All scores are native Tesseract 5.5.0 English OCR, not a browser accuracy guarantee.",
+  "results": [
+    {
+      "case": "real1_27",
+      "baseline": {
+        "directed_correct": 5,
+        "undirected_correct": 8,
+        "positions_correct": 8,
+        "total_joins": 26,
+        "total_pieces": 27
+      },
+      "ocr": {
+        "directed_correct": 26,
+        "undirected_correct": 26,
+        "positions_correct": 27,
+        "total_joins": 26,
+        "total_pieces": 27
+      },
+      "ocr_diagnostics": {
+        "candidate_pairs": 372,
+        "orientation_decisive": true,
+        "global_flip": false,
+        "language": "eng",
+        "elapsed_seconds": 79.40789085800043,
+        "status": "applied",
+        "supported_joins": 25,
+        "orientation_groups": 1,
+        "flipped_strips": 0
+      }
+    },
+    {
+      "case": "real2_56",
+      "baseline": {
+        "directed_correct": 6,
+        "undirected_correct": 9,
+        "positions_correct": 0,
+        "total_joins": 55,
+        "total_pieces": 56
+      },
+      "ocr": {
+        "directed_correct": 10,
+        "undirected_correct": 15,
+        "positions_correct": 0,
+        "total_joins": 55,
+        "total_pieces": 56
+      },
+      "ocr_diagnostics": {
+        "candidate_pairs": 852,
+        "orientation_decisive": true,
+        "global_flip": false,
+        "orientation_groups": 2,
+        "flipped_strips": 28,
+        "language": "eng",
+        "elapsed_seconds": 65.22167250700022,
+        "status": "applied",
+        "supported_joins": 54
+      }
+    },
+    {
+      "case": "real3_39",
+      "baseline": {
+        "directed_correct": 2,
+        "undirected_correct": 5,
+        "positions_correct": 2,
+        "total_joins": 38,
+        "total_pieces": 39
+      },
+      "ocr": {
+        "directed_correct": 8,
+        "undirected_correct": 10,
+        "positions_correct": 1,
+        "total_joins": 38,
+        "total_pieces": 39
+      },
+      "ocr_diagnostics": {
+        "candidate_pairs": 588,
+        "orientation_decisive": true,
+        "global_flip": false,
+        "language": "eng",
+        "elapsed_seconds": 36.937272854000184,
+        "status": "applied",
+        "supported_joins": 36,
+        "orientation_groups": 1,
+        "flipped_strips": 0
+      }
+    }
+  ]
+}

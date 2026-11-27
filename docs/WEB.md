@@ -110,8 +110,8 @@ required in physical mode.
 - Paper touching the scan edge, overlapping/stacked pieces, near-identical
   foreground/background, strong shadows, nonplanarity, perspective and
   inconsistent DPI can cause segmentation or alignment failures. Missing
-  material can cause seam translation drift. No OCR or upright orientation
-  guarantee. Global rotation is ambiguous. Coverage is occupancy of an
+  material can cause seam translation drift. Upright orientation remains
+  unverified, even with optional document-strip OCR. Coverage is occupancy of an
   estimated bounding box, not original-page coverage, and DPA/F1 are not
   computed on physical scans without independently registered truth.
 
@@ -147,6 +147,31 @@ shapes, the irregular scan route remains available. Physical strip ordering
 is experimental: aligned geometry and full placement do not prove that the
 text is in correct order. The normalized strips and scan report are exportable;
 the supplied ground-truth ordering is never used for inference.
+
+For text-bearing physical strips, **Enhanced document strip matching (local
+English OCR)** is enabled by default. It estimates local scanner shading,
+shortlists up to 12 candidate neighbors per direction (at most 900 distinct
+candidate seams), and scores confident words whose bounding boxes actually
+cross the seam. A second chain optimization combines these scores with the
+pixel evidence. Upright orientation is checked in both directions, with
+separate checks for sizeable relative-orientation groups. Lack of a recognized
+word is not a mismatch. The browser downloads pinned Tesseract.js 6.0.1,
+WebAssembly and English language data on first use; candidate images are
+processed entirely on the device. Native Studio uses the optional installed
+`tesseract` command and `eng` model. Uncheck the option for non-English
+documents or faster pixel-only matching. Tiny or very sparse scans skip OCR;
+if OCR is unavailable or insufficiently informative, the original result is
+retained. OCR is slower and cannot guarantee true joins or handle all scripts,
+multiple text layouts, or substantial missing paper.
+
+Reproduce the real-strip benchmark using
+`PYTHONPATH=src python scripts/benchmark_scanned_strips.py /path/to/DocDataset.zip`.
+The original [DocDataset](https://people.tamu.edu/~xinli/DocReassembly/) is
+not redistributed. The script anonymizes inputs before reconstruction, then
+reads the answer ordering only after both solvers finish. See
+[`reports/scan_strip_ocr.json`](../reports/scan_strip_ocr.json) for measured
+results. These are native OCR results, not a claim of identical browser
+performance or verified accuracy on arbitrary uploads.
 
 ## Verification status
 
