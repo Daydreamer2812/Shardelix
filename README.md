@@ -2,14 +2,21 @@
 
 # Shardelix
 
-### Blind image reconstruction · Jigsaw puzzle solver · Classical computer vision
+### Reference-free blind image & document reconstruction
 
-Reassemble shuffled, rotated and partially missing digital image fragments<br>
-with a CPU-only C++20 / Python solver that also runs in your browser via WebAssembly.<br>
-No training data, GPU, API keys or neural models required.
+**Reconstruct the unseen. Recover structure from fragments alone.**
+
+What if the original image no longer exists? No preview, no template, no answer key — just a collection of disconnected pieces.
+
+Shardelix is a classical computer vision research framework that estimates how shuffled, rotated and potentially incomplete digital fragments fit together, without ever seeing the original image during reconstruction.
+
+**No reference image · No ground truth during inference · No pretrained model · No training dataset**
+
+CPU-first Python and C++20 · Native execution and in-browser WebAssembly
 
 [![Version](https://img.shields.io/badge/version-13.0.1-2463eb?style=flat-square)](pyproject.toml)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776ab?style=flat-square&logo=python&logoColor=white)](pyproject.toml)
+[![Reference-free](https://img.shields.io/badge/reconstruction-reference--free-139b85?style=flat-square)](#what-makes-shardelix-blind)
 [![CPU](https://img.shields.io/badge/engine-classical%20CV-139b85?style=flat-square)](#how-it-works)
 [![Tests](https://github.com/Daydreamer2812/Shardelix/actions/workflows/ci.yml/badge.svg)](https://github.com/Daydreamer2812/Shardelix/actions/workflows/ci.yml)
 [![Browser](https://github.com/Daydreamer2812/Shardelix/actions/workflows/web-smoke.yml/badge.svg)](https://github.com/Daydreamer2812/Shardelix/actions/workflows/web-smoke.yml)
@@ -30,15 +37,40 @@ No training data, GPU, API keys or neural models required.
 
 ---
 
+## What makes Shardelix blind?
+
+Most image restoration workflows start with some knowledge of the desired result. Shardelix tackles a different problem: **infer the arrangement of disconnected fragments when the target image is unavailable.** It searches for compatible boundaries and globally consistent relative poses using the evidence present in the pieces themselves.
+
+| What the solver can use | What it does not receive |
+|:--|:--|
+| Fragment pixels, contours and alpha masks | Original or reference image |
+| Color, texture and boundary continuity | Template or target thumbnail |
+| Geometric compatibility and candidate relationships | Ground-truth positions, ordering or rotations |
+| Public problem constraints, when needed (canvas dimensions, grid/cut family, expected count or angle mode) | Pretrained model weights or a training dataset |
+
+The reconstruction and evaluation paths are deliberately separated. Ground truth is optional and is used **only after reconstruction** to measure performance; it is not required for solving imported fragments. Public geometric constraints are not ground truth about individual fragment poses.
+
+```mermaid
+flowchart LR
+    A[Unordered fragments] --> B[Blind reconstruction engine]
+    P[Public problem constraints if needed] --> B
+    B --> C[Predicted image and poses]
+    C --> E[Optional post-solve evaluation]
+    R[Held-out reference or ground truth] -. evaluation only .-> E
+```
+
+If the available fragments do not uniquely determine the original arrangement, Shardelix can report ambiguity, unanchored groups or partial solutions rather than claim verified accuracy. Missing pixels are not hallucinated or inpainted.
+
 ## Why Shardelix?
 
-Shardelix (formerly FragmentLab) is a research framework for reconstructing digital images and documents from unordered fragments. It uses appearance continuity, complementary boundaries, rotation normalization, sparse graph assembly and geometric verification. The original image is **never** passed to the blind solver.
+Shardelix (formerly FragmentLab) brings **fragment generation, reference-free reconstruction, geometric verification and reproducible benchmarking** into a single research framework.
 
-- **One framework, many cut families.** Rectangular grids, vertical and horizontal strips, jagged, wavy, jigsaw and mixed irregular fragments.
-- **Flexible poses.** Upright, random quarter-turns and experimental continuous in-plane rotations; optional missing fragments with explicit uncertainty.
-- **Two front ends.** Local Python Studio and static browser Studio using the same source code through Pyodide/WebAssembly.
-- **Research-ready evaluation.** Generate reproducible synthetic cases, inspect blind placements, compare performance profiles and export benchmark reports.
-- **CPU only.** NumPy, SciPy and Pillow; no model weights, API keys or GPU required.
+- **Beyond rectangular puzzles:** supports grids, vertical and horizontal strips, jagged, wavy, jigsaw and mixed irregular digital cuts.
+- **Unknown poses and incomplete inputs:** handles independent quarter-turns, experimental continuous in-plane rotations and missing fragments, subject to observable constraints.
+- **Classical, explainable matching:** combines complementary boundary geometry, appearance continuity, sparse candidate graphs and consistency checks without neural training.
+- **Scalable CPU-first implementation:** selected computational kernels are accelerated in C++20, with a Python reference backend and WebAssembly deployment.
+- **One engine, multiple interfaces:** interactive Web Studio, local Studio, command-line tools and Python API.
+- **Research-grade evidence:** separates blind inference from evaluation, exposes placements and diagnostics, and publishes reproducible measurements including failures.
 
 ## Get started in 60 seconds
 
@@ -64,7 +96,7 @@ python scripts/build_native.py   # optional C++20 compiler (g++ or clang++)
 python -m shardelix studio
 ```
 
-Open the local Studio at **http://127.0.0.1:8765**. Choose **Fragment generator**, click *Use a synthetic sample*, set the cut and piece count, and generate. Use **Send to reconstruction** to transfer the anonymous pieces and a separately held reference. Or download the two ZIP files and re-import independently in **Reconstruction**.
+Open the local Studio at **http://127.0.0.1:8765**. To solve without a reference, open **Reconstruction**, import your fragment images or fragments ZIP, specify public geometry if required, and leave the optional ground-truth field empty. To create a reproducible experiment, use **Fragment generator** and **Send to reconstruction**; the generated reference is held separately for optional post-solve evaluation.
 
 ### 2. Run directly in a browser (static build)
 
