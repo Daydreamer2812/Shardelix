@@ -1,7 +1,7 @@
 name: Browser engine smoke
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, v13-dev]
   pull_request:
   workflow_dispatch:
 permissions:
@@ -18,7 +18,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: python scripts/build_web.py --out build/pages
+      - uses: emscripten-core/setup-emsdk@v15
+        with:
+          version: '4.0.15'
+      - run: python scripts/build_web.py --out build/pages --wasm
       - run: npm install --no-save playwright
       - run: npx playwright install --with-deps chromium
       - name: Real WebAssembly browser workflow
@@ -27,7 +30,7 @@ jobs:
           server=$!
           trap 'kill $server || true' EXIT
           for i in $(seq 1 20); do curl -fsS http://127.0.0.1:8767/ -o /dev/null && break || sleep 1; done
-          QA_SCREENSHOT=/tmp/studio.png node scripts/qa_studio.cjs http://127.0.0.1:8767/
+          EXPECT_CPP="C++ / WASM" QA_SCREENSHOT=/tmp/studio.png node scripts/qa_studio.cjs http://127.0.0.1:8767/
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -35,4 +38,5 @@ jobs:
           path: |
             /tmp/pages.log
             /tmp/studio.png
+            /tmp/studio-generator.png
             /tmp/studio-mobile.png

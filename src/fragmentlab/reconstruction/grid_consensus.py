@@ -16,7 +16,7 @@ from .geometry import R
 
 D=np.array([[0,-1],[1,0],[0,1],[-1,0]],int)
 
-def profiles(pieces,depth=1):
+def _profiles_reference(pieces,depth=1):
     out=[]
     for p in pieces:
         a=p.rgba[:,:,:3].astype(np.float32)/255.
@@ -38,6 +38,13 @@ def profiles(pieces,depth=1):
                 q=e-gaussian_filter1d(g,.65,axis=0)
             out.append((e.copy(),np.ascontiguousarray(e-q)))
     return out
+
+def profiles(pieces,depth=1):
+    if depth==1:
+        from ..native_core import profiles as accelerated
+        result=accelerated(pieces)
+        if result is not None:return result
+    return _profiles_reference(pieces,depth)
 
 def edge_costs(pieces,rotations,metric="hybrid",gradient=.35,depth=1):
     desc=profiles(pieces,depth);m=len(desc)

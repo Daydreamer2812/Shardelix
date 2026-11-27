@@ -5,7 +5,7 @@ batches avoid an N-by-N matrix and only count observed shortlist matches.
 """
 import numpy as np
 
-def loop_votes(idx,batch=65536):
+def _loop_votes_reference(idx,batch=65536):
     m,keep=idx.shape
     support=np.zeros((m,keep),np.int32)
     def cast(x):return x.astype(np.int64,copy=False)
@@ -33,6 +33,11 @@ def loop_votes(idx,batch=65536):
                     if not ok.any():continue
                     for x,y in ((a,b),(cc,e),(js,f),(ls,g)):add(x[ok],y[ok])
     return support
+
+def loop_votes(idx,batch=65536):
+    from ..native_core import loop_votes as accelerated
+    result=accelerated(idx)
+    return _loop_votes_reference(idx,batch) if result is None else result
 
 def reciprocal_links(idx,costs,rows,margin):
     support=loop_votes(idx);m,keep=idx.shape

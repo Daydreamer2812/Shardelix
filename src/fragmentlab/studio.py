@@ -49,7 +49,7 @@ class State:
             s={"state":"error","stage":"Worker exited","error":"Solver process stopped; check memory or inputs."}
         if self.started is not None and s.get("state")=="running":s["elapsed_seconds"]=round(time.monotonic()-self.started,1)
         return s
-    def start(self,conf,files):
+    def start(self,conf,files,truth=None):
         with self.lock:
             if self.process and self.process.poll() is None:
                 current=self.status()
@@ -64,6 +64,12 @@ class State:
                 leaf=filename.replace("\\","/").split("/")[-1]
                 if not leaf or leaf in {".",".."} or (up/leaf).exists():raise ValueError("Invalid or duplicate file name")
                 (up/leaf).write_bytes(data)
+            if truth:
+                name,data=truth
+                leaf=name.replace("\\","/").split("/")[-1]
+                if not leaf or leaf in {".",".."}:raise ValueError("Invalid reference filename")
+                folder=self.job/"truth";folder.mkdir()
+                (folder/leaf).write_bytes(data)
             atomic_json(self.job/"config.json",conf)
             atomic_json(self.job/"status.json",{"state":"running","stage":"Starting worker"})
             self.started=time.monotonic()
@@ -109,11 +115,14 @@ def serve(port=8765,open_browser=True):
                     if "multipart/form-data" not in self.headers.get("Content-Type",""):raise ValueError("Expected multipart form")
                     payload=self.rfile.read(size)
                     message=BytesParser(policy=default).parsebytes(("Content-Type: "+self.headers["Content-Type"]+"\r\nMIME-Version: 1.0\r\n\r\n").encode()+payload)
-                    conf=None;files=[]
+                    conf=None;files=[];truth=None
                     for part in message.iter_parts():
                         name=part.get_param("name",header="content-disposition")
                         if name=="config":conf=json.loads(part.get_payload(decode=True))
                         elif name=="files" and part.get_filename():files.append((part.get_filename(),part.get_payload(decode=True)))
+                        elif name=="truth" and part.get_filename():
+                            if truth is not None:raise ValueError("Only one reference allowed")
+                            truth=(part.get_filename(),part.get_payload(decode=True))
                     if not isinstance(conf,dict):raise ValueError("Missing configuration")
                     if self.path=="/api/inspect":
                         with tempfile.TemporaryDirectory() as tmp:
@@ -125,7 +134,7 @@ def serve(port=8765,open_browser=True):
                                 path.write_bytes(data);paths.append(path)
                             self.reply(inspect_uploads(paths))
                         return
-                    state.start(conf,files);self.reply(state.status())
+                    state.start(conf,files,truth);self.reply(state.status())
                 except Exception as e:self.reply({"error":str(e)[:500]},400)
         server=ThreadingHTTPServer(("127.0.0.1",port),Handler)
         url=f"http://127.0.0.1:{server.server_port}"

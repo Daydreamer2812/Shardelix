@@ -1,16 +1,17 @@
-# V12 Studio — GitHub Pages and local runs
+# V13 Studio — GitHub Pages and local runs
 
 ## UI and solver routing
 
-From image → Generate known fragments → Solver(profile)
-From fragments → Import RGBA PNGs / ZIP + public metadata → Solver(profile)
+Fragment generator → generate anonymous pieces → export fragments ZIP and independent ground truth ZIP.
+Reconstruction → direct transfer or import RGBA PNGs / ZIP + public metadata → Solver(profile) → optional independent evaluator.
+The source/reference image never enters matching.
 
 The benchmark switch repeats the same generated-case workflow across selected
 counts, cuts, seeds and profiles. The independent evaluator reads known truth
 only after solve; it is not a third solver. The browser and native Studio share
 `src/fragmentlab/workflow12.py` and the reconstruction package.
 All profiles use the same cut-specific algorithms and geometric validation.
-Fast reduces search and skips extra refinement; Balanced is the default;
+Fast reduces search; a bounded rescue runs only on severe irregular under-coverage; Balanced is the default;
 High accuracy adds bounded search and verifies candidate hypotheses against
 observable data. It is not a guarantee of better accuracy. Native optional MILP
 is not attempted in WebAssembly; browser and native results need not be identical.
@@ -32,7 +33,7 @@ For a separately hosted copy (subject to the repository license):
    the runner and tests real WebAssembly, single/batch solving, blind replay,
    exports, and responsive layout. Review the retained screenshot and logs.
 
-This public release is a curated copy of the validated V12 code.
+V13 is a hybrid upgrade of the curated V12 code.
 Enable Pages in repository settings; the included GitHub Actions workflow
 builds and deploys the static site from main. For branch-based hosting, build
 the static assets and deploy exactly the four output files to a dedicated
@@ -42,14 +43,14 @@ the rendered UI. No account credentials or API keys are needed to run it.
 ## Local static preview
 
 ```bash
-python scripts/build_web.py --out build/pages
+python scripts/build_web.py --out build/pages --wasm
 python -m http.server 8767 --bind 127.0.0.1 --directory build/pages
 ```
 Visit http://127.0.0.1:8767. Opening index.html directly via file:// is not supported.
-Only Python's standard library is required for the static build.
+The accelerated build requires Emscripten (em++). Omit --wasm for the Python reference build.
 The build script creates the static artifact locally; generated build files are not committed.
 The deployment workflow rebuilds it from source, so do not manually edit engine.zip.
-The pinned Pyodide 0.27.7 runtime and its NumPy, SciPy, Pillow packages download
+The C++ worker module uses SIMD and portable single-threaded WebAssembly. The pinned Pyodide 0.27.7 runtime and its NumPy, SciPy, Pillow packages download
 from cdn.jsdelivr.net. Initial loading can take time and requires internet.
 There is no application/backend upload endpoint in browser mode. The input files,
 working state and downloads stay in the browser worker; CDN requests load code only.
@@ -70,8 +71,7 @@ These are protective caps, not verified WebAssembly capacity or performance
 guarantees. Use modest cases first. Mobile memory may be tighter. Cancel
 terminates a browser worker and the next run reloads it. The native app starts
 its own cancellable subprocess. Download before starting another run.
-Only generated cases with independent truth report DPA/F1. Imported results
-report coverage, collisions and observable ambiguity; no fake ground-truth score.
+DPA/F1 require a matching independent ground-truth archive. A reference raster alone supports only raw, unaligned pixel comparison on overlapping observed pixels and visual inspection; no fabricated position labels.
 Document strips require same-height digital rectangles, not photographs of torn
 paper or arbitrary perspective. Unknown-width inference cannot know the total
 missing area of strips not present in the input.

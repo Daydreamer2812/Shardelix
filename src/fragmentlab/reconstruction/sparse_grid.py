@@ -73,26 +73,36 @@ def candidates(pieces,shape,grid,rotations, shortlist=40, keep=5, profile_sample
             tr=time.perf_counter()
             # Larger bounded vector batches reduce Python overhead.
             batch=min(512,max(32,8_000_000//max(1,allids.shape[1]*min(L,256)*3*4)))
+            from ..native_core import backend,rerank
+            # One fused call avoids large intermediate candidate-by-pixel arrays
+            # and repeated WASM bridge copies.
+            accelerated=None
+            if backend()!="python-reference":
+                jj_all=np.sort(allids,axis=1)
+                accelerated=rerank(eu,gu,ev,gv,jj_all,max(1,L//128))
             for lo in range(0,len(u),batch):
                 hi=min(len(u),lo+batch);a=u[lo:hi]
                 jj=allids[lo:hi].copy()
                 jj.sort(axis=1)
                 same=np.zeros(jj.shape,bool);same[:,1:]=jj[:,1:]==jj[:,:-1]
-                # Downsample exact comparison only for very long strips.
-                step=max(1,L//128);E=eu[lo:hi,::step];G=gu[lo:hi,::step]
-                F=ev[jj,::-step];H=gv[jj,::-step]
-                # When step>1, both have matching lengths; reverse before sampling.
-                delta=E[:,None]-F
-                basecost=np.mean(np.abs(delta),axis=(2,3))
-                # Smooth-image prediction with robust per-channel-gradient scaling.
-                # For 1-pixel strips no inward derivative exists.
-                su=np.sqrt(np.mean(G*G,axis=1)+.00012)
-                sv=np.sqrt(np.mean(H*H,axis=2)+.00012)
-                pred=(np.mean(np.abs(delta+G[:,None]),axis=2)/su[:,None]+
-                      np.mean(np.abs(-delta+H),axis=2)/sv).mean(axis=2)*.5
-                scale=np.sqrt(np.maximum(.01,np.sqrt(np.mean(G*G,axis=(1,2))))[:,None]*
-                              np.maximum(.01,np.sqrt(np.mean(H*H,axis=(2,3)))))
-                cc=.45*basecost/scale+.55*pred
+                if accelerated is not None:
+                    cc=accelerated[lo:hi].copy()
+                else:
+                    # Downsample exact comparison only for very long strips.
+                    step=max(1,L//128);E=eu[lo:hi,::step];G=gu[lo:hi,::step]
+                    F=ev[jj,::-step];H=gv[jj,::-step]
+                    # When step>1, both have matching lengths; reverse before sampling.
+                    delta=E[:,None]-F
+                    basecost=np.mean(np.abs(delta),axis=(2,3))
+                    # Smooth-image prediction with robust per-channel-gradient scaling.
+                    # For 1-pixel strips no inward derivative exists.
+                    su=np.sqrt(np.mean(G*G,axis=1)+.00012)
+                    sv=np.sqrt(np.mean(H*H,axis=2)+.00012)
+                    pred=(np.mean(np.abs(delta+G[:,None]),axis=2)/su[:,None]+
+                          np.mean(np.abs(-delta+H),axis=2)/sv).mean(axis=2)*.5
+                    scale=np.sqrt(np.maximum(.01,np.sqrt(np.mean(G*G,axis=(1,2))))[:,None]*
+                                  np.maximum(.01,np.sqrt(np.mean(H*H,axis=(2,3)))))
+                    cc=.45*basecost/scale+.55*pred
                 cc[(a[:,None]//4==v[jj]//4)|same]=np.inf
                 order=np.argsort(cc,axis=1,kind="stable")[:,:keep]
                 jj=np.take_along_axis(jj,order,axis=1);val=np.take_along_axis(cc,order,axis=1)

@@ -168,6 +168,21 @@ class Solver:
             poses,diag=_solve_v7(fragments,shape,cut,grid,rotations,auto_tune=auto_tune,params=params)
         else:
             poses,diag=solve(fragments,shape,cut,grid,rotations,auto_tune=auto_tune,params=params)
+        # Fast normally evaluates one hypothesis. On catastrophic irregular
+        # under-coverage, try one complementary verified candidate instead of
+        # returning an almost empty placement. Acceptance is strictly blind.
+        if (self.profile=="fast" and not grid and cut in {"jigsaw","wavy","random","jagged"}
+                and not params and self.strategy!="classic" and 8<=len(fragments)<=1024
+                and len(poses)<.60*len(fragments)):
+            from .reconstruction.verified import solve_verified
+            from .reconstruction.solver import objective,orient_to_canvas
+            q,d=solve_verified(fragments,shape,rotations,k=16,max_bucket=18,pack=False)
+            if rotations:q=orient_to_canvas(fragments,q,shape)
+            a,b=objective(fragments,poses,shape),objective(fragments,q,shape)
+            accepted=(len(q)>len(poses) and b>a+1e-8 and render(fragments,q,shape)[2]==0)
+            trial={"accepted":bool(accepted),"initial_placed":len(poses),"alternative_placed":len(q),"initial_objective":a,"alternative_objective":b}
+            if accepted:poses,diag=q,d
+            diag["fast_rescue_v13"]=trial
         if self.profile=="accurate" and not params and self.strategy!="classic":
             if grid:
                 from .reconstruction.recovery12 import verify_extra_grid

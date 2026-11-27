@@ -12,7 +12,7 @@ R=np.array([[[1,0],[0,1]],[[0,-1],[1,0]],[[-1,0],[0,-1]],[[0,1],[-1,0]]],dtype=i
 DIR=np.array([[1,0],[0,1],[-1,0],[0,-1]],dtype=int)
 
 
-def contours(mask: np.ndarray) -> list[tuple[np.ndarray,np.ndarray]]:
+def _contours_reference(mask: np.ndarray) -> list[tuple[np.ndarray,np.ndarray]]:
     """Oriented unit vertex edges, clockwise around foreground, exact to one pixel."""
     padded=np.pad(mask,1)
     sides=[mask & ~padded[:-2,1:-1],mask & ~padded[1:-1,2:],
@@ -44,6 +44,12 @@ def contours(mask: np.ndarray) -> list[tuple[np.ndarray,np.ndarray]]:
             result.append((np.array(vs,dtype=np.int32),np.array(ds,dtype=np.uint8)))
     return result
 
+
+def contours(mask: np.ndarray):
+    """Exact ordered contours, using C++ when available."""
+    from ..native_core import contours as accelerated
+    result=accelerated(mask)
+    return _contours_reference(mask) if result is None else result
 
 def _keys(v: np.ndarray,d: np.ndarray,k: int,step: int,rotations: bool):
     """Vectorized rolling arc descriptors; same exact hashes as the legacy loop."""

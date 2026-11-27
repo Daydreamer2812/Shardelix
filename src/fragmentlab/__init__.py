@@ -5,4 +5,4 @@ from .api import Solver, ReconstructionResult
 from .reconstruction.limits import ResourceLimits
 
 __all__ = ["Fragment", "Pose", "Solver", "ReconstructionResult", "ResourceLimits"]
-__version__ = "12.0.0"
+__version__ = "13.0.0"

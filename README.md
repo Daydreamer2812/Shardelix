@@ -2,12 +2,12 @@
 
 # FragmentLab
 
-### Classical computer vision for blind fragment reconstruction
+### Classical CV for blind image fragment reconstruction
 
 Reassemble shuffled, rotated and partially missing digital image fragments<br>
 with one CPU-only reconstruction framework — no training data or neural models.
 
-[![Version](https://img.shields.io/badge/version-12.0.0-2463eb?style=flat-square)](pyproject.toml)
+[![Version](https://img.shields.io/badge/version-13.0.0-2463eb?style=flat-square)](pyproject.toml)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776ab?style=flat-square&logo=python&logoColor=white)](pyproject.toml)
 [![CPU](https://img.shields.io/badge/engine-classical%20CV-139b85?style=flat-square)](#how-it-works)
 [![Tests](https://github.com/Daydreamer2812/fragmentlab-official/actions/workflows/ci.yml/badge.svg)](https://github.com/Daydreamer2812/fragmentlab-official/actions/workflows/ci.yml)
@@ -46,19 +46,20 @@ python -m venv .venv
 # Linux/macOS: source .venv/bin/activate
 # Windows PowerShell: .venv\Scripts\Activate.ps1
 python -m pip install -e .
+python scripts/build_native.py   # optional C++20 compiler (g++ or clang++)
 python -m fragmentlab studio
 ```
 
-Open the local Studio at **http://127.0.0.1:8765**. Select **From image**, click *Use a synthetic sample*, choose a cut and piece count, and run reconstruction.
+Open the local Studio at **http://127.0.0.1:8765**. Choose **Fragment generator**, click *Use a synthetic sample*, set the cut and piece count, and generate. Use **Send to reconstruction** to transfer the anonymous pieces and a separately held reference. Or download the two ZIP files and re-import independently in **Reconstruction**.
 
 ### 2. Run directly in a browser (static build)
 
 ```bash
-python scripts/build_web.py --out build/pages
+python scripts/build_web.py --out build/pages --wasm  # requires Emscripten SDK
 python -m http.server 8767 --bind 127.0.0.1 --directory build/pages
 ```
 
-Open **http://127.0.0.1:8767**. The browser downloads its pinned Pyodide runtime on first use and then solves locally in a dedicated worker. User fragments are not uploaded to a reconstruction server.
+Open **http://127.0.0.1:8767**. The browser uses the same C++20 kernels compiled to WASM, alongside the pinned Pyodide runtime and the Python reference algorithms, in a dedicated worker. A fallback static build without --wasm runs the Python reference. User fragments are not uploaded to a reconstruction server.
 
 **[Open the hosted Web Studio](https://daydreamer2812.github.io/fragmentlab-official/)** — no installation required. See [Web Studio & hosting](docs/WEB.md) for browser limits and self-hosting.
 
@@ -93,11 +94,13 @@ flowchart LR
     H --> I
 ```
 
+The generator never calls the solver unless the optional benchmark mode is explicitly enabled. The reconstruction tab accepts existing pieces or direct handoff. Reference images and generated evaluation ZIPs are passed to an independent evaluator only after reconstruction.
+
 The three performance profiles adjust search effort within the **same solver**, not separate applications:
 
 | Profile | Intended use |
 |:--|:--|
-| **Fast** | Smaller search effort and less refinement; useful for quick trials |
+| **Fast** | Smaller search effort; one bounded rescue for severe irregular under-coverage |
 | **Balanced** | Default adaptive route with bounded fallback and verification |
 | **High accuracy** | Additional hypotheses and geometry checks; may take longer, not guaranteed to improve every case |
 
@@ -128,7 +131,9 @@ These are **protective resource ceilings**, not measured capacity or accuracy gu
 
 ## Benchmarks
 
-Representative **measured V12 native CPU results**, not universal guarantees:
+The V13 hybrid core accelerates exact mask contour tracing, edge descriptor extraction, sparse 2×2 cycle voting and seam re-ranking in C++20. The Python reference remains available (`FRAGMENTLAB_CORE=python`); the same C ABI is used by the native shared library and WebAssembly. See [V13 changes and evidence](docs/V13_RESULTS.md) for actual parity tests and benchmark methodology.
+
+Representative **historical measured V12 native CPU results**, not universal guarantees:
 
 | Test | DPA | Adjacency F1 | Status |
 |:--|--:|--:|:--:|
@@ -150,7 +155,7 @@ python scripts/stress_v9.py --help
 python scripts/make_showcase.py
 ```
 
-The release's numerical evidence includes difficult and failed cases. It does not claim state-of-the-art performance against other published solvers without matched experimental protocols.
+The historical V12 numerical evidence includes difficult and failed cases. It does not claim state-of-the-art performance against other published solvers without matched experimental protocols.
 
 ## Python API
 
@@ -177,6 +182,7 @@ See [Framework API](docs/FRAMEWORK_API.md) and [coordinates](docs/COORDINATE_CON
 
 ```text
 fragmentlab-official/
+├── cpp/                 # Portable C++20 kernels
 ├── src/fragmentlab/     # Solver, geometry, CLI and Studio
 ├── web/                # Browser WebAssembly worker
 ├── data/examples/      # Generated, shareable synthetic fixtures
