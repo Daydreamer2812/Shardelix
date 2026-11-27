@@ -2,18 +2,23 @@
 
 # FragmentLab
 
-### Classical CV for blind image fragment reconstruction
+### Blind image reconstruction · Jigsaw puzzle solver · Classical computer vision
 
 Reassemble shuffled, rotated and partially missing digital image fragments<br>
-with one CPU-only reconstruction framework — no training data or neural models.
+with a CPU-only C++20 / Python solver that also runs in your browser via WebAssembly.<br>
+No training data, GPU, API keys or neural models required.
 
 [![Version](https://img.shields.io/badge/version-13.0.0-2463eb?style=flat-square)](pyproject.toml)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776ab?style=flat-square&logo=python&logoColor=white)](pyproject.toml)
 [![CPU](https://img.shields.io/badge/engine-classical%20CV-139b85?style=flat-square)](#how-it-works)
 [![Tests](https://github.com/Daydreamer2812/fragmentlab-official/actions/workflows/ci.yml/badge.svg)](https://github.com/Daydreamer2812/fragmentlab-official/actions/workflows/ci.yml)
 [![Browser](https://github.com/Daydreamer2812/fragmentlab-official/actions/workflows/web-smoke.yml/badge.svg)](https://github.com/Daydreamer2812/fragmentlab-official/actions/workflows/web-smoke.yml)
+[![C++20](https://img.shields.io/badge/C%2B%2B-20-00599C?style=flat-square&logo=cplusplus)](cpp/)
+[![WebAssembly](https://img.shields.io/badge/WebAssembly-SIMD-654FF0?style=flat-square&logo=webassembly)](docs/WEB.md)
+[![GitHub stars](https://img.shields.io/github/stars/Daydreamer2812/fragmentlab-official?style=flat-square)](https://github.com/Daydreamer2812/fragmentlab-official/stargazers)
+[![Release downloads](https://img.shields.io/github/downloads/Daydreamer2812/fragmentlab-official/total?style=flat-square)](https://github.com/Daydreamer2812/fragmentlab-official/releases)
 
-[**Launch Web Studio**](https://daydreamer2812.github.io/fragmentlab-official/) · [**Quick start**](#quick-start) · [**Capabilities**](#capabilities) · [**Benchmarks**](#benchmarks) · [**Python API**](#python-api) · [**Web deployment**](docs/WEB.md)
+[**Launch Web Studio**](https://daydreamer2812.github.io/fragmentlab-official/) · [**Download V13**](https://github.com/Daydreamer2812/fragmentlab-official/releases/latest) · [**Quick start**](#quick-start) · [**Capabilities**](#capabilities) · [**Benchmarks**](#benchmarks) · [**Python API**](#python-api) · [**Web deployment**](docs/WEB.md)
 
 ![Actual reconstruction: source image, shuffled rotated fragments and predicted reassembly with cut boundaries](docs/assets/reconstruction-showcase.webp)
 
@@ -32,6 +37,13 @@ FragmentLab is a research framework for reconstructing digital images and docume
 - **Two front ends.** Local Python Studio and static browser Studio using the same source code through Pyodide/WebAssembly.
 - **Research-ready evaluation.** Generate reproducible synthetic cases, inspect blind placements, compare performance profiles and export benchmark reports.
 - **CPU only.** NumPy, SciPy and Pillow; no model weights, API keys or GPU required.
+
+## Get started in 60 seconds
+
+| Try in your browser | Download a release | Integrate with Python |
+|:--|:--|:--|
+| [Open the live Studio](https://daydreamer2812.github.io/fragmentlab-official/) — no install | [Latest release](https://github.com/Daydreamer2812/fragmentlab-official/releases/latest) — source ZIP, prebuilt WebAssembly bundle, checksums | [Python API](#python-api) — use your own fragments |
+| Choose a synthetic sample → Generate fragments → Send to reconstruction | Extract the source ZIP and follow the local quick start; the web ZIP needs a local HTTP server and internet on first run | Run blind matching, export image, poses and independent evaluation |
 
 ## Quick start
 
@@ -133,6 +145,13 @@ These are **protective resource ceilings**, not measured capacity or accuracy gu
 
 The V13 hybrid core accelerates exact mask contour tracing, edge descriptor extraction, sparse 2×2 cycle voting and seam re-ranking in C++20. The Python reference remains available (`FRAGMENTLAB_CORE=python`); the same C ABI is used by the native shared library and WebAssembly. See [V13 changes and evidence](docs/V13_RESULTS.md) for actual parity tests and benchmark methodology.
 
+| Uniform grid | Python reference | Native C++ hybrid | Solver speedup |
+|:--|--:|--:|--:|
+| 4,096 fragments (20 px cells) | 2.896 s | 1.308 s | **2.21×** |
+| 16,384 fragments (20 px cells) | 11.203 s | 6.540 s | **1.71×** |
+
+Both paired synthetic cases (seed 11226, quarter-turn) achieved 100% DPA and adjacency F1, with zero collisions. Native timings exclude generation, input import, rendering and evaluation; they are not browser or cross-solver speed claims. [Raw V13 measurements](reports/v13/paired.json).
+
 Representative **historical measured V12 native CPU results**, not universal guarantees:
 
 | Test | DPA | Adjacency F1 | Status |
@@ -189,7 +208,7 @@ fragmentlab-official/
 ├── examples/           # Python integration
 ├── scripts/            # Build, verification and benchmark runners
 ├── tests/              # Algorithm and web regression tests
-├── reports/v12/        # V12 numerical evidence
+├── reports/             # Versioned numerical evidence
 └── docs/               # API, evidence, datasets and web deployment
 ```
 
@@ -214,7 +233,9 @@ GitHub Actions checks supported Python versions and executes a real Chromium/Web
 ## Citation, contributions & usage
 
 FragmentLab is an alpha research project maintained by [Daydreamer2812](https://github.com/Daydreamer2812).
-If using the framework in research, cite this repository and the exact commit or version.
+If using the framework in research, cite this repository and the exact commit or release version. [Citation metadata](CITATION.cff) enables GitHub's citation panel.
+
+If FragmentLab helps your research or coursework, consider starring the repository so you can find it again, or [report a reproducible case](https://github.com/Daydreamer2812/fragmentlab-official/issues/new/choose). Honest success and failure reports are equally valuable.
 
 - [Contributing](CONTRIBUTING.md)
 - [Security](SECURITY.md)
