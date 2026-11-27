@@ -16,7 +16,7 @@ def evaluate_pose9(pieces,poses,truth,meta,result,truth_labels):
     if result.get("diagnostics",{}).get("raw_boundary_conflicts") is not None:
         from .tolerant9 import repair_boundary_ownership
         norm,raw_conflicts,core_conflicts=repair_boundary_ownership(norm,poses,shape)
-    aligned=canvas_align(norm,poses,gt,shape,meta["rotations"])
+    aligned,k=canvas_align(norm,poses,gt,shape,meta["rotations"],return_rotation=True)
     _,raw,collision=render(norm,poses,shape)
     _,pred,_=render(norm,aligned,shape)
     lookup={p.id:j for j,p in enumerate(norm)}
@@ -31,6 +31,9 @@ def evaluate_pose9(pieces,poses,truth,meta,result,truth_labels):
         dx=abs(p.x-q.x);dy=abs(p.y-q.y);exact+=p==q
         correct+=int(dx==dy==0 and err<=2)
         correct_relaxed+=int(max(dx,dy)<=1 and err<=2)
+    raw_correct=sum(p.x==gt[i].x and p.y==gt[i].y and
+                    (abs(((truth["poses"][i]["input_ccw_deg"]+angles[i]-p.k*90+180)%360)-180)<=2
+                     if mode=="continuous" else p.k==gt[i].k) for i,p in poses.items())
     n=len(norm);observed_area=int(sel.sum());found=int((pred>=0).sum());available_recovery=len(poses)/n
     area_recovery=min(1.,found/max(1,observed_area))
     dpa=correct/n;label_recovery=float(((pred==lt)&sel).sum()/max(1,observed_area))
@@ -38,6 +41,7 @@ def evaluate_pose9(pieces,poses,truth,meta,result,truth_labels):
     missing_tp=int((missing_gt&missing_pred).sum());missing_den=int(missing_gt.sum()+missing_pred.sum())
     return dict(piece_count=n,expected_count=meta["expected_count"],missing_count=meta["expected_count"]-n,placed=len(poses),direct_position_accuracy=dpa,
                 exact_discrete_pose_accuracy=exact/n,position_accuracy_1px=correct_relaxed/n,
+                raw_position_accuracy=raw_correct/n,evaluation_rotation_cw_deg=k*90,
                 adjacency_precision=precision,adjacency_recall=recall,adjacency_f1=f1,coverage=float((raw>=0).mean()),
                 expected_observed_coverage=float(sel.mean()),available_piece_recovery=available_recovery,available_area_recovery=area_recovery,
                 observed_pixel_label_accuracy=label_recovery,missing_pixel_f1=2*missing_tp/missing_den if missing_den else 1.,

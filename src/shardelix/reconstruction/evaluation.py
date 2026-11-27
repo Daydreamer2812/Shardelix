@@ -38,11 +38,11 @@ def gauge_align(pieces,poses,truth,allow_global_rotation):
     return best[1] if best[1] is not None else poses
 
 
-def canvas_align(pieces,poses,truth,shape,allow_global_rotation):
+def canvas_align(pieces,poses,truth,shape,allow_global_rotation,*,return_rotation=False):
     """Align only rotations of the known full canvas, never a free translation."""
-    if not allow_global_rotation:return poses
+    if not allow_global_rotation:return (poses,0) if return_rotation else poses
     lookup={p.id:p for p in pieces};H,W=shape
-    best=(-1,poses)
+    best=(-1,poses,0)
     for r in range(4 if H==W else 2):
         k=r if H==W else r*2
         rot=R[k]
@@ -54,15 +54,16 @@ def canvas_align(pieces,poses,truth,shape,allow_global_rotation):
             xy=(corners@rot.T).min(axis=0)-origin
             out[id]=Pose(int(xy[0]),int(xy[1]),(p.k+k)%4)
         score=sum(truth.get(i)==p for i,p in out.items())
-        if score>best[0]:best=(score,out)
-    return best[1]
+        if score>best[0]:best=(score,out,k)
+    return (best[1],best[2]) if return_rotation else best[1]
 
 
 def evaluate(pieces: list[Fragment],poses:dict[str,Pose],truth:dict[str,Pose],
              shape:tuple[int,int],allow_global_rotation:bool=False,allow_translation:bool=False) -> dict:
     raw,Lraw,raw_collision=render(pieces,poses,shape)
     gauge=gauge_align(pieces,poses,truth,allow_global_rotation)
-    aligned=gauge if allow_translation else canvas_align(pieces,poses,truth,shape,allow_global_rotation)
+    aligned,k=canvas_align(pieces,poses,truth,shape,allow_global_rotation,return_rotation=True)
+    if allow_translation:aligned=gauge
     pred,Lp,coll=render(pieces,aligned,shape)
     orig,Lt,_=render(pieces,truth,shape)
     ap,at=adjacency(Lp),adjacency(Lt)
@@ -88,6 +89,7 @@ def evaluate(pieces: list[Fragment],poses:dict[str,Pose],truth:dict[str,Pose],
     gauge_dpa=sum(truth.get(i)==p for i,p in gauge.items())/n
     return {"piece_count":n,"placed":len(poses),"direct_position_accuracy":len(correct)/n,
             "raw_position_accuracy":raw_dpa,"gauge_aligned_position_accuracy":gauge_dpa,
+            "evaluation_rotation_cw_deg":None if allow_translation else k*90,
             "adjacency_precision":precision,"adjacency_recall":recall,"adjacency_f1":f1,
              "largest_correct_component":largest/n,"coverage":float(np.mean(Lraw>=0)),
             "aligned_coverage":float(np.mean(Lp>=0)),

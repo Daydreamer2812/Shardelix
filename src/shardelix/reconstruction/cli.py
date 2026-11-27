@@ -150,17 +150,16 @@ def main(argv=None):
         serve(a.port,not a.no_browser);return 0
     if a.command in {"generate","run"}:
         src=read_source(a.source,a.max_side,a.page)
+        fitted_grid=None
         if a.fit_grid:
             from .limits import RECTANGULAR,MAX_PIXELS
-            from .generator import dimensions
+            from .generator import fit_generation_canvas
             from PIL import Image
             if a.cut in RECTANGULAR and not a.label_map:
-                h,w=src.shape[:2];r,c=(1,a.pieces) if a.cut=="strips" else (a.pieces,1) if a.cut=="horizontal-strips" else dimensions(a.pieces,h,w)
-                hh=max(r,round(h/r)*r);ww=max(c,round(w/c)*c)
-                if hh*ww>MAX_PIXELS:raise ValueError("Uniform canvas exceeds pixel budget")
+                hh,ww,fitted_grid=fit_generation_canvas(src.shape[:2],a.pieces,a.cut,MAX_PIXELS,True)
                 src=np.asarray(Image.fromarray(src).resize((ww,hh),Image.Resampling.LANCZOS))
         case=a.out if a.command=="generate" else a.out/"case"
-        m=generate(src,case,a.pieces,a.cut,a.seed,a.rotations,np.load(a.label_map,allow_pickle=False) if a.label_map else None,angle_mode=a.angle_mode,missing=a.missing,sampling=a.sampling)
+        m=generate(src,case,a.pieces,a.cut,a.seed,a.rotations,np.load(a.label_map,allow_pickle=False) if a.label_map else None,angle_mode=a.angle_mode,missing=a.missing,sampling=a.sampling,grid=fitted_grid)
         if a.command=="generate":print(json.dumps(m,indent=2));return 0
         solve_case(case,a.out/"result",tune=not a.no_tune,params=a.params,profile=a.profile)
         r=evaluate_case(case,a.out/"result");print(json.dumps(r,indent=2));return int(a.require_95 and not r["pass_95"])

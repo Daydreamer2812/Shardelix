@@ -13,7 +13,7 @@ WEB_INPUT_PIXELS=24_000_000
 WEB_BATCH=24
 WEB_BATCH_OUTPUT_BYTES=192*1024**2
 NATIVE_BATCH=64
-DOWNLOADS={"assembly.png","assembly_with_cuts.png","cut_lines.png","placements.json","unanchored_components.json","ambiguity.json","diagnostics.json","metrics.json","source.png","result.zip","fragments.zip","benchmark.csv","benchmark.json","fragments_preview.png","ground_truth.zip","comparison.json"}
+DOWNLOADS={"assembly.png","assembly_with_cuts.png","assembly_reference_aligned.png","assembly_reference_aligned_with_cuts.png","cut_lines.png","placements.json","unanchored_components.json","ambiguity.json","diagnostics.json","metrics.json","source.png","result.zip","fragments.zip","benchmark.csv","benchmark.json","fragments_preview.png","ground_truth.zip","comparison.json"}
 
 def safe_zip(source:Path,case:Path,*,browser=False,extract=True):
     """Inspect/extract public metadata and image leaves; never extract truth."""
@@ -88,7 +88,7 @@ def inspect_uploads(files,browser=False):
 
 def _generate_case(root,files,conf,update,browser=False):
     from .reconstruction.common import read_source,save_rgba
-    from .reconstruction.generator import generate,dimensions
+    from .reconstruction.generator import generate,fit_generation_canvas
     from PIL import Image
     import numpy as np
     case=root/"case";out=root/"result";out.mkdir(parents=True,exist_ok=True)
@@ -106,27 +106,23 @@ def _generate_case(root,files,conf,update,browser=False):
     if browser and files[0].suffix.lower()==".pdf":raise ValueError("Use an image or convert PDF page to PNG for browser mode")
     if files[0].suffix.lower()!=".pdf":_pixel_budget(files,WEB_INPUT_PIXELS if browser else MAX_PIXELS)
     src=read_source(files[0],max_side,page)
-    h,w=src.shape[:2];grid=None
-    if cut in RECTANGULAR:
-        grid=(1,n) if cut=="strips" else (n,1) if cut=="horizontal-strips" else dimensions(n,h,w)
-        r,c=grid
-        if r>h or c>w:raise ValueError("Requested grid/strip count exceeds source dimensions; increase resolution or change count")
-        if n>1024 or angle=="continuous" or missing:
-            hh=max(r,round(h/r)*r);ww=max(c,round(w/c)*c)
-            if hh*ww>pixel_cap:raise ValueError("Uniform grid exceeds pixel budget")
-            src=np.asarray(Image.fromarray(src).resize((ww,hh),Image.Resampling.LANCZOS));h,w=src.shape[:2]
-        if min(h//r,w//c)<2: # supported thin strips, but explicitly warn
-            update("Generating thin cells (limited texture evidence)")
-    if h*w>pixel_cap:raise ValueError("Canvas exceeds pixel budget; decrease resolution")
-    if browser and angle=="continuous" and h*w*sampling*sampling>WEB_INPUT_PIXELS//2:
-        raise ValueError("Oversampled browser input exceeds budget; reduce sampling or resolution")
+    initial=src.shape[:2]
+    if browser and angle=="continuous":
+        pixel_cap=min(pixel_cap,WEB_INPUT_PIXELS//(2*sampling*sampling))
+    h,w,grid=fit_generation_canvas(initial,n,cut,pixel_cap,n>1024 or angle=="continuous" or bool(missing))
+    resized=(h,w)!=initial
+    if resized:
+        update(f"Auto-fitting canvas: {initial[1]} × {initial[0]} → {w} × {h}")
+        src=np.asarray(Image.fromarray(src).resize((w,h),Image.Resampling.LANCZOS))
+    if grid and min(h//grid[0],w//grid[1])<2:
+        update("Generating thin cells (limited texture evidence)")
     validate_constraints(n,(h,w),cut,grid,rotations)
     save_rgba(out/"source.png",src)
     update("Generating shuffled fragments")
-    generate(src,case,n,cut,int(conf.get("seed",42)),rotations,angle_mode=angle,missing=missing,sampling=sampling)
+    generate(src,case,n,cut,int(conf.get("seed",42)),rotations,angle_mode=angle,missing=missing,sampling=sampling,grid=grid)
     del src
     meta=json.loads((case/"case.json").read_text())
-    return meta,case,out
+    return meta,case,out,{"preferred_size":[initial[1],initial[0]],"auto_fitted":resized,"grid":list(grid) if grid else None,"thin_cells":bool(grid and min(h//grid[0],w//grid[1])<2)}
 
 def _public_archive(case,out):
     with zipfile.ZipFile(out/"fragments.zip","w",zipfile.ZIP_STORED) as z:
@@ -138,7 +134,7 @@ def _generate_only(root,files,conf,notify,browser=False):
     from .reconstruction.common import json_write
     started=time.perf_counter()
     update=lambda stage:notify({"state":"running","stage":stage,"case":1,"total_cases":1,"elapsed_seconds":time.perf_counter()-started})
-    meta,case,out=_generate_case(root,files,conf,update,browser)
+    meta,case,out,fit_info=_generate_case(root,files,conf,update,browser)
     update("Packaging fragments and separate ground truth")
     _public_archive(case,out)
     with zipfile.ZipFile(out/"ground_truth.zip","w",zipfile.ZIP_DEFLATED) as z:
@@ -157,9 +153,9 @@ def _generate_only(root,files,conf,notify,browser=False):
             sheet.paste(im,(x,y),im);draw.text(((j%cols)*tile+8,(j//cols)*tile+tile-21),f"{j+1:03d}",fill=(75,85,80))
     sheet.save(out/"fragments_preview.png",optimize=True)
     shutil.rmtree(case)
-    return {"state":"done","stage":"Fragments generated","generation":{"observed":n,"expected":meta.get("expected_count",n),"width":meta["width"],"height":meta["height"],"cut":meta["cut"],"angle_mode":meta.get("angle_mode","quarter" if meta["rotations"] else "none"),"preview_count":show,"seconds":time.perf_counter()-started},"files":sorted(p.name for p in out.iterdir() if p.name in DOWNLOADS)}
+    return {"state":"done","stage":"Fragments generated","generation":{"observed":n,"expected":meta.get("expected_count",n),"width":meta["width"],"height":meta["height"],"cut":meta["cut"],"angle_mode":meta.get("angle_mode","quarter" if meta["rotations"] else "none"),"preview_count":show,"seconds":time.perf_counter()-started,**fit_info},"files":sorted(p.name for p in out.iterdir() if p.name in DOWNLOADS)}
 
-def _evaluate_external(case,out,meta,truth_dir,browser):
+def _evaluate_external(case,out,meta,truth_dir,browser,allow_rotation):
     """Called only AFTER solve and render; truth never enters solver inputs."""
     from PIL import Image
     import numpy as np
@@ -168,7 +164,7 @@ def _evaluate_external(case,out,meta,truth_dir,browser):
     files=list(truth_dir.iterdir()) if truth_dir.exists() else []
     if not files:return
     if len(files)!=1:raise ValueError("Select one reference image or ground-truth ZIP")
-    f=files[0];reference=None;warning=None;pose_evaluated=False
+    f=files[0];reference=None;warning=None;pose_evaluated=False;pose_rotation=None
     if f.suffix.lower()==".zip":
         allowed={"source.png","evaluation/ground_truth.json","evaluation/truth_labels.npz","evaluation/fragment_manifest.json"}
         limit=WEB_PIXELS if browser else MAX_PIXELS
@@ -202,26 +198,19 @@ def _evaluate_external(case,out,meta,truth_dir,browser):
                             if len(z.infolist())!=1 or z.infolist()[0].file_size>limit*8+65536:raise ValueError("Invalid label archive")
                         with np.load(labels,allow_pickle=False) as z:
                             if z["labels"].shape!=(meta["height"],meta["width"]):raise ValueError("Truth canvas mismatch")
-                    evaluate_case(case,out);pose_evaluated=True
+                    metrics=evaluate_case(case,out);pose_evaluated=True;pose_rotation=metrics.get("evaluation_rotation_cw_deg")
                 except (ValueError,KeyError,TypeError,OSError) as exc:warning="Pose evaluation unavailable: "+str(exc)[:180]
         else:warning="No compatible per-piece ground truth; image comparison only."
     elif f.suffix.lower() in IMAGE_EXT:
         reference=f
     else:raise ValueError("Ground truth must be an image or generated truth ZIP")
-    comparison={"pose_evaluated":pose_evaluated,"warning":warning,"metric_scope":"Raw reference alignment, placed pixels only; no inferred transforms."}
+    comparison={"pose_evaluated":pose_evaluated,"warning":warning}
     if reference:
-        with Image.open(reference) as im:
-            if im.width*im.height>(WEB_INPUT_PIXELS if browser else MAX_PIXELS):raise ValueError("Reference exceeds pixel budget")
-            ref=im.convert("RGBA")
-        ref.save(out/"source.png")
-        with Image.open(out/"assembly.png") as im:pred=im.convert("RGBA")
-        comparison.update(reference_size=list(ref.size),reconstruction_size=list(pred.size))
-        if ref.size==pred.size:
-            a=np.asarray(pred);b=np.asarray(ref);observed=(a[:,:,3]>0)&(b[:,:,3]>0)
-            if observed.any():
-                err=a[observed,:3].astype(np.float32)-b[observed,:3].astype(np.float32)
-                mse=float(np.mean(err*err));comparison.update(raw_mae=float(np.mean(np.abs(err))),raw_rmse=float(np.sqrt(mse)),exact_rgb_fraction=float(np.mean(np.all(err==0,axis=1))),compared_pixel_fraction=float(observed.mean()))
-        else:comparison["warning"]="Reference canvas differs in size; visual comparison only."
+        from .reconstruction.reference_alignment import compare_reference
+        measured=compare_reference(out,reference,allow_rotation=allow_rotation,
+                                   pose_rotation=pose_rotation,pixel_cap=WEB_INPUT_PIXELS if browser else MAX_PIXELS)
+        comparison.update(measured)
+        if warning:comparison["warning"]=" ".join(filter(None,[warning,measured.get("warning")]))
     json_write(out/"comparison.json",comparison)
 
 def _single(root,files,conf,update,browser=False,truth_dir=None):
@@ -242,7 +231,7 @@ def _single(root,files,conf,update,browser=False,truth_dir=None):
     profile,tune,params=profiles(conf)
     started=time.perf_counter()
     if task=="demo":
-        meta,case,out=_generate_case(root,files,conf,update,browser)
+        meta,case,out,fit_info=_generate_case(root,files,conf,update,browser)
     elif task=="blind":
         meta=None
         if len(files)==1 and files[0].suffix.lower()==".zip":
@@ -292,9 +281,14 @@ def _single(root,files,conf,update,browser=False,truth_dir=None):
     finally:
         if held is not None:held.rename(case/"evaluation")
     update("Rendering and evaluating")
-    if task=="demo":evaluate_case(case,out)
+    if task=="demo":
+        from .reconstruction.reference_alignment import compare_reference
+        metrics=evaluate_case(case,out)
+        comparison=compare_reference(out,out/"source.png",allow_rotation=rotations,
+                                     pose_rotation=metrics.get("evaluation_rotation_cw_deg"),pixel_cap=pixel_cap)
+        json_write(out/"comparison.json",{**comparison,"pose_evaluated":True})
     elif truth_dir is not None:
-        try:_evaluate_external(case,out,meta,truth_dir,browser)
+        try:_evaluate_external(case,out,meta,truth_dir,browser,rotations)
         except Exception as exc:
             json_write(out/"comparison.json",{"warning":"Reference evaluation failed: "+str(exc)[:300],"pose_evaluated":False})
     d=json.loads((out/"diagnostics.json").read_text())
@@ -348,7 +342,7 @@ def run_job(root:Path,conf,notify=lambda s:None,*,browser=False):
             if browser and batch and retained>=WEB_BATCH_OUTPUT_BYTES:raise ValueError("Browser benchmark retained-output budget exhausted; use native Studio")
             d,m,o=_single(dest,files,c,update,browser,root/"truth")
             row.update(status="done",algorithm=d.get("algorithm"),runtime_seconds=d.get("runtime_seconds"),
-                elapsed_seconds=d.get("workflow_elapsed_seconds"),peak_process_rss_mib=d.get("process_peak_rss_mib"),placed=d.get("placed"),coverage=d.get("coverage"),**{k:m.get(k) for k in ("direct_position_accuracy","adjacency_f1","pass_95","collision_pixels")} if m else {})
+                elapsed_seconds=d.get("workflow_elapsed_seconds"),peak_process_rss_mib=d.get("process_peak_rss_mib"),placed=d.get("placed"),coverage=d.get("coverage"),**{k:m.get(k) for k in ("direct_position_accuracy","raw_position_accuracy","evaluation_rotation_cw_deg","adjacency_f1","pass_95","collision_pixels")} if m else {})
             if last is not None and batch:
                 for name in ("fragments.zip","source.png"):
                     (last[2]/name).unlink(missing_ok=True)

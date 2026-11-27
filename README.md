@@ -197,7 +197,7 @@ Representative **historical measured V12 native CPU results**, not universal gua
 | Jigsaw · 256 generated · 10% missing · continuous 1× | 91.30% | 92.26% | Fail |
 | Multi-gap strips · paired holdout | — | — | V11: 0/8 → V12: 4/8 |
 
-DPA = direct position accuracy; adjacency F1 measures correct neighboring relationships. Strict gates also account for collisions and recoverable coverage. The evaluator can account for the global rotation gauge but never freely shift the solution. For per-case settings, timing, memory, the full failure rows and caveats, read [V12 results](docs/V12_RESULTS.md) and [raw numeric evidence](reports/v12/).
+DPA = direct position accuracy; adjacency F1 measures correct neighboring relationships. Strict gates also account for collisions and recoverable coverage. The evaluator can account for the global rotation gauge but never freely shift the solution. Studio reports raw and rotation-aligned DPA separately; a reference-aligned preview is clearly labeled and never replaces the blind output. For per-case settings, timing, memory, the full failure rows and caveats, read [V12 results](docs/V12_RESULTS.md) and [raw numeric evidence](reports/v12/).
 
 **Reproduce:**
 

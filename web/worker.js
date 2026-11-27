@@ -70,7 +70,10 @@ async function handle(m){
       const buffer=bytes.slice().buffer;
       self.postMessage({type:"reply",id:m.id,value:buffer},[buffer]);
     } else throw new Error("Unknown action");
-  }catch(e){post("reply",{id:m.id,error:String(e.message||e).slice(-1600)})}
+  }catch(e){
+    const detail=String(e.message||e).trim(),validation=detail.split("\n").at(-1).match(/^(?:ValueError|FileExistsError): (.+)$/);
+    post("reply",{id:m.id,error:validation?validation[1]:detail.slice(-1600)})
+  }
 }
 let queue=Promise.resolve();
 self.onmessage=({data:m})=>{queue=queue.then(()=>handle(m))};

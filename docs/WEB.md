@@ -71,7 +71,9 @@ These are protective caps, not verified WebAssembly capacity or performance
 guarantees. Use modest cases first. Mobile memory may be tighter. Cancel
 terminates a browser worker and the next run reloads it. The native app starts
 its own cancellable subprocess. Download before starting another run.
-DPA/F1 require a matching independent ground-truth archive. A reference raster alone supports only raw, unaligned pixel comparison on overlapping observed pixels and visual inspection; no fabricated position labels.
+The generator treats Resolution as a preferred maximum side. It can resize the working canvas to fit the requested exact count and resource limits (including sampling), then reports the actual canvas and grid. Uniform rectangular cuts may require snapping each dimension to a cell multiple. Thin cells have limited texture; infeasible counts return a descriptive error rather than silently changing the count.
+
+DPA/F1 require a matching independent ground-truth archive. Raw DPA measures absolute poses in the original blind canvas; rotation-aligned DPA allows a single global quarter-turn of the known canvas (0/180° for nonsquare canvases). A correctly assembled image can therefore have 100% aligned DPA while being upside down. With a reference, the Studio shows raw and rotation-aligned pixel MAE on overlapping observed pixels, and can preview/export a separately labeled reference-aligned image and overlay. Reference-only alignment uses pixel agreement, not pose labels; it cannot establish DPA/F1. No reflection, local edit, or free translation is applied. The original blind PNG, cut overlay and poses are retained unchanged. If no reference is supplied, absolute upright orientation cannot generally be established.
 Document strips require same-height digital rectangles, not photographs of torn
 paper or arbitrary perspective. Unknown-width inference cannot know the total
 missing area of strips not present in the input.

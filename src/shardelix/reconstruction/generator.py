@@ -17,11 +17,47 @@ from .limits import max_count,validate_constraints
 CUTS = ("grid", "strips", "horizontal-strips", "jagged", "wavy", "jigsaw", "random")
 
 
-def dimensions(count: int, h: int, w: int) -> tuple[int, int]:
-    # A rectangular factorization close to the image aspect ratio.
+def _factor_pairs(count):
     pairs={(r,count//r) for r in range(1,math.isqrt(count)+1) if count%r==0}
-    pairs|={(c,r) for r,c in pairs}
-    return min(sorted(pairs),key=lambda rc:abs(math.log((rc[1]/rc[0])/(w/h))))
+    return pairs|{(c,r) for r,c in pairs}
+
+
+def dimensions(count: int, h: int, w: int) -> tuple[int, int]:
+    # Prefer a factorization that actually fits the raster.
+    pairs=_factor_pairs(count)
+    feasible={rc for rc in pairs if rc[0]<=h and rc[1]<=w}
+    return min(sorted(feasible or pairs),key=lambda rc:abs(math.log((rc[1]/rc[0])/(w/h))))
+
+
+def fit_generation_canvas(shape, count, cut, pixel_cap, uniform=False):
+    """Fit an exact count to a preferred raster. Never silently drop pieces.
+
+    Downscale oversized canvases, or minimally upscale to fit the grid while
+    preserving aspect ratio before snapping to uniform cells, if requested.
+    Returns (height, width, grid); impossible requests get actionable errors.
+    """
+    h,w=shape
+    scale=min(1.,math.sqrt(pixel_cap/(h*w)))
+    h,w=max(2,int(h*scale)),max(2,int(w*scale))
+    grid=(1,count) if cut=="strips" else (count,1) if cut=="horizontal-strips" else dimensions(count,h,w) if cut=="grid" else None
+    if grid:
+        r,c=grid
+        growth=max(1.,r/h,c/w)
+        hh,ww=max(r,math.ceil(h*growth)),max(c,math.ceil(w*growth))
+        if uniform:
+            hh=max(r,round(hh/r)*r);ww=max(c,round(ww/c)*c)
+            if hh*ww>pixel_cap:
+                hh=max(r,int(h*growth/r)*r);ww=max(c,int(w*growth/c)*c)
+        if hh*ww>pixel_cap:
+            axis_hint=f"try at most {w} vertical strips" if cut=="strips" else f"try at most {h} horizontal strips" if cut=="horizontal-strips" else "try a smaller, more factorable grid count (e.g. 256, 1024)"
+            raise ValueError(f"Cannot fit {count} {cut} pieces into a {pixel_cap:,}-pixel budget without distorting the image; {axis_hint} or use native Studio.")
+        h,w=hh,ww
+    elif h*w<count:
+        growth=math.sqrt(count/(h*w))
+        h,w=math.ceil(h*growth),math.ceil(w*growth)
+    if h*w>pixel_cap:
+        raise ValueError("Cannot fit source and requested count within the pixel budget; reduce the count or use native Studio.")
+    return h,w,grid
 
 
 def _split(image_shape: tuple[int, int], n: int, rng: np.random.Generator, cut: str) -> np.ndarray:
@@ -77,7 +113,7 @@ def _split(image_shape: tuple[int, int], n: int, rng: np.random.Generator, cut: 
 
 
 def generate(source: np.ndarray, output: Path, count: int, cut: str, seed: int = 42,
-             rotations: bool = False, label_map: np.ndarray | None = None, *, angle_mode: str | None = None, missing: float = 0., sampling: int = 1) -> dict:
+             rotations: bool = False, label_map: np.ndarray | None = None, *, angle_mode: str | None = None, missing: float = 0., sampling: int = 1, grid: tuple[int, int] | None = None) -> dict:
     if (cut not in CUTS and not (cut=="custom" and label_map is not None)) or not 1 <= count <= max_count(cut):
         raise ValueError("Choose a supported cut and a count within its size limit")
     if type(rotations) is not bool:raise ValueError("rotations must be a boolean")
@@ -87,7 +123,8 @@ def generate(source: np.ndarray, output: Path, count: int, cut: str, seed: int =
     if type(sampling) is not int or sampling not in (1,2,3,4) or sampling!=1 and angle_mode!="continuous":raise ValueError("Invalid sampling")
     rotations=angle_mode!="none"
     h,w = source.shape[:2]
-    grid=(1,count) if cut=="strips" else (count,1) if cut=="horizontal-strips" else dimensions(count,h,w) if cut=="grid" else None
+    if grid is None:
+        grid=(1,count) if cut=="strips" else (count,1) if cut=="horizontal-strips" else dimensions(count,h,w) if cut=="grid" else None
     if label_map is not None: grid=None
     validate_constraints(count,(h,w),"custom" if label_map is not None else cut,grid,rotations)
     if h*w < count or min(h,w) < 2:
@@ -150,7 +187,7 @@ def generate(source: np.ndarray, output: Path, count: int, cut: str, seed: int =
             truth[ident].update(input_ccw_deg=angle,height=ph,width=pw)
 
     meta={"width":w,"height":h,"piece_count":count,"cut":cut,
-          "rotations":rotations, "grid": list((1,count) if cut=="strips" else (count,1) if cut=="horizontal-strips" else dimensions(count,h,w)) if cut in {"grid","strips","horizontal-strips"} else None}
+          "rotations":rotations, "grid": list(grid) if grid is not None else None}
     if angle_mode=="continuous" or missing:
         meta.update(piece_count=len(truth),expected_count=count,angle_mode=angle_mode,sampling=sampling)
     json_write(output/"case.json", meta)
