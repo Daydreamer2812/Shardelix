@@ -1,5 +1,7 @@
 # DAFNE research branch: classical matching against the original artwork
 
+> Historical FFT baseline. For the current indexed engine, tested DB2 results, and updated limits, see [DAFNE_INDEXED.md](DAFNE_INDEXED.md).
+
 This **opt-in, reference-assisted** experiment is isolated from blind reconstruction.
 It uses no trained network, OCR, learned features, neural inpainting or pose
 annotations during matching. It is not a solution to the reference-free DAFNE

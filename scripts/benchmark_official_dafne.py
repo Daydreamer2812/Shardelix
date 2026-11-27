@@ -61,7 +61,7 @@ def run(item):
                 for n in ns:
                     p=d/'upload'/Path(n).name;p.write_bytes(z.read(n))
                     with Image.open(p) as im:im_shapes[p.stem]=im.size
-                state=run_job(d,{'task':'blind','input_mode':'reference','profile':'balanced'})
+                state=run_job(d,{'task':'blind','input_mode':'reference','reference_engine':'fft','profile':'balanced'})
                 # No ground-truth text has been read before solve finished.
                 diag=state['diagnostics'];r=d/'result'
                 assert diag.get('matching_reference_used') is True

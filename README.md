@@ -18,7 +18,7 @@ CPU-first Python and C++20 · Native execution and in-browser WebAssembly
 > This branch also exposes a separately labeled, opt-in classical
 > reference-assisted DAFNE mode. It requires the original artwork, never reads
 > pose truth during matching and is not a blind result. See the
-> [verified DAFNE development benchmark and instructions](docs/DAFNE_REFERENCE.md).
+> [indexed DAFNE results and instructions](docs/DAFNE_INDEXED.md) (28 official cases, including all three DB2 tests).
 
 
 [![Version](https://img.shields.io/badge/version-13.0.1-2463eb?style=flat-square)](pyproject.toml)

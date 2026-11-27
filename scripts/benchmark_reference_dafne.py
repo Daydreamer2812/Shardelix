@@ -81,7 +81,7 @@ def main():
         (root/"upload").mkdir();(root/"matching_reference").mkdir()
         shutil.copy2(a.input_zip,root/"upload"/a.input_zip.name)
         shutil.copy2(a.reference,root/"matching_reference"/a.reference.name)
-        state=run_job(root,{"task":"blind","input_mode":"reference","profile":"balanced"},
+        state=run_job(root,{"task":"blind","input_mode":"reference","reference_engine":"fft","profile":"balanced"},
                       lambda s:print(s["stage"],flush=True),browser=a.browser_limits)
         assert state["state"]=="done" and state["diagnostics"]["matching_reference_used"]
         shutil.copytree(root/"result",a.output,dirs_exist_ok=True)

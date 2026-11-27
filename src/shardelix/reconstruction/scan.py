@@ -38,7 +38,7 @@ def chroma_mask(a):
     return None
 
 
-def preprocess(paths, target: Path, *, pixel_limit=24_000_000, preserve_opaque=False, piece_rasters=False):
+def preprocess(paths, target: Path, *, pixel_limit=24_000_000, preserve_opaque=False, piece_rasters=False, max_pieces=MAX_SCAN_PIECES, preserve_scale=False):
     """Split overview scans, or preserve each explicitly declared piece raster.
 
     An eroded piece may have multiple surviving foreground islands. Joining
@@ -52,7 +52,7 @@ def preprocess(paths, target: Path, *, pixel_limit=24_000_000, preserve_opaque=F
     total = sum(w*h for w,h in sizes)
     if total > pixel_limit:
         raise ValueError("Decoded scans exceed pixel budget; scan at lower DPI or use native Studio.")
-    scale = min(1., MAX_SCAN_SIDE/max(max(s) for s in sizes), math.sqrt(MAX_WORK_PIXELS/total))
+    scale = 1. if preserve_scale else min(1., MAX_SCAN_SIDE/max(max(s) for s in sizes), math.sqrt(MAX_WORK_PIXELS/total))
     pieces, scans, warnings = [], [], []
     for path in paths:
         with Image.open(path) as im:
@@ -156,8 +156,8 @@ def preprocess(paths, target: Path, *, pixel_limit=24_000_000, preserve_opaque=F
             if sl is None: continue
             local = labels[sl] == label
             if np.count_nonzero(local)<minimum or min(local.shape)<5:continue
-            if len(pieces)>=MAX_SCAN_PIECES:
-                raise ValueError(f"Scan mode supports up to {MAX_SCAN_PIECES} detected pieces; separate speckle and use smaller sets.")
+            if len(pieces)>=max_pieces:
+                raise ValueError(f"Scan mode supports up to {max_pieces} detected pieces; separate speckle and use smaller sets.")
             y,x=sl
             if method!="opaque-raster-preserved" and (x.start==0 or y.start==0 or x.stop==w or y.stop==h):
                 warnings.append(f"{path.name}: a piece touches the scan border; its edge may be clipped.")

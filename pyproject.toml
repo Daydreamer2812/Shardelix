@@ -27,6 +27,7 @@ Issues = "https://github.com/Daydreamer2812/Shardelix/issues"
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "ruff>=0.8"]
+reference = ["opencv-python-headless>=4.8"]  # optional tiled SIFT acceleration
 pdf = ["PyMuPDF>=1.23"]
 ui = []  # Studio uses the standard library
 

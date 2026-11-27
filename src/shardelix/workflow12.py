@@ -18,7 +18,7 @@ DOWNLOADS={"assembly.png","assembly_with_cuts.png","assembly_reference_aligned.p
 # Auxiliary views and truth are never counted as fragments. Unknown nested
 # layouts are accepted only when one primary image directory is unambiguous.
 _MASK_DIRS={"bg_mask","bg_mask_vis","masks","mask","mask_vis","foreground_masks","alpha_masks","segmentation_masks"}
-_PRIMARY_DIRS={"pieces","fragments","tiles","patches","scans"}
+_PRIMARY_DIRS={"pieces","fragments","tiles","patches","scans","frag_eroded"}
 _AUX_DIRS={"evaluation","result","results","ground_truth","ground-truth","groundtruth","truth","__macosx",
            "preview","previews","thumbnails","reference","references","original","originals",
            "labels","gt","annotations","output","outputs"}|_MASK_DIRS
@@ -75,7 +75,12 @@ def safe_zip(source:Path,case:Path,*,browser=False,extract=True,inspect_geometry
             if suffix not in IMAGE_EXT or (leaf.lower() in _AUX_FILES and not explicit_dir):continue
             groups.setdefault(dirs,[]).append(e)
         explicit=[d for d in groups if _PRIMARY_DIRS.intersection(x.lower() for x in d)]
-        if explicit:chosen=explicit
+        dafne=[d for d in explicit if d and d[-1].lower()=="frag_eroded"]
+        if dafne:
+            if len(dafne)!=1:raise ValueError("DAFNE archive contains multiple cases; upload one frag_eroded directory or use the batch benchmark")
+            if len(explicit)!=1:raise ValueError("Ambiguous DAFNE and other primary fragment directories")
+            chosen=dafne
+        elif explicit:chosen=explicit
         elif () in groups:chosen=[()]
         else:
             # Standard folder-wrapped ZIPs produced by OS archive tools.
@@ -83,7 +88,7 @@ def safe_zip(source:Path,case:Path,*,browser=False,extract=True,inspect_geometry
             chosen=list(groups)
             if len(chosen)>1:raise ValueError("Multiple image directories in ZIP; put primary fragments in pieces/ or scans/")
         images=[(d,e) for d in chosen for e in groups[d]]
-        piece_rasters=bool(chosen) and all(any(x.lower() in {"pieces","fragments","tiles","patches"} for x in d) and not any(x.lower()=="scans" for x in d) for d in chosen)
+        piece_rasters=bool(chosen) and all(any(x.lower() in {"pieces","fragments","tiles","patches","frag_eroded"} for x in d) and not any(x.lower()=="scans" for x in d) for d in chosen)
         num=len(images)
         if not num:raise ValueError("No supported fragments found in ZIP")
         if num>limit:raise ValueError("Archive exceeds fragment count budget")
@@ -142,7 +147,7 @@ def safe_zip(source:Path,case:Path,*,browser=False,extract=True,inspect_geometry
                     with z.open(e) as f,(target/leaf).open("wb") as out:shutil.copyfileobj(f,out,1024*1024)
         if inspect_geometry:
             openers=[lambda e=e:z.open(e) for _,e in images]
-            explicit_scans=any("scans" in tuple(x.lower() for x in d) for d,_ in images)
+            explicit_scans=any({"scans","frag_eroded"}.intersection(x.lower() for x in d) for d,_ in images)
             if meta is None:
                 extra=_inspect_rasters(openers,num,browser,mask_count=mask_count,explicit_scans=explicit_scans)
             else:
@@ -384,6 +389,7 @@ def _reference_single(root,files,conf,update,browser=False,matching_reference_di
     """Opt-in matching reference, isolated from the evaluation-only truth slot."""
     from .reconstruction.scan import preprocess
     from .reconstruction.reference_match import reconstruct_reference
+    from .reconstruction.reference_index import reconstruct_indexed, MAX_REFERENCE_PIECES, MAX_REFERENCE_PIXELS, MAX_REFERENCE_INPUT_PIXELS
     from .reconstruction.common import json_write
     from .native_core import backend
     started=time.perf_counter()
@@ -400,12 +406,17 @@ def _reference_single(root,files,conf,update,browser=False,matching_reference_di
             raise ValueError("Reference-assisted mode accepts fragment images or one ZIP")
         paths=files;piece_rasters=True
     update("Segmenting reference-assisted fragments")
-    pieces,report=preprocess(paths,case/"pieces",pixel_limit=WEB_INPUT_PIXELS if browser else MAX_PIXELS*3,
-                             preserve_opaque=True,piece_rasters=piece_rasters)
+    legacy=conf.get("reference_engine")=="fft"
+    cap=256 if legacy else (4096 if browser else MAX_REFERENCE_PIECES)
+    pieces,report=preprocess(paths,case/"pieces",pixel_limit=WEB_INPUT_PIXELS if browser else MAX_REFERENCE_INPUT_PIXELS,
+                             preserve_opaque=True,piece_rasters=piece_rasters,max_pieces=cap,preserve_scale=not legacy)
     if report["common_scale"]!=1.:
         raise ValueError("Reference-assisted registration needs unchanged fragment scale; reduce input size and reference by the same factor")
-    d=reconstruct_reference(pieces,refs[0],out,report,update,
-                           pixel_cap=min(WEB_PIXELS if browser else MAX_PIXELS,2_000_000))
+    if legacy:
+        d=reconstruct_reference(pieces,refs[0],out,report,update,pixel_cap=2_000_000)
+    else:
+        d=reconstruct_indexed(pieces,refs[0],out,report,update,pixel_cap=WEB_PIXELS if browser else MAX_REFERENCE_PIXELS,
+                              piece_cap=cap,use_sift=not browser,deep=conf.get("reference_engine")=="indexed-deep")
     _public_archive(case,out)
     d.update(compute_backend=backend(),workflow_elapsed_seconds=time.perf_counter()-started,
              performance_profile="reference-assisted",input_detection={"route":"reference-assisted"})
@@ -632,5 +643,5 @@ def run_job(root:Path,conf,notify=lambda s:None,*,browser=False):
                         z.write(p,str(Path("cases")/directory.name/p.relative_to(directory/"result")))
     shutil.rmtree(root/"runs",ignore_errors=True)
     return {"state":"done","stage":"Benchmark complete" if batch else "Reconstruction exported",
-            "diagnostics":{k:v for k,v in d.items() if k in ("algorithm","runtime_seconds","status","placed","piece_count","coverage","collision_pixels","render_collision_pixels","identical_piece_count","sparse_high_consensus","reciprocal_seam_fraction","expected_count","missing_count","angle_mode","sampling","available_piece_recovery","normalization_seconds","index_mode","index_fallback_used","index_query_seconds","retrieval_seconds","assembly_seconds","performance_profile","process_peak_rss_mib","workflow_elapsed_seconds","frame_anchor_status","multigap_status","extra_verification","compute_backend","fast_rescue_v13","import_geometry_mode","import_geometry","input_detection","scan","matching_reference_used","accuracy_verified")},
+            "diagnostics":{k:v for k,v in d.items() if k in ("algorithm","runtime_seconds","status","placed","piece_count","coverage","collision_pixels","render_collision_pixels","identical_piece_count","sparse_high_consensus","reciprocal_seam_fraction","expected_count","missing_count","angle_mode","sampling","available_piece_recovery","normalization_seconds","index_mode","index_fallback_used","index_query_seconds","retrieval_seconds","assembly_seconds","performance_profile","process_peak_rss_mib","workflow_elapsed_seconds","frame_anchor_status","multigap_status","extra_verification","compute_backend","fast_rescue_v13","import_geometry_mode","import_geometry","input_detection","scan","matching_reference_used","accuracy_verified","matching_backend")},
             "metrics":m,"comparison":json.loads((result/"comparison.json").read_text()) if (result/"comparison.json").exists() else None,"benchmark":rows if batch else None,"files":sorted(p.name for p in result.iterdir() if p.name in DOWNLOADS)}
