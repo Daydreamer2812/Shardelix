@@ -65,7 +65,10 @@ FL_EXPORT int32_t* fl_arc_votes(const int32_t* packed,int size,int k,int bucket,
                                int shards,int record_cap,int vote_cap) {
     if(!packed||size<2||k<6||k>32||bucket<1||shards<1||record_cap<1||vote_cap<1)return nullptr;
     struct Loop{int i,n;const int32_t* p;};
-    struct Arc{uint64_t code,rev;int i,x,y,bx,by;uint8_t da,db;};
+    // Canonical group key plus a two-bit direction tag: 0 self-complementary,
+    // 1 forward is canonical, 2 reverse is canonical. k<=32 leaves two
+    // free bits. Store just one key (rather than two 64-bit chain codes).
+    struct Arc{uint64_t key;int i,x,y,bx,by;uint8_t da,db;};
     using Vote=std::array<int32_t,5>;
     struct Hash{size_t operator()(const Vote& q)const{
         uint64_t h=0x9e3779b97f4a7c15ULL;
@@ -96,35 +99,51 @@ FL_EXPORT int32_t* fl_arc_votes(const int32_t* packed,int size,int k,int bucket,
                 auto turn=[&](int z){return mod4(d(z+1)-d(z));};
                 for(int z=0;z<m;++z){int v=turn(z);f=(f<<2)|v;r=(r>>2)|(uint64_t(mod4(-v))<<shift);changes+=v!=0;}
                 for(int s=0;s<l.n;++s){
-                    if(changes>=4&&int(mix(std::min(f,r))%uint64_t(shards))==shard){
+                    const uint64_t canonical=std::min(f,r);
+                    if(changes>=4&&(shards==1||int(mix(canonical)%uint64_t(shards))==shard)){
                         if(int(arcs.size())>=record_cap)return nullptr;
                         if(arcs.size()==arcs.capacity())arcs.reserve(std::min<size_t>(record_cap,std::max<size_t>(1024,arcs.capacity()*2)));
                         const int a=3*s,b=3*((s+k)%l.n);
-                        arcs.push_back({f,r,l.i,l.p[a],l.p[a+1],l.p[b],l.p[b+1],uint8_t(d(s)),uint8_t(mod4(d(s+k-1)+2))});
+                        const uint64_t key=(canonical<<2)|(f==r?0:f<r?1:2);
+                        arcs.push_back({key,l.i,l.p[a],l.p[a+1],l.p[b],l.p[b+1],uint8_t(d(s)),uint8_t(mod4(d(s+k-1)+2))});
                     }
                     int old=turn(s),next=turn(s+m);
                     changes+=(next!=0)-(old!=0);f=((f<<2)|next)&mask;
                     r=(r>>2)|(uint64_t(mod4(-next))<<shift);
                 }
             }
-            std::sort(arcs.begin(),arcs.end(),[](const Arc& a,const Arc& b){return a.code<b.code;});
+            // Sort complementary directions next to one another, then
+            // scan linearly. No binary search per distinct chain code.
+            std::sort(arcs.begin(),arcs.end(),[](const Arc& a,const Arc& b){return a.key<b.key;});
+            auto vote=[&](const Arc& a,const Arc& b){
+                if(a.i==b.i)return true;
+                const Arc&A=a.i<b.i?a:b;
+                const Arc&B=a.i<b.i?b:a;
+                int rr=mod4(A.da-B.db),x=B.bx,y=B.by;
+                int xx=rr==0?x:rr==1?-y:rr==2?-x:y;
+                int yy=rr==0?y:rr==1?x:rr==2?-y:-x;
+                Vote v{A.i,B.i,rr,A.x-xx,A.y-yy};
+                auto [where,fresh]=votes.try_emplace(v,0);
+                if(fresh&&int(votes.size())>vote_cap)return false;
+                ++where->second;
+                return true;
+            };
             for(size_t a=0;a<arcs.size();){
-                size_t b=a+1;while(b<arcs.size()&&arcs[b].code==arcs[a].code)++b;
-                if(b-a<=size_t(bucket)){
-                    // For a fixed normalized direction chain, the reversed
-                    // complementary chain is unique.
-                    auto it=std::lower_bound(arcs.begin(),arcs.end(),arcs[a].rev,[](const Arc& q,uint64_t v){return q.code<v;});
-                    auto end=it;while(end!=arcs.end()&&end->code==arcs[a].rev&&end-it<=bucket)++end;
-                    if(end-it<=bucket)for(size_t z=a;z<b;++z)for(auto jt=it;jt!=end;++jt){
-                        const Arc&A=arcs[z];const Arc&B=*jt;if(A.i>=B.i)continue;
-                        int rr=mod4(A.da-B.db),x=B.bx,y=B.by;
-                        int xx=rr==0?x:rr==1?-y:rr==2?-x:y;
-                        int yy=rr==0?y:rr==1?x:rr==2?-y:-x;
-                        Vote v{A.i,B.i,rr,A.x-xx,A.y-yy};
-                        auto [where,fresh]=votes.try_emplace(v,0);
-                        if(fresh&&int(votes.size())>vote_cap)return nullptr;
-                        ++where->second;
-                    }
+                size_t mid=a+1;
+                while(mid<arcs.size()&&arcs[mid].key==arcs[a].key)++mid;
+                size_t b=mid;
+                while(b<arcs.size()&&(arcs[b].key>>2)==(arcs[a].key>>2))++b;
+                if((arcs[a].key&3)==0){
+                    // Self-complementary chains: visit each unordered arc
+                    // pair once, retaining the original lower-ID direction.
+                    if(mid-a<=size_t(bucket))
+                        for(size_t z=a;z<mid;++z)for(size_t j=z+1;j<mid;++j)
+                            if(!vote(arcs[z],arcs[j]))return nullptr;
+                }else if(mid-a<=size_t(bucket)&&b-mid<=size_t(bucket)){
+                    // Both polarity buckets must satisfy the same rare-arc
+                    // guard as before. A missing reverse bucket casts no vote.
+                    for(size_t z=a;z<mid;++z)for(size_t j=mid;j<b;++j)
+                        if(!vote(arcs[z],arcs[j]))return nullptr;
                 }
                 a=b;
             }

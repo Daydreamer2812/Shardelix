@@ -1,0 +1,440 @@
+{
+  "protocol": "Three alternating sequential native CPU runs per revision, independent subprocesses; same anonymous synthetic intact-lattice fixture, count 4096, nominal tile 36, seed 827, SHARDELIX memory estimate override 512 MiB. No reference or GT in inference. Solver time excludes fixture creation, ZIP/PNG I/O and evaluation; peak RSS includes fixture and evaluation. Shared runner, wall-clock variation possible.",
+  "baseline_commit": "42cd2a75db30b219699c80388cef88518bd25d4f",
+  "environment": {
+    "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+    "python": "3.12.14",
+    "numpy": "2.3.5",
+    "scipy": "1.17.0",
+    "pillow": "13.0.0",
+    "compiler": "g++ (Debian 14.2.0-19) 14.2.0"
+  },
+  "change": "Canonical packed chain-code key (one uint64 key plus direction tag); sort and linear group scan in place of binary search per distinct code, retaining both rare-bucket guards and exact lower-ID vote direction.",
+  "runs": {
+    "base": [
+      {
+        "status": "completed",
+        "scope": "blind exact lattice solver, in-memory (not ZIP/PNG or physical scan)",
+        "count": 4096,
+        "tile": 36,
+        "seed": 827,
+        "input_pixels": 8581390,
+        "source_wh": [
+          2304,
+          2304
+        ],
+        "placed": 4096,
+        "exact_global_poses": 4096,
+        "correct_relative_joins": 4095,
+        "accepted_joins": 4095,
+        "components": 1,
+        "fixture_seconds": 2.523,
+        "match_seconds": 4.898,
+        "merge_seconds": 0.584,
+        "solver_seconds": 5.482,
+        "peak_rss_mib": 230.3,
+        "budget": {
+          "source": "available-host-memory; explicit lower budget",
+          "memory_budget_mib": 512.0,
+          "available_memory_mib": 6746.0,
+          "working_pixels": 29826161,
+          "canvas_pixels": 22369621,
+          "arc_records_per_shard": 3728270,
+          "vote_entries": 2485513,
+          "gap_pair_budget": 4096
+        },
+        "index": {
+          "arc_windows": [
+            32,
+            20
+          ],
+          "arc_backend": "compact-native",
+          "arc_passes": [
+            {
+              "window": 32,
+              "shards": 1,
+              "bucket": 6,
+              "record_cap": 3728270,
+              "vote_cap": 2485513
+            },
+            {
+              "window": 20,
+              "shards": 1,
+              "bucket": 6,
+              "record_cap": 3728270,
+              "vote_cap": 2485513
+            }
+          ],
+          "packed_contour_bytes": 32199720,
+          "voted_poses": 92746,
+          "verified_poses": 38340,
+          "verified_pairs": 38264,
+          "accepted_candidates": 8064
+        },
+        "merge": {
+          "spatial_overlap_tests": 16002,
+          "collision_rejections": 0,
+          "canvas_budget_rejections": 0,
+          "integer_merge": true
+        }
+      },
+      {
+        "status": "completed",
+        "scope": "blind exact lattice solver, in-memory (not ZIP/PNG or physical scan)",
+        "count": 4096,
+        "tile": 36,
+        "seed": 827,
+        "input_pixels": 8581390,
+        "source_wh": [
+          2304,
+          2304
+        ],
+        "placed": 4096,
+        "exact_global_poses": 4096,
+        "correct_relative_joins": 4095,
+        "accepted_joins": 4095,
+        "components": 1,
+        "fixture_seconds": 2.425,
+        "match_seconds": 5.13,
+        "merge_seconds": 0.843,
+        "solver_seconds": 5.973,
+        "peak_rss_mib": 229.9,
+        "budget": {
+          "source": "available-host-memory; explicit lower budget",
+          "memory_budget_mib": 512.0,
+          "available_memory_mib": 6780.9,
+          "working_pixels": 29826161,
+          "canvas_pixels": 22369621,
+          "arc_records_per_shard": 3728270,
+          "vote_entries": 2485513,
+          "gap_pair_budget": 4096
+        },
+        "index": {
+          "arc_windows": [
+            32,
+            20
+          ],
+          "arc_backend": "compact-native",
+          "arc_passes": [
+            {
+              "window": 32,
+              "shards": 1,
+              "bucket": 6,
+              "record_cap": 3728270,
+              "vote_cap": 2485513
+            },
+            {
+              "window": 20,
+              "shards": 1,
+              "bucket": 6,
+              "record_cap": 3728270,
+              "vote_cap": 2485513
+            }
+          ],
+          "packed_contour_bytes": 32199720,
+          "voted_poses": 92746,
+          "verified_poses": 38340,
+          "verified_pairs": 38264,
+          "accepted_candidates": 8064
+        },
+        "merge": {
+          "spatial_overlap_tests": 16002,
+          "collision_rejections": 0,
+          "canvas_budget_rejections": 0,
+          "integer_merge": true
+        }
+      },
+      {
+        "status": "completed",
+        "scope": "blind exact lattice solver, in-memory (not ZIP/PNG or physical scan)",
+        "count": 4096,
+        "tile": 36,
+        "seed": 827,
+        "input_pixels": 8581390,
+        "source_wh": [
+          2304,
+          2304
+        ],
+        "placed": 4096,
+        "exact_global_poses": 4096,
+        "correct_relative_joins": 4095,
+        "accepted_joins": 4095,
+        "components": 1,
+        "fixture_seconds": 4.189,
+        "match_seconds": 5.014,
+        "merge_seconds": 0.571,
+        "solver_seconds": 5.585,
+        "peak_rss_mib": 229.8,
+        "budget": {
+          "source": "available-host-memory; explicit lower budget",
+          "memory_budget_mib": 512.0,
+          "available_memory_mib": 6762.2,
+          "working_pixels": 29826161,
+          "canvas_pixels": 22369621,
+          "arc_records_per_shard": 3728270,
+          "vote_entries": 2485513,
+          "gap_pair_budget": 4096
+        },
+        "index": {
+          "arc_windows": [
+            32,
+            20
+          ],
+          "arc_backend": "compact-native",
+          "arc_passes": [
+            {
+              "window": 32,
+              "shards": 1,
+              "bucket": 6,
+              "record_cap": 3728270,
+              "vote_cap": 2485513
+            },
+            {
+              "window": 20,
+              "shards": 1,
+              "bucket": 6,
+              "record_cap": 3728270,
+              "vote_cap": 2485513
+            }
+          ],
+          "packed_contour_bytes": 32199720,
+          "voted_poses": 92746,
+          "verified_poses": 38340,
+          "verified_pairs": 38264,
+          "accepted_candidates": 8064
+        },
+        "merge": {
+          "spatial_overlap_tests": 16002,
+          "collision_rejections": 0,
+          "canvas_budget_rejections": 0,
+          "integer_merge": true
+        }
+      }
+    ],
+    "v14": [
+      {
+        "status": "completed",
+        "scope": "blind exact lattice solver, in-memory (not ZIP/PNG or physical scan)",
+        "count": 4096,
+        "tile": 36,
+        "seed": 827,
+        "input_pixels": 8581390,
+        "source_wh": [
+          2304,
+          2304
+        ],
+        "placed": 4096,
+        "exact_global_poses": 4096,
+        "correct_relative_joins": 4095,
+        "accepted_joins": 4095,
+        "components": 1,
+        "fixture_seconds": 2.586,
+        "match_seconds": 2.825,
+        "merge_seconds": 0.673,
+        "solver_seconds": 3.498,
+        "peak_rss_mib": 212.6,
+        "budget": {
+          "source": "available-host-memory; explicit lower budget",
+          "memory_budget_mib": 512.0,
+          "available_memory_mib": 6756.5,
+          "working_pixels": 29826161,
+          "canvas_pixels": 22369621,
+          "arc_records_per_shard": 3728270,
+          "vote_entries": 2485513,
+          "gap_pair_budget": 4096
+        },
+        "index": {
+          "arc_windows": [
+            32,
+            20
+          ],
+          "arc_backend": "compact-native",
+          "arc_passes": [
+            {
+              "window": 32,
+              "shards": 1,
+              "bucket": 6,
+              "record_cap": 3728270,
+              "vote_cap": 2485513
+            },
+            {
+              "window": 20,
+              "shards": 1,
+              "bucket": 6,
+              "record_cap": 3728270,
+              "vote_cap": 2485513
+            }
+          ],
+          "packed_contour_bytes": 32199720,
+          "voted_poses": 92746,
+          "verified_poses": 38340,
+          "verified_pairs": 38264,
+          "accepted_candidates": 8064
+        },
+        "merge": {
+          "spatial_overlap_tests": 16002,
+          "collision_rejections": 0,
+          "canvas_budget_rejections": 0,
+          "integer_merge": true
+        }
+      },
+      {
+        "status": "completed",
+        "scope": "blind exact lattice solver, in-memory (not ZIP/PNG or physical scan)",
+        "count": 4096,
+        "tile": 36,
+        "seed": 827,
+        "input_pixels": 8581390,
+        "source_wh": [
+          2304,
+          2304
+        ],
+        "placed": 4096,
+        "exact_global_poses": 4096,
+        "correct_relative_joins": 4095,
+        "accepted_joins": 4095,
+        "components": 1,
+        "fixture_seconds": 2.572,
+        "match_seconds": 3.659,
+        "merge_seconds": 0.649,
+        "solver_seconds": 4.309,
+        "peak_rss_mib": 212.7,
+        "budget": {
+          "source": "available-host-memory; explicit lower budget",
+          "memory_budget_mib": 512.0,
+          "available_memory_mib": 6786.5,
+          "working_pixels": 29826161,
+          "canvas_pixels": 22369621,
+          "arc_records_per_shard": 3728270,
+          "vote_entries": 2485513,
+          "gap_pair_budget": 4096
+        },
+        "index": {
+          "arc_windows": [
+            32,
+            20
+          ],
+          "arc_backend": "compact-native",
+          "arc_passes": [
+            {
+              "window": 32,
+              "shards": 1,
+              "bucket": 6,
+              "record_cap": 3728270,
+              "vote_cap": 2485513
+            },
+            {
+              "window": 20,
+              "shards": 1,
+              "bucket": 6,
+              "record_cap": 3728270,
+              "vote_cap": 2485513
+            }
+          ],
+          "packed_contour_bytes": 32199720,
+          "voted_poses": 92746,
+          "verified_poses": 38340,
+          "verified_pairs": 38264,
+          "accepted_candidates": 8064
+        },
+        "merge": {
+          "spatial_overlap_tests": 16002,
+          "collision_rejections": 0,
+          "canvas_budget_rejections": 0,
+          "integer_merge": true
+        }
+      },
+      {
+        "status": "completed",
+        "scope": "blind exact lattice solver, in-memory (not ZIP/PNG or physical scan)",
+        "count": 4096,
+        "tile": 36,
+        "seed": 827,
+        "input_pixels": 8581390,
+        "source_wh": [
+          2304,
+          2304
+        ],
+        "placed": 4096,
+        "exact_global_poses": 4096,
+        "correct_relative_joins": 4095,
+        "accepted_joins": 4095,
+        "components": 1,
+        "fixture_seconds": 2.388,
+        "match_seconds": 3.08,
+        "merge_seconds": 0.642,
+        "solver_seconds": 3.722,
+        "peak_rss_mib": 212.6,
+        "budget": {
+          "source": "available-host-memory; explicit lower budget",
+          "memory_budget_mib": 512.0,
+          "available_memory_mib": 6771.1,
+          "working_pixels": 29826161,
+          "canvas_pixels": 22369621,
+          "arc_records_per_shard": 3728270,
+          "vote_entries": 2485513,
+          "gap_pair_budget": 4096
+        },
+        "index": {
+          "arc_windows": [
+            32,
+            20
+          ],
+          "arc_backend": "compact-native",
+          "arc_passes": [
+            {
+              "window": 32,
+              "shards": 1,
+              "bucket": 6,
+              "record_cap": 3728270,
+              "vote_cap": 2485513
+            },
+            {
+              "window": 20,
+              "shards": 1,
+              "bucket": 6,
+              "record_cap": 3728270,
+              "vote_cap": 2485513
+            }
+          ],
+          "packed_contour_bytes": 32199720,
+          "voted_poses": 92746,
+          "verified_poses": 38340,
+          "verified_pairs": 38264,
+          "accepted_candidates": 8064
+        },
+        "merge": {
+          "spatial_overlap_tests": 16002,
+          "collision_rejections": 0,
+          "canvas_budget_rejections": 0,
+          "integer_merge": true
+        }
+      }
+    ]
+  },
+  "median": {
+    "base": {
+      "solver_seconds": 5.585,
+      "match_seconds": 5.014,
+      "merge_seconds": 0.584,
+      "peak_rss_mib": 229.9,
+      "solver_seconds_range": [
+        5.482,
+        5.973
+      ]
+    },
+    "v14": {
+      "solver_seconds": 3.722,
+      "match_seconds": 3.08,
+      "merge_seconds": 0.649,
+      "peak_rss_mib": 212.6,
+      "solver_seconds_range": [
+        3.498,
+        4.309
+      ]
+    }
+  },
+  "speedup": 1.500537345513165,
+  "peak_rss_reduction_fraction": 0.07525010874293181,
+  "limitations": "Synthetic intact quarter-turn case only; no claim for continuous erosion, DAFNE, 100k or actual browser performance."
+}

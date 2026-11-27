@@ -1,4 +1,4 @@
-# Unified framework
+# Unified V14 framework
 
 Shardelix provides one input pipeline for generation, reconstruction and evaluation. The web worker, native Studio, Python file API and CLI all run the same workflow. The specialized modules are retained internally so that grid, document strip and torn-edge methods use the geometry appropriate to the input. They are not separate apps.
 
@@ -45,6 +45,8 @@ state = reconstruct_files("fragments.zip", "assisted", matching_reference="origi
 Accepts a ZIP, image directory or image paths. A new or empty output directory is required. Existing low-level `Solver.solve`, generate/solve/evaluate commands and benchmark scripts remain available for research and backward compatibility.
 
 ## Evidence and limits
+
+- [V14 release evidence](V14_RESULTS.md): current release summary, latest blind damaged-case measurements, native optimization and resource limits.
 
 - [Blind eroded recovery](ERODED_RECOVERY.md): reported failures and partial poses as well as successes. The severe 102-piece blind DAFNE development case remains unsolved.
 - [DAFNE indexed reference-assisted results](DAFNE_INDEXED.md): 6027/6029 genuine poses and 1154/1154 distractors rejected over 28 development cases. These are historical reference-assisted measurements, not the blind accuracy or a full dataset/SOTA claim.

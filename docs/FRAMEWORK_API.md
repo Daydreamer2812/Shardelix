@@ -1,9 +1,8 @@
-# Shardelix 11.0: framework API
+# Shardelix V14: framework API
 
 ## Install and call
 Python 3.11+, NumPy, SciPy, Pillow. The package is a research/framework
-release candidate (alpha), not a production service. Install the supplied
-wheel locally with dependencies already available, or use `PYTHONPATH=src`.
+release candidate (alpha), not a production service. Install from the source checkout with `python -m pip install -e .`, or use `PYTHONPATH=src`.
 
 ```python
 from shardelix import Solver, ResourceLimits
@@ -86,8 +85,7 @@ Full raster export may require additional ~1–2 GB for large canvases;
 the large-grid stress script saves only bounded predicted previews.
 Studio estimates a separate upload limit from available disk and multipart-parser RAM; file inputs use available disk. CLI/in-memory API is recommended
 for large datasets. Metadata-free scan import uses an adaptive working-set budget; see [resource measurements](RESOURCE_SCALING.md). Avoid holding multiple full frames at once. No real
-physical-fragment guarantee. Refer to V12_RESULTS.md for current measured conditions; historical V10
-262,144-piece stress is not a V12 measurement.
+physical-fragment guarantee. Refer to [V14 results](V14_RESULTS.md) for current release evidence. Historical benchmarks are not V14 reruns.
 
 ## Development
 Install the package with `python -m pip install -e .`, then run

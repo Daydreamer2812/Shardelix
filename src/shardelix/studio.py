@@ -19,6 +19,7 @@ from email.parser import BytesParser
 from email.policy import default
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
 from urllib.parse import urlparse,parse_qs
+from . import __version__
 from .reconstruction.limits import GRID_MAX,MAX_PIXELS
 
 from .workflow12 import native_upload_limit, DOWNLOADS, run_job, inspect_uploads, safe_zip
@@ -96,7 +97,7 @@ def serve(port=8765,open_browser=True):
                 if not self.local_host():self.send_error(403);return
                 u=urlparse(self.path)
                 if u.path=="/":
-                    html=Path(__file__).with_name("studio.html").read_text().replace("__SESSION_TOKEN__",state.token).replace("__NATIVE_UPLOAD_BYTES__",str(native_upload_limit(state.root,multipart=True))).encode()
+                    html=Path(__file__).with_name("studio.html").read_text().replace("__SHARDELIX_VERSION__",__version__).replace("__SESSION_TOKEN__",state.token).replace("__NATIVE_UPLOAD_BYTES__",str(native_upload_limit(state.root,multipart=True))).encode()
                     self.send_response(200);self.send_header("Content-Type","text/html; charset=utf-8");self.send_header("Content-Length",str(len(html)));self.end_headers();self.wfile.write(html)
                 elif u.path=="/api/status":self.reply(state.status())
                 elif u.path=="/api/file":

@@ -4,11 +4,11 @@ title: "Shardelix: Blind Digital Image and Document Fragment Reconstruction"
 type: software
 authors:
   - name: "Daydreamer2812"
-version: "13.0.1"
+version: "14.0.0"
 date-released: 2026-11-27
 repository-code: "https://github.com/Daydreamer2812/Shardelix"
 url: "https://daydreamer2812.github.io/Shardelix/"
-abstract: "A CPU-only classical computer vision research framework for blind reconstruction of shuffled, rotated and partially missing digital image fragments, with a C++20 acceleration core, Python API, and WebAssembly Studio."
+abstract: "A CPU-only classical computer vision research framework for blind reconstruction of shuffled, rotated and partially missing digital image and document fragments, with sparse geometric matching, experimental eroded-boundary recovery, a C++20 acceleration core, Python API, and WebAssembly Studio."
 keywords:
   - computer vision
   - image reconstruction

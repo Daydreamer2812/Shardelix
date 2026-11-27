@@ -1,4 +1,4 @@
-import unittest,tempfile,subprocess,sys,zipfile,os
+import unittest,tempfile,subprocess,sys,zipfile,os,tomllib
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
 class WebBuildTests(unittest.TestCase):
@@ -28,5 +28,11 @@ class WebBuildTests(unittest.TestCase):
             p=subprocess.run([sys.executable,"-c","import shardelix;print(shardelix.__version__)"],cwd=d,
                          env={**os.environ,"PYTHONPATH":str(d/"engine.zip")},capture_output=True,text=True)
             self.assertEqual(p.returncode,0,p.stderr)
-            self.assertEqual(p.stdout.strip(),"13.0.1")
+            with (ROOT/"pyproject.toml").open("rb") as project:
+                version=tomllib.load(project)["project"]["version"]
+            self.assertEqual(p.stdout.strip(),version)
+            self.assertIn(f"v{version} · Unified",html)
+            self.assertNotIn("__SHARDELIX_VERSION__",html)
+            self.assertIn(f'version: "{version}"',(ROOT/"CITATION.cff").read_text())
+            self.assertTrue((ROOT/"docs/releases"/f"v{version}.md").is_file())
 if __name__=="__main__":unittest.main()

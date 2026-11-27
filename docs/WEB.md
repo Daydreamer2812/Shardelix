@@ -1,4 +1,4 @@
-# Unified V13 Studio — GitHub Pages and local runs
+# Unified V14 Studio — GitHub Pages and local runs
 
 ## UI and solver routing
 
@@ -33,10 +33,10 @@ For a separately hosted copy (subject to the repository license):
    the runner and tests real WebAssembly, single/batch solving, blind replay,
    exports, and responsive layout. Review the retained screenshot and logs.
 
-V13 is a hybrid upgrade of the curated V12 code.
+V14 unifies the V13 hybrid core with adaptive irregular and missing-edge recovery.
 Enable Pages in repository settings; the included GitHub Actions workflow
 builds and deploys the static site from main. For branch-based hosting, build
-the static assets and deploy exactly the four output files to a dedicated
+the static assets and deploy the complete generated output directory to a dedicated
 hosting branch. A Pages site exposes the distributed engine ZIP as well as
 the rendered UI. No account credentials or API keys are needed to run it.
 

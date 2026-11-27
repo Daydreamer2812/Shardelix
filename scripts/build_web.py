@@ -1,10 +1,13 @@
 """Build deterministic GitHub Pages static artifact from the shared Studio and Python package."""
 from pathlib import Path
-import argparse,shutil,zipfile,hashlib
+import argparse,shutil,zipfile,hashlib,tomllib
 ROOT=Path(__file__).resolve().parents[1]
 def build(output, wasm=False):
     output=Path(output);output.mkdir(parents=True,exist_ok=True)
-    shutil.copyfile(ROOT/"src/shardelix/studio.html",output/"index.html")
+    with (ROOT/"pyproject.toml").open("rb") as f:
+        version=tomllib.load(f)["project"]["version"]
+    html=(ROOT/"src/shardelix/studio.html").read_text(encoding="utf-8")
+    (output/"index.html").write_text(html.replace("__SHARDELIX_VERSION__",version),encoding="utf-8")
     shutil.copyfile(ROOT/"web/worker.js",output/"worker.js")
     shutil.copyfile(ROOT/"web/core_bridge.js",output/"core_bridge.js")
     if wasm:

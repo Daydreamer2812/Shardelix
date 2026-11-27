@@ -43,6 +43,20 @@ class ResourceTests(unittest.TestCase):
                 self.assertEqual(truth,{tuple(q) for q in result})
         with self.assertRaises(MemoryError):arc_votes(packed,20,6,1,1,100_000)
 
+    @unittest.skipUnless(arc_votes_available(),"native arc kernel unavailable")
+    def test_canonical_arc_bucket_and_shard_parity(self):
+        # Duplicates create populous and sometimes self-complementary
+        # chain-code buckets. Preserve the reference rare-bucket rule.
+        pieces,_,_=fixture(12,36,2718)
+        pieces += [Fragment("duplicate-"+str(i),p.rgba.copy()) for i,p in enumerate(pieces[:3])]
+        packed=_packed_contours(pieces,resource_budget(browser=True))
+        for k in (6,14,24,32):
+            for bucket in (2,6,16):
+                truth={tuple(q) for q in propose(pieces,k,True,max_bucket=bucket) if q[0]>=3}
+                for shards in (1,3):
+                    result=arc_votes(packed,k,bucket,shards,1_000_000,100_000)
+                    self.assertEqual(truth,{tuple(q) for q in result})
+
     def test_native_contact_all_rotations(self):
         rng=np.random.default_rng(827)
         a=rng.integers(40,100,(32,18,4),dtype=np.uint8);a[...,3]=255
