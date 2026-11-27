@@ -71,7 +71,7 @@ def run(input_archive,solution_archive,out,*,case=None,engine="indexed",browser=
                 stage=s.get("stage","")
                 m=re.search(r"(\d+)/(\d+)",stage)
                 if not m or int(m.group(1))%100==0:print(stage,flush=True)
-            state=run_job(root,{"task":"blind","input_mode":"reference","reference_engine":engine},update,browser=browser)
+            state=run_job(root,{"task":"blind","input_mode":"reference","reference_engine":None if engine=="auto" else engine},update,browser=browser)
             assert state["diagnostics"]["matching_reference_used"] is True
             generated=root/"result"
             # Copy the solver report before reading any independent annotations.
@@ -95,7 +95,7 @@ def run(input_archive,solution_archive,out,*,case=None,engine="indexed",browser=
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument("input_archive",type=Path);p.add_argument("out",type=Path)
-    p.add_argument("--solution",type=Path);p.add_argument("--case");p.add_argument("--engine",choices=["indexed","indexed-deep","fft"],default="indexed")
+    p.add_argument("--solution",type=Path);p.add_argument("--case");p.add_argument("--engine",choices=["auto","indexed","indexed-deep","fft"],default="indexed")
     p.add_argument("--browser-limits",action="store_true");p.add_argument("--keep",action="store_true")
     p.add_argument("--all-cases",action="store_true",help="Run every case in this archive with per-case checkpoints")
     p.add_argument("--resume",action="store_true",help="Reuse completed benchmark.json checkpoints")

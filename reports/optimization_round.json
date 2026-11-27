@@ -1,0 +1,542 @@
+{
+  "baseline_commit": "ab219a342a9a8a7c631dad3129eb513bd62a3190",
+  "scope": "targeted development tests; no held-out or full-catalog SOTA claim",
+  "scan_report": "scan_strips.json",
+  "reference_assisted": [
+    {
+      "input_count": 107,
+      "genuine_count": 65,
+      "distractor_count": 42,
+      "correct_pose_count": 65,
+      "correct_pose_count_10px_5deg": 65,
+      "pose_accuracy": 1.0,
+      "distractors_rejected": 42,
+      "distractors_placed": 0,
+      "distractor_rejection": 1.0,
+      "median_position_error_px": 0.7122833050632307,
+      "median_angle_error_deg": 0.012157432390267786,
+      "max_position_error_px": 2.479900899323989,
+      "max_angle_error_deg": 1.0176784351648394,
+      "missing_genuine": [],
+      "incorrect_genuine": [],
+      "false_accepted": [],
+      "strict_pass": true,
+      "position_tolerance_px": 10,
+      "angle_tolerance_deg": 10,
+      "case": "affreschi_Tarquinia_Itremusici_1280x853/affreschi_Tarquinia_Itremusici_1280x853_2019-2-19_14.55.4",
+      "protocol": "reference-assisted; absolute pose; no alignment; no ML",
+      "engine": "reference-assisted-indexed-se2",
+      "matching_backend": "opencv-sift-flann+scipy-colour-kdtree",
+      "runtime_seconds": 24.358794372001285,
+      "coverage": 0.5812545794255568,
+      "elapsed_seconds": 25.305359105001116,
+      "browser_limits": false,
+      "input_sha256": "102916be4e91a22b38f5772ed7000521a45f1a39a5d72f2fb79a97bd59fcb520",
+      "reference_sha256": "c791056aad0017257607043c1ea25c94c8df1ef08b68232e87b1b483ea17ebf3",
+      "micro_rescue": {
+        "attempted": 21,
+        "placed": 1,
+        "eligible": 21
+      }
+    },
+    {
+      "input_count": 122,
+      "genuine_count": 108,
+      "distractor_count": 14,
+      "correct_pose_count": 108,
+      "correct_pose_count_10px_5deg": 108,
+      "pose_accuracy": 1.0,
+      "distractors_rejected": 14,
+      "distractors_placed": 0,
+      "distractor_rejection": 1.0,
+      "median_position_error_px": 0.9100718265667156,
+      "median_angle_error_deg": 0.020170063243071468,
+      "max_position_error_px": 2.8224749588746976,
+      "max_angle_error_deg": 0.6195119250672292,
+      "missing_genuine": [],
+      "incorrect_genuine": [],
+      "false_accepted": [],
+      "strict_pass": true,
+      "position_tolerance_px": 10,
+      "angle_tolerance_deg": 10,
+      "case": "PierodellaFrancesca_Resurrezione_730x826/PierodellaFrancesca_Resurrezione_730x826_2019-2-28_13.56.11",
+      "protocol": "reference-assisted; absolute pose; no alignment; no ML",
+      "engine": "reference-assisted-indexed-se2",
+      "matching_backend": "opencv-sift-flann+scipy-colour-kdtree",
+      "runtime_seconds": 12.54160218999823,
+      "coverage": 0.6668579389034462,
+      "elapsed_seconds": 13.177353833998495,
+      "browser_limits": false,
+      "input_sha256": "056094619e8382114f072a3e8ea3356b1abc50247922bb94625fa1daf4a54178",
+      "reference_sha256": "37151b04be55de2135afe1bff6236600e441a9ef22728161bd0e036aaf1565f5",
+      "micro_rescue": {
+        "attempted": 7,
+        "placed": 1,
+        "eligible": 7
+      }
+    },
+    {
+      "input_count": 107,
+      "genuine_count": 65,
+      "distractor_count": 42,
+      "correct_pose_count": 65,
+      "correct_pose_count_10px_5deg": 65,
+      "pose_accuracy": 1.0,
+      "distractors_rejected": 42,
+      "distractors_placed": 0,
+      "distractor_rejection": 1.0,
+      "median_position_error_px": 0.7106798109825399,
+      "median_angle_error_deg": 0.010126765413417615,
+      "max_position_error_px": 2.4770549039674177,
+      "max_angle_error_deg": 1.0176784351648394,
+      "missing_genuine": [],
+      "incorrect_genuine": [],
+      "false_accepted": [],
+      "strict_pass": true,
+      "position_tolerance_px": 10,
+      "angle_tolerance_deg": 10,
+      "case": "affreschi_Tarquinia_Itremusici_1280x853/affreschi_Tarquinia_Itremusici_1280x853_2019-2-19_14.55.4",
+      "protocol": "reference-assisted; absolute pose; no alignment; no ML",
+      "engine": "reference-assisted-indexed-se2",
+      "matching_backend": "dense-colour-index",
+      "runtime_seconds": 23.8399636130016,
+      "coverage": 0.5812710653575616,
+      "elapsed_seconds": 24.71572085400112,
+      "browser_limits": true,
+      "input_sha256": "102916be4e91a22b38f5772ed7000521a45f1a39a5d72f2fb79a97bd59fcb520",
+      "reference_sha256": "c791056aad0017257607043c1ea25c94c8df1ef08b68232e87b1b483ea17ebf3",
+      "micro_rescue": {
+        "attempted": 21,
+        "placed": 1,
+        "eligible": 21
+      }
+    }
+  ],
+  "blind_dafne_102": {
+    "protocol": "No reference, truth only in evaluator; 87 genuine, 15 distractors; absolute gauge not known.",
+    "baseline": {
+      "correct_primary": 3,
+      "correct_relative_joins": 6,
+      "accepted_relative_joins": 16,
+      "wall_seconds": 292.3
+    },
+    "result": {
+      "primary": {
+        "pose_correct": 3,
+        "gt_pose_count": 87,
+        "genuine_placed": 3,
+        "outliers_placed": 0,
+        "median_position_error_px": 1.5958074513814322,
+        "median_angle_error_deg": 1.999999999999996
+      },
+      "components": {
+        "model": "classical-continuation",
+        "accepted_relative_joins": 16,
+        "correct_relative_joins": 6,
+        "outlier_joins": 1,
+        "relative_join_precision": 0.375,
+        "nontrivial_pieces": 30,
+        "nontrivial_groups": 14,
+        "groups": [
+          {
+            "size": 3,
+            "correct_global_gauge_poses": 3
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 3,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 2
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 2
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 2
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 2
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          }
+        ]
+      },
+      "alternative": {
+        "model": "gap-aware",
+        "accepted_relative_joins": 11,
+        "correct_relative_joins": 3,
+        "outlier_joins": 1,
+        "relative_join_precision": 0.2727272727272727,
+        "nontrivial_pieces": 18,
+        "nontrivial_groups": 7,
+        "groups": [
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 2
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 2
+          },
+          {
+            "size": 4,
+            "correct_global_gauge_poses": 2
+          },
+          {
+            "size": 4,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          }
+        ]
+      },
+      "other_model": {
+        "model": "exact-contact",
+        "accepted_relative_joins": 22,
+        "correct_relative_joins": 3,
+        "outlier_joins": 0,
+        "relative_join_precision": 0.13636363636363635,
+        "nontrivial_pieces": 38,
+        "nontrivial_groups": 16,
+        "groups": [
+          {
+            "size": 4,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 3,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 3,
+            "correct_global_gauge_poses": 3
+          },
+          {
+            "size": 3,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 3,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 2
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          }
+        ]
+      }
+    },
+    "wall_seconds": 283.16362771499917,
+    "deep_recovery": {
+      "attempted": true,
+      "selected": true,
+      "gap_limit_px": 36.0,
+      "line_tokens": 921,
+      "line_proposals": 71099,
+      "point_proposals": 102508,
+      "point_verified": 3399,
+      "spectral_pairs": 898,
+      "spectral_proposals": 12572,
+      "spectral_verified": 2213,
+      "population_prior": true,
+      "population_downweighted": 15,
+      "pose_modes": 3974,
+      "seed_hypotheses": 21,
+      "accepted_joins": 16,
+      "contextual_growth_joins": 2,
+      "closed_loop_joins": 0,
+      "component_sizes": [
+        3,
+        2,
+        3,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    }
+  },
+  "synthetic_grid": {
+    "piece_count": 4096,
+    "placed": 4096,
+    "direct_position_accuracy": 1.0,
+    "raw_position_accuracy": 0.0,
+    "gauge_aligned_position_accuracy": 1.0,
+    "evaluation_rotation_cw_deg": 270,
+    "adjacency_precision": 1.0,
+    "adjacency_recall": 1.0,
+    "adjacency_f1": 1.0,
+    "largest_correct_component": 1.0,
+    "coverage": 1.0,
+    "aligned_coverage": 1.0,
+    "raw_pixel_accuracy": 0.0,
+    "pixel_accuracy": 1.0,
+    "collision_pixels": 0,
+    "pass_95": true,
+    "source": "texture",
+    "cut": "grid",
+    "seed": 911,
+    "method": "v8",
+    "shape": [
+      1024,
+      1024
+    ],
+    "solver_seconds": 2.077894326997921,
+    "generate_load_seconds": 2.582761252000637,
+    "render_evaluate_seconds": 8.107545028000459,
+    "peak_process_rss_mib": 126.74609375,
+    "algorithm": "sparse-edge-consensus-v10",
+    "diagnostics": {
+      "components": 1,
+      "anchor_pieces": 4096,
+      "accepted": 4095,
+      "rejected": 0,
+      "reciprocal_seam_fraction": 0.9598214285714286,
+      "shortlist_seam_fraction": 0.9929315476190477,
+      "median_reciprocal_margin": 0.27217815816402435,
+      "placed_fraction": 1.0,
+      "component_pack_added": 0,
+      "component_pack_batches": [],
+      "algorithm": "sparse-edge-consensus-v10",
+      "index_mode": "midpoint",
+      "index_query_seconds": 1.2724246029974893,
+      "rerank_seconds": 0.13628242499908083,
+      "retrieval_seconds": 1.5121045259984385,
+      "assembly_seconds": 0.511828370999865,
+      "shortlist": 40,
+      "descriptor_samples": 4,
+      "identical_piece_count": 0,
+      "index_trials": [
+        {
+          "index": "midpoint",
+          "quality": [
+            1.0,
+            0.9929315476190477,
+            0.9598214285714286
+          ],
+          "seconds": 2.0239328969983035
+        }
+      ],
+      "index_fallback_used": false,
+      "mode": "blind",
+      "source_reference_used": false,
+      "auto_tune": true,
+      "sparse_high_consensus": true,
+      "runtime_seconds": 2.0756500530005724,
+      "blind_objective": 0.9892552148174084
+    },
+    "python": "3.12.14"
+  },
+  "tests": {
+    "native_passed": 112,
+    "python_passed": 109,
+    "python_skipped": 3,
+    "workflow_passed": 2,
+    "actual_browser_run": false
+  },
+  "external_432": {
+    "evaluation": "No independent truth; full placement does not establish correct ordering.",
+    "diagnostics": {
+      "algorithm": "grid-edge-consensus",
+      "identical_piece_count": 31,
+      "runtime_seconds": 21.412000438998803,
+      "performance_profile": "balanced",
+      "status": "ambiguous",
+      "placed": 432,
+      "piece_count": 432,
+      "coverage": 1.0,
+      "collision_pixels": 0,
+      "accuracy_verified": false,
+      "render_collision_pixels": 0,
+      "workflow_elapsed_seconds": 22.00125568400108,
+      "import_geometry_mode": "inferred-grid",
+      "import_geometry": {
+        "width": 672,
+        "height": 504,
+        "grid": [
+          18,
+          24
+        ],
+        "cut": "grid",
+        "piece_count": 432
+      },
+      "input_detection": {
+        "route": "grid",
+        "evidence": {
+          "sampled_images": 32,
+          "alpha_or_key": 0,
+          "solid_or_matte_background": 0,
+          "foreground_masks": 0,
+          "decoded_pixels": 338688
+        },
+        "warning": null
+      },
+      "compute_backend": "cpp-native",
+      "process_peak_rss_mib": 293.0625
+    }
+  }
+}

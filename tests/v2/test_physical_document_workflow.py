@@ -9,7 +9,7 @@ from unittest.mock import patch
 import numpy as np
 from PIL import Image
 
-from shardelix.workflow12 import run_job
+from shardelix.workflow12 import run_job, inspect_uploads
 
 
 class PhysicalDocumentWorkflowTests(unittest.TestCase):
@@ -45,6 +45,42 @@ class PhysicalDocumentWorkflowTests(unittest.TestCase):
                     self.assertNotIn("ocr", archived["scan"])
                     poses.append(json.loads(z.read("placements.json"))["poses"])
         self.assertEqual(poses[0], poses[1])
+
+    def test_color_strips_with_transparent_padding_auto_route(self):
+        with tempfile.TemporaryDirectory() as t:
+            root=Path(t);(root/"upload").mkdir()
+            y,x=np.indices((128,56))
+            source=np.stack([120+80*np.sin(.13*x+.03*y),140+65*np.cos(.21*x-.06*y),
+                             120+70*np.sin(.08*x-.09*y)],axis=2).astype(np.uint8)
+            for i in (3,1,0,2):
+                tile=np.zeros((150,100,4),np.uint8)
+                tile[11:139,40:54,:3]=source[:,14*i:14*(i+1)]
+                tile[11:139,40:54,3]=255
+                if i%2:tile=np.rot90(tile)
+                Image.fromarray(tile).save(root/"upload"/f"p{(i*7)%11}.png")
+            info=inspect_uploads(sorted((root/"upload").iterdir()),True)
+            self.assertEqual(info["route"],"scan-strips")
+            state=run_job(root,{"task":"blind","input_mode":"auto","auto_layout":True},browser=True)
+            self.assertEqual(state["diagnostics"]["algorithm"],"physical-color-strip-chain")
+            self.assertEqual(state["diagnostics"]["placed"],4)
+            self.assertEqual(state["diagnostics"]["render_collision_pixels"],0)
+            with Image.open(root/"result/assembly.png") as im:
+                self.assertEqual(im.size,(56,128))
+
+    def test_patch_similarity_is_bounded_and_finite(self):
+        from shardelix.reconstruction.physical_document import _patch_recurrence
+        images=[]
+        for k in range(4):
+            a=np.zeros((92,26),np.float32)
+            for y in range(9,83,13):
+                a[y:y+3,3:22]=1
+                a[y:y+7,7+k:9+k]=1
+            images.append(a)
+        c=_patch_recurrence(images,6,0)
+        self.assertEqual(c.shape,(4,4))
+        self.assertTrue(np.isfinite(c).all())
+        self.assertGreaterEqual(float(c.min()),0)
+        np.testing.assert_allclose(c,_patch_recurrence(images,6,0))
 
 
 if __name__ == "__main__":

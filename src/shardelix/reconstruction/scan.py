@@ -573,6 +573,7 @@ def reconstruct(pieces,out:Path,report,update=lambda _:None,*,pixel_cap=8_000_00
     d={"algorithm":"physical-scan-classical-continuation" if deep["selected"] else ("physical-scan-gap-aware-se2" if recovery["selected"] else "physical-scan-se2-experimental"),"status":"unverified" if len(main)==len(pieces) else "partial",
        "placed":len(main),"piece_count":len(pieces),"coverage":coverage,"render_collision_pixels":collision,
        "available_piece_recovery":len(main)/len(pieces),"runtime_seconds":time.perf_counter()-started,
+       "accuracy_verified":False,"orientation_ambiguous":True,
        "scan":{"kind":"irregular-fragments","gap_recovery":recovery,"deep_recovery":deep,"input_images":report["input_images"],"detected_pieces":len(pieces),"components":len(groups),"pair_search":report["pair_search"],"searched_pairs":len(pairs),"possible_pairs":n*(n-1)//2,
                "warnings":report["warnings"],"common_scale":report["common_scale"],"accuracy_verified":False}}
     json_write(out/"diagnostics.json",d)

@@ -7,35 +7,75 @@
     {
       "case": "real1_27",
       "pixel_only": {
-        "directed_correct": 5,
-        "undirected_correct": 8,
-        "positions_correct": 8,
+        "directed_correct": 16,
+        "undirected_correct": 17,
+        "positions_correct": 12,
         "total_joins": 26,
         "total_pieces": 27
       },
-      "runtime_seconds": 2.6969970210011525
+      "runtime_seconds": 6.597261837003316
     },
     {
       "case": "real2_56",
       "pixel_only": {
-        "directed_correct": 6,
-        "undirected_correct": 9,
+        "directed_correct": 50,
+        "undirected_correct": 50,
         "positions_correct": 0,
         "total_joins": 55,
         "total_pieces": 56
       },
-      "runtime_seconds": 8.855719416998909
+      "runtime_seconds": 20.140496059000725
     },
     {
       "case": "real3_39",
       "pixel_only": {
-        "directed_correct": 2,
-        "undirected_correct": 5,
-        "positions_correct": 2,
+        "directed_correct": 22,
+        "undirected_correct": 23,
+        "positions_correct": 1,
         "total_joins": 38,
         "total_pieces": 39
       },
-      "runtime_seconds": 6.016306656001689
+      "runtime_seconds": 15.944424129000254
     }
-  ]
+  ],
+  "profile": "balanced",
+  "baseline": {
+    "commit": "ab219a342a9a8a7c631dad3129eb513bd62a3190",
+    "results": [
+      {
+        "case": "real1_27",
+        "pixel_only": {
+          "directed_correct": 5,
+          "undirected_correct": 8,
+          "positions_correct": 8,
+          "total_joins": 26,
+          "total_pieces": 27
+        },
+        "runtime_seconds": 2.6969970210011525
+      },
+      {
+        "case": "real2_56",
+        "pixel_only": {
+          "directed_correct": 6,
+          "undirected_correct": 9,
+          "positions_correct": 0,
+          "total_joins": 55,
+          "total_pieces": 56
+        },
+        "runtime_seconds": 8.855719416998909
+      },
+      {
+        "case": "real3_39",
+        "pixel_only": {
+          "directed_correct": 2,
+          "undirected_correct": 5,
+          "positions_correct": 2,
+          "total_joins": 38,
+          "total_pieces": 39
+        },
+        "runtime_seconds": 6.016306656001689
+      }
+    ]
+  },
+  "notes": "Development cases, not a held-out benchmark. Orientation and ordering are not guaranteed. Timings on the local native Python process, with other concurrent tests."
 }

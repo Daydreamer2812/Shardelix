@@ -12,7 +12,7 @@ only after solve; it is not a third solver. The browser and native Studio share
 `src/shardelix/workflow12.py` and the reconstruction package.
 All profiles use the same cut-specific algorithms and geometric validation.
 Fast reduces search; a bounded rescue runs only on severe irregular under-coverage; Balanced is the default;
-In reference-assisted mode Fast and Balanced use indexed registration; High accuracy enables experimental micro-fragment recovery. In blind mode, High accuracy adds bounded search and verifies candidate hypotheses against
+In reference-assisted mode Fast uses indexed registration, Balanced adds bounded tiny-fragment rescue, and High accuracy enables wider experimental micro-fragment recovery. In blind mode, High accuracy adds bounded search and verifies candidate hypotheses against
 observable data. It is not a guarantee of better accuracy. Native optional MILP
 is not attempted in WebAssembly; browser and native results need not be identical.
 
@@ -183,14 +183,17 @@ are applied and remaining inputs are inferred automatically.
 If the images are elongated and share a common long dimension, the engine
 attempts physical document-strip rectification before general contour matching.
 It rectifies the foreground silhouette per row, estimates relative 180° text
-orientation from row projections, compares robust multiscale ink-edge profiles
-and optimizes a directed chain. It supports 2–128 scanned strips. For other
+orientation from cleaned whole-strip row projections, compares shadow-normalized
+ink-edge profiles, and in Balanced/High accuracy uses nearby observed interior
+patches to score likely stroke continuations without recognizing characters.
+Color photographs use chromatic strip matching instead. Fast skips the patch index.
+The solver optimizes a directed chain. It supports 2–128 scanned strips. For other
 shapes, the irregular scan route remains available. Physical strip ordering
 is experimental: aligned geometry and full placement do not prove that the
 text is in correct order. The normalized strips and scan report are exportable;
 the supplied ground-truth ordering is never used for inference.
 
-No character recognition or language models are used. Matching is based only
+No character recognition, language models, or trained models are used. Matching is based only
 on image geometry and pixel continuity; consequently the method is
 language-independent, but cannot resolve all ambiguous text seams or
 guarantee global upright orientation.
@@ -201,7 +204,8 @@ The original [DocDataset](https://people.tamu.edu/~xinli/DocReassembly/) is
 not redistributed. The script anonymizes inputs before reconstruction, then
 reads the answer ordering only after the pixel-only solver finishes. See
 [`reports/scan_strips.json`](../reports/scan_strips.json) for measured
-results. These are native pixel-only results, not a claim of identical browser
+results: 90/119 correct undirected seams vs 22/119 before the optimization.
+This is not 100% page-order recovery, and the stronger search costs more CPU time. These are native pixel-only results, not a claim of identical browser
 performance or verified accuracy on arbitrary uploads.
 
 ## Verification status

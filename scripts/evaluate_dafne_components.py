@@ -26,8 +26,10 @@ def evaluate(input_zip,truth_zip,result):
     dims={}
     with zipfile.ZipFile(input_zip) as z:
         for path in z.namelist():
-            if path.startswith(("pieces/","fragments/")) and path.lower().endswith((".png",".jpg",".jpeg")):
-                with Image.open(io.BytesIO(z.read(path))) as im:dims[Path(path).stem]=im.size
+            if Path(path).stem.startswith("fragment_") and path.lower().endswith((".png",".jpg",".jpeg")):
+                name=Path(path).stem
+                if name in dims:raise ValueError(f"Duplicate fragment ID in input ZIP: {name}")
+                with Image.open(io.BytesIO(z.read(path))) as im:dims[name]=im.size
     with zipfile.ZipFile(truth_zip) as z:
         annotation=json.loads(z.read("annotations/source_metadata.json"))
     locations={int(p[0]):list(map(float,p[1:]))for line in annotation["ground_truth"]for p in [line.split()]}
@@ -38,6 +40,7 @@ def evaluate(input_zip,truth_zip,result):
         if name not in dims:continue
         x,y,a=locations[v];w,h=dims[name];r=np.exp(-1j*np.deg2rad(a))
         gt[name]=(r,complex(x,y)-r*complex(w/2,h/2))
+    if not gt:raise ValueError("No matching truth IDs found in input archive; check dataset annotation and fragment filenames")
     report=json.loads((result/"scan_report.json").read_text())
     comp=json.loads((result/"component_placements.json").read_text())
     primary=json.loads((result/"placements.json").read_text())

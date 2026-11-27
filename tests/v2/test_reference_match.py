@@ -47,4 +47,31 @@ class ReferenceModeTests(unittest.TestCase):
                 self.assertEqual(img.size,(136,124))
                 self.assertLess(np.count_nonzero(np.array(img)[:,:,3]),w*h)
 
+    def test_adaptive_tiny_retry_rescues_collision_without_eviction(self):
+        from unittest.mock import patch
+        from shardelix.reconstruction.common import Fragment
+        from shardelix.reconstruction.reference_index import IndexedMatch,reconstruct_indexed
+        def match(x,y,err):
+            return IndexedMatch(0.,np.array([x,y],np.float32),err,3.,"test")
+        class Index:
+            sift_index=None
+            def __init__(self,*args,**kwargs):pass
+            def match(self,p,**kwargs):
+                return [match(20,20,.5 if p.id=="a" else .9 if p.id=="b" else 1.2)]
+            def micro_match(self,p):
+                return [match(45,45,.2)] if p.id=="b" else [match(20,20,.1)]
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);src=root/"reference.png";Image.new("RGB",(64,64)).save(src)
+            a=np.full((8,8,4),255,np.uint8)
+            ps=[Fragment(k,a.copy()) for k in ("a","b","c")]
+            with patch("shardelix.reconstruction.reference_index.ReferenceIndex",Index):
+                d=reconstruct_indexed(ps,src,root/"out",{"input_images":3,"common_scale":1.},adaptive_micro=True)
+            self.assertEqual(d["placed"],2)
+            self.assertEqual(d["micro_rescue"],{"attempted":2,"placed":1,"eligible":2})
+            poses=json.loads((root/"out/placements.json").read_text())
+            self.assertEqual(set(poses),{"a","b"})
+            np.testing.assert_allclose(poses["a"]["input_to_canvas_affine"],[[1,0,16],[0,1,16]])
+            self.assertEqual(d["render_collision_pixels"],0)
+
+
 if __name__=="__main__":unittest.main()

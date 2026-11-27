@@ -49,6 +49,22 @@ class GeneralInputTests(unittest.TestCase):
                 self.assertEqual(state["diagnostics"]["render_collision_pixels"],0)
                 self.assertIsNone(state["metrics"])
 
+    def test_malformed_and_stale_metadata_are_reinferred(self):
+        for metadata in ("{invalid",json.dumps({"height":60,"width":60,"piece_count":4,
+                                                "cut":"grid","rotations":False,"grid":[2,2]})):
+            with self.subTest(metadata=metadata),tempfile.TemporaryDirectory() as t:
+                r=self.root(t);zpath=r/"upload/tiles.zip";im=texture(40,40)
+                with zipfile.ZipFile(zpath,"w") as z:
+                    for i in range(4):
+                        y,x=divmod(i,2);z.writestr(f"pieces/{i}.png",png(im[y*20:y*20+20,x*20:x*20+20]))
+                    z.writestr("case.json",metadata)
+                info=inspect_uploads([zpath],True)
+                self.assertIsNone(info["metadata"])
+                self.assertIn("Ignored incompatible case.json",info["metadata_warning"])
+                state=run(r)
+                self.assertEqual(state["diagnostics"]["placed"],4)
+                self.assertEqual(state["diagnostics"]["import_geometry_mode"],"inferred-grid")
+
     def test_generic_solid_backgrounds_use_exact_masks(self):
         with tempfile.TemporaryDirectory() as t:
             r=self.root(t);yy,xx=np.indices((72,72))

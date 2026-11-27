@@ -28,7 +28,7 @@ def metrics(order, truth):
             "total_joins": len(truth)-1, "total_pieces": len(truth)}
 
 
-def evaluate(z, name, case):
+def evaluate(z, name, case, profile):
     prefix = f"DocDataset/stripes/{name}/"
     scans, pieces, out = (case/p for p in ("scans", "pieces", "result"))
     scans.mkdir(parents=True)
@@ -49,7 +49,7 @@ def evaluate(z, name, case):
         with Image.open(io.BytesIO(z.read(prefix+"bg_mask_vis/"+leaf))) as mask:
             rgba.putalpha(mask.convert("L"))
         rgba.save(scans/(alias+".png"))
-    diag = reconstruct_strips(sorted(scans.glob("*.png")), pieces, out)
+    diag = reconstruct_strips(sorted(scans.glob("*.png")), pieces, out, profile=profile)
     poses = json.loads((out/"placements.json").read_text())["poses"]
     order = sorted(poses, key=lambda i: poses[i]["x"])
     # Evaluation labels enter the process only once inference has finished.
@@ -62,11 +62,12 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("archive", type=Path)
     parser.add_argument("--out", type=Path)
+    parser.add_argument("--profile", choices=("fast", "balanced", "accurate"), default="balanced")
     args = parser.parse_args()
     with tempfile.TemporaryDirectory() as tmp, zipfile.ZipFile(args.archive) as z:
-        results = [evaluate(z, name, Path(tmp)/name)
+        results = [evaluate(z, name, Path(tmp)/name, args.profile)
                    for name in ("real1_27", "real2_56", "real3_39")]
-    data = {"dataset":"DocDataset, physical stripes", "seed":624,
+    data = {"dataset":"DocDataset, physical stripes", "seed":624, "profile":args.profile,
             "source":"https://people.tamu.edu/~xinli/DocReassembly/data/DocDataset.zip",
             "protocol":"Anonymized scan pixels + foreground masks only; truth read after reconstruction.",
             "results":results}

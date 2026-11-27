@@ -35,6 +35,12 @@ This is an experimental extension, not a claim of a solved DAFNE benchmark.
 6. Output the primary component and transparently represent the lost material.
    No spatial relationship is assumed between disconnected components.
 
+The optimization update also caches invariant masks and interior distance
+transforms across spectral angles, chunks Fourier correlations, and checks
+triangles with distinct boundary arcs before accepting borderline multi-evidence
+seams. The [targeted rerun](OPTIMIZATION.md) preserved 6/16 correct relative
+joins and 3/87 primary poses on the severe DAFNE case; it did not solve it.
+
 ## Output
 
 - `assembly.png`: observed pixels of the selected connected group only.

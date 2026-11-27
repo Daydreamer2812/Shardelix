@@ -14,18 +14,19 @@ from .scan import rotation
 from .continuation import _sample
 
 
-def _raster(shape,field,xy,R,center,band):
+def _raster(shape,field,xy,R,center,band,mask=None,core=None):
     # xy are scene offsets; sample a rotated moving fragment about its center.
     q=xy@R+center
     qf=q+field.pad
     valid=(qf[...,0]>=.5)&(qf[...,1]>=.5)&(qf[...,0]<field.rgb.shape[1]-.5)&(qf[...,1]<field.rgb.shape[0]-.5)
-    inside=_sample(shape.fragment.mask.astype(np.float32),q,mode="constant")>.5
+    if mask is None:mask=shape.fragment.mask.astype(np.float32)
+    inside=_sample(mask,q,mode="constant")>.5
     dist=_sample(field.distance,qf,mode="constant")
     rgb=_sample(field.rgb,qf,mode="constant")/255.
     strength=np.clip(_sample(field.strength,qf,mode="constant")/8.,0,1)
     # Use a mask band on observed pixels rather than the whole interior.
     # Preceding interior distance is computed separately for each shape.
-    core=ndi.distance_transform_edt(shape.fragment.mask).astype(np.float32)
+    if core is None:core=ndi.distance_transform_edt(shape.fragment.mask).astype(np.float32)
     dep=_sample(core,q,mode="constant")
     obs=inside*(dep<=9.5)*valid
     ext=(~inside)*valid*(dist>.1)*(dist<=band)*np.exp(-dist/max(4.,band*.75))
@@ -37,8 +38,8 @@ def _raster(shape,field,xy,R,center,band):
     return np.concatenate([inside[None].astype(np.float32),channels(obs),channels(ext)],axis=0)
 
 
-def _spectrum(shape,field,xy,R,center,band):
-    return fft.rfft2(_raster(shape,field,xy,R,center,band),axes=(-2,-1))
+def _spectrum(shape,field,xy,R,center,band,mask=None,core=None):
+    return fft.rfft2(_raster(shape,field,xy,R,center,band,mask,core),axes=(-2,-1))
 
 
 def _correlation(a,b,N):
@@ -76,7 +77,11 @@ def fft_proposals(shapes,fields,pairs,max_gap,update=lambda _:None,*,limit=14):
     for i,j in pairs:
         if i!=j:by_moving[max(i,j)].append(min(i,j))
     fixed=sorted({i for js in by_moving.values() for i in js})
-    spectra={i:_spectrum(shapes[i],fields[i],xy,np.eye(2),centers[i],band) for i in fixed}
+    # Distance-to-boundary and float masks are invariant under sampled angle.
+    # Cache them once instead of computing 24 distance transforms per piece.
+    masks={i:shapes[i].fragment.mask.astype(np.float32) for i in set(fixed)|set(by_moving)}
+    depths={i:ndi.distance_transform_edt(m).astype(np.float32) for i,m in masks.items()}
+    spectra={i:_spectrum(shapes[i],fields[i],xy,np.eye(2),centers[i],band,masks[i],depths[i]) for i in fixed}
     out=defaultdict(list)
     for ordinal,(j,near) in enumerate(sorted(by_moving.items())):
         near=sorted(set(near))
@@ -85,31 +90,33 @@ def fft_proposals(shapes,fields,pairs,max_gap,update=lambda _:None,*,limit=14):
         denom=np.minimum(area,shapes[j].fragment.mask.sum())/step**2
         for k in range(24):
             theta=2*np.pi*k/24-np.pi
-            R=rotation(theta);B=_spectrum(shapes[j],fields[j],xy,R,centers[j],band)
-            values=_correlation(A,B,N)
-            support=np.maximum(values[:,0],0)
-            error=np.sqrt(np.maximum(values[:,1],0)/np.maximum(support*3,1.e-6))*255.
-            texture=np.maximum(values[:,2],0)/np.maximum(support,1.e-6)
-            overlap=np.maximum(values[:,3],0)/np.maximum(denom[:,None,None],1.)
-            # Moderate support threshold and texture weighting; full-raster
-            # verification is independent of this approximate squared error.
-            rank=np.sqrt(support)*np.exp(-error/25.)*(.20+.80*np.minimum(texture,1.))
-            rank[(support<max(4.,15/step))|(overlap>.035)]=0.
-            # Best 2 distinct translation peaks for each rotation.
-            flat=rank.reshape(len(near),-1)
-            for _ in range(2):
-                ids=np.argmax(flat,axis=1)
-                scores=flat[np.arange(len(near)),ids]
-                yy,xx=np.unravel_index(ids,(N,N))
-                for z,i in enumerate(near):
-                    if scores[z]<.30:continue
-                    dx=int(xx[z]);dy=int(yy[z])
-                    if dx>N//2:dx-=N
-                    if dy>N//2:dy-=N
-                    t=centers[i]+step*np.array([dx,dy])-R@centers[j]
-                    out[i,j].append((float(scores[z]),theta,t))
-                    # Suppress neighboring translations around the first peak.
-                    flat[z,((yy[z]+np.arange(-2,3))%N)[:,None]*N+((xx[z]+np.arange(-2,3))%N)[None,:]]=0.
+            R=rotation(theta);B=_spectrum(shapes[j],fields[j],xy,R,centers[j],band,masks[j],depths[j])
+            for start in range(0,len(near),12):
+                stop=min(start+12,len(near));chunk=near[start:stop]
+                values=_correlation(A[start:stop],B,N)
+                support=np.maximum(values[:,0],0)
+                error=np.sqrt(np.maximum(values[:,1],0)/np.maximum(support*3,1.e-6))*255.
+                texture=np.maximum(values[:,2],0)/np.maximum(support,1.e-6)
+                overlap=np.maximum(values[:,3],0)/np.maximum(denom[start:stop,None,None],1.)
+                # Moderate support threshold and texture weighting; full-raster
+                # verification is independent of this approximate squared error.
+                rank=np.sqrt(support)*np.exp(-error/25.)*(.20+.80*np.minimum(texture,1.))
+                rank[(support<max(4.,15/step))|(overlap>.035)]=0.
+                # Best 2 distinct translation peaks for each rotation.
+                flat=rank.reshape(len(chunk),-1)
+                for _ in range(2):
+                    ids=np.argmax(flat,axis=1)
+                    scores=flat[np.arange(len(chunk)),ids]
+                    yy,xx=np.unravel_index(ids,(N,N))
+                    for z,i in enumerate(chunk):
+                        if scores[z]<.30:continue
+                        dx=int(xx[z]);dy=int(yy[z])
+                        if dx>N//2:dx-=N
+                        if dy>N//2:dy-=N
+                        t=centers[i]+step*np.array([dx,dy])-R@centers[j]
+                        out[i,j].append((float(scores[z]),theta,t))
+                        # Suppress neighboring translations around the first peak.
+                        flat[z,((yy[z]+np.arange(-2,3))%N)[:,None]*N+((xx[z]+np.arange(-2,3))%N)[None,:]]=0.
         # Keep peak diversity rather than 14 near-identical angles/translations.
         if ordinal%max(1,len(by_moving)//12)==0:
             update(f"Spectral configuration search {ordinal+1}/{len(by_moving)}")

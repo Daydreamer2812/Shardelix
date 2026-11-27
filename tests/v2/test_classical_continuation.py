@@ -4,7 +4,7 @@ import math
 import numpy as np
 from shardelix.reconstruction.common import Fragment
 from shardelix.reconstruction.scan import _shape,rotation
-from shardelix.reconstruction.continuation import make_field,pose_difference,population_weights,confidence_forest
+from shardelix.reconstruction.continuation import make_field,pose_difference,population_weights,confidence_forest,_closed_triangles
 from shardelix.reconstruction.spectral_gap import fft_proposals
 from scripts.benchmark_eroded import eroded_fixture
 
@@ -36,6 +36,20 @@ class ClassicalContinuationTests(unittest.TestCase):
         q,_=population_weights(shapes[::-1])
         np.testing.assert_allclose(q,w[::-1])
         self.assertTrue(np.all(w[:-1]==1.))
+
+    def test_closed_triangle_requires_pose_consistency_and_distinct_arcs(self):
+        pieces,truth=eroded_fixture(seed=3,erosion=3,keep=(0,1,2))
+        shapes=[_shape(p,2.) for p in pieces[:3]]
+        def mode(i,j,a,b):
+            A,u=truth[i];B,v=truth[j]
+            return (9.,i,j,A.T@B,A.T@(v-u),{"arc_a":a,"arc_b":b,"population_weight":1.})
+        m=[mode(0,1,0,0),mode(0,2,len(shapes[0].points)//2,0),
+           mode(1,2,len(shapes[1].points)//2,len(shapes[2].points)//2)]
+        np.testing.assert_array_equal(_closed_triangles(shapes,m),[1,1,1])
+        q=list(m[2]);q[4]=q[4]+[30,25]
+        np.testing.assert_array_equal(_closed_triangles(shapes,[m[0],m[1],tuple(q)]),[0,0,0])
+        q=list(m[2]);q[5]={**q[5],"arc_a":0}
+        np.testing.assert_array_equal(_closed_triangles(shapes,[m[0],m[1],tuple(q)]),[0,0,0])
 
     def test_context_growth_requires_independent_evidence(self):
         pieces,truth=eroded_fixture(seed=3,erosion=3,keep=(0,1,2,3))

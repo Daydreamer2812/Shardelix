@@ -18,7 +18,7 @@ CPU-first Python and C++20 · Native execution and in-browser WebAssembly
 > Automatic reconstruction is blind by default. Enable **Use original image for matching (optional)** only when you have the intact artwork.
 > Ground truth remains a different, evaluation-only input. Choose Fast, Balanced
 > (recommended), or High accuracy; the engine selects the appropriate solver.
-> [Framework and routing](docs/FRAMEWORK.md) · [DAFNE reference-assisted benchmark](docs/DAFNE_INDEXED.md) (28 official cases; not a blind benchmark).
+> [Framework and routing](docs/FRAMEWORK.md) · [Optimization evidence](docs/OPTIMIZATION.md) · [DAFNE reference-assisted benchmark](docs/DAFNE_INDEXED.md) (28 official cases; not a blind benchmark).
 
 
 [![Version](https://img.shields.io/badge/version-13.0.1-2463eb?style=flat-square)](pyproject.toml)

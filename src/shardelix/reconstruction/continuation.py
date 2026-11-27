@@ -343,6 +343,47 @@ def score_candidates(shapes, fields, candidates, max_gap, previous=()):
     return scored,active
 
 
+def _closed_triangles(shapes,modes):
+    """Find corroborating SE(2) cycles with distinct boundary arcs.
+
+    Each mode maps j into i. A closed triangle must agree at the actual
+    moving-piece center and use different arcs at each piece. Bound neighbor
+    and pose counts so the search cannot expand to all cubic combinations.
+    """
+    neighbors=defaultdict(dict)
+    for z,(score,i,j,R,t,info) in enumerate(modes):
+        if score<5. or info.get("population_weight",1.)<.5:continue
+        neighbors[i].setdefault(j,[]).append((score,z,R,t))
+        neighbors[j].setdefault(i,[]).append((score,z,R.T,-R.T@t))
+    for i,links in neighbors.items():
+        for j,items in links.items():
+            links[j]=sorted(items,key=lambda v:-v[0])[:3]
+    centers=[q.points.mean(0) for q in shapes]
+    def different(z,w,i):
+        a,b=modes[z],modes[w];A,B=a[-1],b[-1]
+        ka="a" if a[1]==i else "b";kb="a" if b[1]==i else "b"
+        p,q=A["arc_"+ka],B["arc_"+kb];n=len(shapes[i].points)
+        return min(abs(p-q),n-abs(p-q))>n*.045
+    support=np.zeros(len(modes),np.int16)
+    for z,(s,i,j,R,t,info) in enumerate(modes):
+        if s<5. or j not in neighbors[i]:continue
+        common=set(neighbors[i])&set(neighbors[j])
+        common=sorted(common,key=lambda k:-min(neighbors[i][k][0][0],neighbors[j][k][0][0]))[:16]
+        for k in common:
+            found=False
+            for _,a,A,u in neighbors[i][k]:
+                if not different(z,a,i):continue
+                for _,b,B,v in neighbors[k][j]:
+                    if not different(z,b,j) or not different(a,b,k):continue
+                    Q=A@B;e=A@v+u
+                    if np.linalg.norm((R-Q)@centers[j]+t-e)>7.:continue
+                    da=math.acos(float(np.clip(np.trace(R.T@Q)*.5,-1.,1.)))
+                    if da<.13:found=True;break
+                if found:break
+            if found:support[z]+=1
+    return support
+
+
 def independent_consensus(shapes,candidates):
     """Merge SE(2) modes supported by distinct proposal families.
 
@@ -370,6 +411,7 @@ def independent_consensus(shapes,candidates):
             c=(weight,i,j,R,t,{**info,"base_weight":float(s),"families":families})
             z=len(modes);modes.append(c)
             incident[i].append(z);incident[j].append(z)
+    loops=_closed_triangles(shapes,modes)
     accepted=[]
     for z,(s,i,j,R,t,info) in enumerate(modes):
         # All distinct poses compete, but only when they use the same
@@ -397,10 +439,13 @@ def independent_consensus(shapes,candidates):
         multi_line=(lines>=3 and strength>=.9 and s>=12. and uniqueness>=.98)
         clear=(s>=9.5 and uniqueness>=1.25 and info.get("texture",0)>10.)
         confirmed=(legacy and multi and s>=6. and uniqueness>=1.02)
-        if not (strong or clear or confirmed or multi_line):continue
+        # A verified loop can rescue an otherwise borderline seam, but never
+        # a single weak/ambiguous color match.
+        loop=loops[z]>0 and s>=7. and uniqueness>=1.02 and (multi or lines>=2)
+        if not (strong or clear or confirmed or multi_line or loop):continue
         w=s*min(1.6,max(.8,uniqueness))
         accepted.append((float(w),i,j,R,t,{**info,"seam_uniqueness":float(uniqueness),
-                    "loop_support":0,"consensus_supported":bool(multi)}))
+                    "loop_support":int(loops[z]),"consensus_supported":bool(multi or loop)}))
     return accepted,modes
 
 
@@ -574,5 +619,6 @@ def recover(shapes,previous,update=lambda _:None):
            "population_downweighted":int(np.count_nonzero(weights<.5)),
            "pose_modes":len(modes),"seed_hypotheses":len(seeds),"accepted_joins":len(joins),
            "contextual_growth_joins":sum(bool(j.get("contextual_growth"))for j in joins),
+           "closed_loop_joins":sum(j.get("loop_support",0)>0 for j in joins),
            "component_sizes":[len(g)for g in groups]}
     return groups,joins,stats

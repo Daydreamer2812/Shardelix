@@ -15,14 +15,14 @@ Shardelix provides one input pipeline for generation, reconstruction and evaluat
 | Observed input | Internal route |
 |---|---|
 | Rectangular uniform tiles / public grid metadata | Sparse grid or dense grid matching, consensus and pose verification |
-| Document strips | Pixel-only strip ordering; foreground rectification and multiscale ink-edge continuity for scanned strips |
-| Irregular masks / physical scans | Segmentation, complementary contour and color matching; bounded eroded-edge continuation |
+| Document strips | Pixel-only strip ordering; foreground rectification, shadow-normalized row profiles, and observed-patch recurrence for scanned strips |
+| Irregular masks / physical scans | Segmentation, complementary contour and color matching; bounded eroded-edge continuation and SE(2) cycle verification |
 | Explicit original image enabled | Indexed rotation-invariant classical registration, continuous SE(2) refinement and distractor rejection |
 
 | Shared profile | Blind | Reference-assisted |
 |---|---|---|
-| Fast | Reduced search, no deep physical continuation | Validated indexed |
-| Balanced (default) | Adaptive matching, bounded physical fallback | Validated indexed |
+| Fast | Reduced search, no patch recurrence or deep physical continuation | Validated indexed |
+| Balanced (default) | Adaptive matching, bounded physical fallback | Indexed with bounded tiny-fragment rescue |
 | High accuracy | Extra verification and deeper bounded physical search | Indexed-deep micro-fragment/border search (experimental) |
 
 The original-image option is off by default. Ground-truth files and original matching images have distinct paths. Generator-to-reconstruction transfer never opts into matching. The old explicit `reference_engine: "fft"` config is available only for reproducing historical experiments. All matching uses classical CV, without OCR or trained models.
@@ -48,6 +48,9 @@ Accepts a ZIP, image directory or image paths. A new or empty output directory i
 
 - [Blind eroded recovery](ERODED_RECOVERY.md): reported failures and partial poses as well as successes. The severe 102-piece blind DAFNE development case remains unsolved.
 - [DAFNE indexed reference-assisted results](DAFNE_INDEXED.md): 6027/6029 genuine poses and 1154/1154 distractors rejected over 28 development cases. These are historical reference-assisted measurements, not the blind accuracy or a full dataset/SOTA claim.
+- [Optimization evidence](OPTIMIZATION.md): targeted native regression, physical strips, blind damaged fragments and reference-assisted tiny-fragment rescue.
 - [Web resources and hosting](WEB.md): browser limits differ from native; large DB2 cases require native Studio.
+
+Malformed or conflicting public metadata is ignored with a warning where geometry can be inferred; unsupported or ambiguous inputs may still need an override.
 
 A resource guard is not an accuracy guarantee. Some missing-piece configurations are fundamentally ambiguous without the original image. Deep searches are bounded and can be slower, without guaranteed improvement over Balanced.

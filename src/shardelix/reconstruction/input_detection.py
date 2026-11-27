@@ -154,7 +154,7 @@ def _alpha_strip_moment(im):
 
 def inspect_rasters(openers,count,pixel_limit,canvas_cap,*,mask_count=0,explicit_scans=False):
     """Inventory all image headers and route a representative set of pixels."""
-    dims=[];evidence=Counter();total=0;alpha_lengths=[]
+    dims=[];evidence=Counter();total=0;alpha_lengths=[];alpha_boxes=[]
     # For large opaque sets, don't decode every image just to classify the rim.
     sample=set(np.linspace(0,max(0,count-1),min(count,32),dtype=int).tolist())
     for i,opener in enumerate(openers):
@@ -169,12 +169,25 @@ def inspect_rasters(openers,count,pixel_limit,canvas_cap,*,mask_count=0,explicit
                 evidence["alpha"]+=1
             if ("A" in im.getbands() or "transparency" in im.info) and count<=1024 and not mask_count:
                 geom=_alpha_strip_moment(im)
-                if geom:alpha_lengths.append(geom)
+                if geom:
+                    alpha_lengths.append(geom)
+                    mask=np.asarray(im.convert("RGBA").getchannel("A"))>=128
+                    y,x=np.nonzero(mask)
+                    if len(x):
+                        bw,bh=int(x.max()-x.min()+1),int(y.max()-y.min()+1)
+                        if max(bw,bh)>=4*min(bw,bh) and mask.sum()>=.90*bw*bh:alpha_boxes.append((min(bw,bh),max(bw,bh)))
     has_mask=bool(mask_count or evidence["alpha"] or evidence["chroma-key"])
     background=(evidence["solid-background"]+evidence["matte-background"]>=max(1,math.ceil(.6*len(sample))))
     strip=None
     if 2<=count<=1024 and all(max(w,h)>=4*min(w,h) for w,h in dims):
         long=[max(s) for s in dims];short=[min(s) for s in dims];h=int(np.median(long))
+        if max(abs(v-h) for v in long)<=max(2,.015*h):
+            strip={"height":h,"width_range":[min(short),max(short)]}
+    # A nearly axis-aligned alpha strip may be stored inside a square padded
+    # scan. Inspect the silhouette rather than classifying from padding.
+    if not strip and len(alpha_boxes)==count and 2<=count<=128:
+        long=[p[1] for p in alpha_boxes];short=[p[0] for p in alpha_boxes]
+        h=int(np.median(long))
         if max(abs(v-h) for v in long)<=max(2,.015*h):
             strip={"height":h,"width_range":[min(short),max(short)]}
     continuous=None
