@@ -112,7 +112,7 @@ const {execFileSync}=require('node:child_process');
     return c.toDataURL('image/png').split(',')[1];
   }));
   const keyedArchive=path.join('/tmp','shardelix-keyed-102.zip');
-  execFileSync(process.env.PYTHON||'python',['-c','import sys,zipfile,json,base64; z=zipfile.ZipFile(sys.argv[1],"w"); [(z.writestr(f"collection/fragment_{i}.png",base64.b64decode(v))) for i,v in enumerate(json.load(sys.stdin))]; z.writestr("collection/source_metadata.json","{\"ground_truth\":\"not used\"}"); z.close()',keyedArchive],{input:JSON.stringify(keyed)});
+  execFileSync(process.env.PYTHON||'python',['-c','import sys,zipfile,json,base64; z=zipfile.ZipFile(sys.argv[1],"w"); [(z.writestr(f"collection/fragment_{i}.png",base64.b64decode(v))) for i,v in enumerate(json.load(sys.stdin))]; z.writestr("collection/source_metadata.json",json.dumps(dict(ground_truth="not used"))); z.close()',keyedArchive],{input:JSON.stringify(keyed)});
   await page.locator('#inputMode').selectOption('digital');
   await page.locator('#upload').setInputFiles(keyedArchive);
   await page.waitForFunction(()=>document.querySelector('#scanHelp').hidden===false&&document.querySelector('#metadataInfo').textContent.includes('102'),{},{timeout:30000});
