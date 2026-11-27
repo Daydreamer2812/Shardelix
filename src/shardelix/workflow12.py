@@ -261,7 +261,7 @@ def _single(root,files,conf,update,browser=False,truth_dir=None):
     count_cap=WEB_COUNT if browser else GRID_MAX
     pixel_cap=WEB_PIXELS if browser else MAX_PIXELS
     profile,tune,params=profiles(conf)
-    started=time.perf_counter()
+    started=time.perf_counter();import_geometry=None
     if task=="demo":
         meta,case,out,fit_info=_generate_case(root,files,conf,update,browser)
     elif task=="blind":
@@ -274,7 +274,24 @@ def _single(root,files,conf,update,browser=False,truth_dir=None):
                 if f.suffix.lower() not in IMAGE_EXT:raise ValueError("Blind mode accepts images or a ZIP")
                 shutil.copy2(f,case/"pieces"/f.name)
             n=len(files)
-        if meta is None or not conf.get("use_metadata",True):
+        if conf.get("auto_layout",False):
+            # Resolve again from the actual extracted fragments, not the UI's
+            # cached inspection or old manual fields. Never inspect ground truth.
+            if meta is not None:
+                import_geometry="archive-metadata"
+            else:
+                update("Auto-detecting fragment geometry")
+                paths=sorted((case/"pieces").iterdir())
+                suggestion=_suggest_grid((lambda p=p:p.open("rb") for p in paths),n,browser)
+                if not suggestion:
+                    raise ValueError("Automatic setup cannot determine the canvas for irregular or unequal-size fragments without metadata. Turn off Automatic setup to enter the known canvas/cut (or use Document strips).")
+                layout=suggestion["layouts"][0]
+                # Unknown square-tile orientation is resolved by quarter-turn
+                # matching; there is no need to specify a rotation mode.
+                meta=dict(height=layout["height"],width=layout["width"],piece_count=n,
+                          cut="grid",rotations=True,grid=[layout["rows"],layout["cols"]])
+                import_geometry="inferred-grid"
+        elif meta is None or not conf.get("use_metadata",True):
             cut=conf.get("cut","grid")
             if cut=="document":meta=None
             else:
@@ -328,6 +345,9 @@ def _single(root,files,conf,update,browser=False,truth_dir=None):
     _public_archive(case,out)
     d["workflow_elapsed_seconds"]=time.perf_counter()-started
     d["performance_profile"]=profile or "legacy"
+    if import_geometry:
+        d["import_geometry_mode"]=import_geometry
+        d["import_geometry"]={k:meta[k] for k in ("width","height","grid","cut","piece_count")}
     from .native_core import backend
     d["compute_backend"]=backend()
     # Peak RSS is the process high-water mark (not an incremental per-case value).
@@ -406,5 +426,5 @@ def run_job(root:Path,conf,notify=lambda s:None,*,browser=False):
                         z.write(p,str(Path("cases")/directory.name/p.relative_to(directory/"result")))
     shutil.rmtree(root/"runs",ignore_errors=True)
     return {"state":"done","stage":"Benchmark complete" if batch else "Reconstruction exported",
-            "diagnostics":{k:v for k,v in d.items() if k in ("algorithm","runtime_seconds","status","placed","piece_count","coverage","collision_pixels","render_collision_pixels","identical_piece_count","sparse_high_consensus","reciprocal_seam_fraction","expected_count","missing_count","angle_mode","sampling","available_piece_recovery","normalization_seconds","index_mode","index_fallback_used","index_query_seconds","retrieval_seconds","assembly_seconds","performance_profile","process_peak_rss_mib","workflow_elapsed_seconds","frame_anchor_status","multigap_status","extra_verification","compute_backend","fast_rescue_v13")},
+            "diagnostics":{k:v for k,v in d.items() if k in ("algorithm","runtime_seconds","status","placed","piece_count","coverage","collision_pixels","render_collision_pixels","identical_piece_count","sparse_high_consensus","reciprocal_seam_fraction","expected_count","missing_count","angle_mode","sampling","available_piece_recovery","normalization_seconds","index_mode","index_fallback_used","index_query_seconds","retrieval_seconds","assembly_seconds","performance_profile","process_peak_rss_mib","workflow_elapsed_seconds","frame_anchor_status","multigap_status","extra_verification","compute_backend","fast_rescue_v13","import_geometry_mode","import_geometry")},
             "metrics":m,"comparison":json.loads((result/"comparison.json").read_text()) if (result/"comparison.json").exists() else None,"benchmark":rows if batch else None,"files":sorted(p.name for p in result.iterdir() if p.name in DOWNLOADS)}

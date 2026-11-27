@@ -10,7 +10,12 @@ class WebBuildTests(unittest.TestCase):
             html=(d/"index.html").read_text()
             for text in ("Fragment generator","Reconstruction","Ground truth","Benchmark generated cases","Performance profile","./worker.js","__SESSION_TOKEN__"):
                 self.assertIn(text,html)
+            import re
+            revision=re.search(r'buildRevision="([0-9a-f]{20})"',html)
+            self.assertIsNotNone(revision);self.assertNotIn("__BUILD_REVISION__",html)
+            self.assertIn('./worker.js?v=',html)
             worker=(d/"worker.js").read_text()
+            self.assertIn('assetURL("engine.zip")',worker);self.assertIn('searchParams.set("v",revision)',worker)
             self.assertIn("browser=True",worker);self.assertIn("engine.zip",worker)
             self.assertIn("v0.27.7",worker)
             with zipfile.ZipFile(d/"engine.zip") as z:

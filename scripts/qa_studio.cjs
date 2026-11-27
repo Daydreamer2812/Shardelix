@@ -59,9 +59,18 @@ const {execFileSync}=require('node:child_process');
   await page.waitForFunction(()=>document.querySelector('#metadataInfo').textContent.includes('16 opaque tiles'),{},{timeout:30000});
   assert.equal(await page.locator('#rows').inputValue(),'4');assert.equal(await page.locator('#cols').inputValue(),'4');
   assert.equal(await page.locator('#width').inputValue(),'128');assert.equal(await page.locator('#height').inputValue(),'128');
+  assert.equal(await page.locator('#useMeta').isChecked(),true);assert.equal(await page.locator('#geometryFields').isHidden(),true);
+  // Deliberately corrupt stale manual inputs. Automatic mode must ignore these
+  // at preflight AND solve time; the user need only click Run.
+  await page.evaluate(()=>{for(const id of ['rows','cols','width','height'])document.querySelector('#'+id).value='1';
+     document.querySelector('#rows').dispatchEvent(new Event('input',{bubbles:true}));});
+  assert.equal(await page.locator('#run').isEnabled(),true);
+  await page.locator('#run').click();await done('Reconstruction exported');await page.locator('#resultImg').waitFor({state:'visible'});assert.equal(await page.locator('#placed').textContent(),'16 / 16');
+  assert.match(await page.locator('#diagnostics').textContent(),/inferred-grid/);
+  await page.locator('#useMeta').uncheck();
   await page.locator('#inferredLayout').selectOption({label:'2 × 8 · 256 × 64 px'});assert.equal(await page.locator('#width').inputValue(),'256');
   await page.locator('#inferredLayout').selectOption({label:'4 × 4 · 128 × 128 px'});assert.equal(await page.locator('#width').inputValue(),'128');
-  await page.locator('#angle').selectOption('none');await page.locator('#run').click();await done('Reconstruction exported');await page.locator('#resultImg').waitFor({state:'visible'});assert.equal(await page.locator('#placed').textContent(),'16 / 16');
+  await page.locator('#useMeta').check();
   for(const width of [1024,768,390,320]){
    await page.setViewportSize({width,height:844});
    const mobile=await page.evaluate(()=>({viewport:window.innerWidth,scroll:document.documentElement.scrollWidth,overflow:[...document.querySelectorAll('body *')].filter(e=>{const r=e.getBoundingClientRect();return r.width>0&&r.right>window.innerWidth+1}).slice(0,20).map(e=>[e.tagName,e.id,String(e.className),Math.round(e.getBoundingClientRect().right)])}));

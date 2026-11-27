@@ -7,7 +7,10 @@ import zipfile
 from pathlib import Path
 
 from PIL import Image
-from shardelix.workflow12 import inspect_uploads, safe_zip
+from shardelix.workflow12 import inspect_uploads, safe_zip, run_job
+from shardelix.reconstruction.generator import generate
+import numpy as np
+from scipy.ndimage import gaussian_filter
 
 
 def png(size, mode="RGB", transparent=False):
@@ -42,6 +45,28 @@ class ExternalImportGeometryTests(unittest.TestCase):
             self.assertIsNone(inspect_uploads(files,browser=True)["suggested_grid"])
             files[0].write_bytes(png((21,20),"RGB"))
             self.assertIsNone(inspect_uploads(files,browser=True)["suggested_grid"])
+
+    def test_auto_solve_ignores_stale_manual_geometry(self):
+        with tempfile.TemporaryDirectory() as t:
+            root=Path(t);case=root/"source-case"
+            rng=np.random.default_rng(123)
+            a=np.clip(127+500*gaussian_filter(rng.normal(size=(60,80,3)),(1.1,1.1,0)),0,255).astype(np.uint8)
+            generate(a,case,12,"grid",seed=42,rotations=True)
+            for mode in ("external","archive"):
+                job=root/mode;(job/"upload").mkdir(parents=True)
+                with zipfile.ZipFile(job/"upload/pieces.zip","w") as z:
+                    for f in (case/"pieces").iterdir():z.write(f,"pieces/"+f.name)
+                    if mode=="archive":z.write(case/"case.json","case.json")
+                result=run_job(job,dict(task="blind",auto_layout=True,use_metadata=False,
+                                        width=1024,height=1024,rows=2,cols=2,cut="grid",
+                                        angle_mode="quarter",profile="balanced"),browser=True)
+                d=result["diagnostics"]
+                self.assertEqual(d["placed"],12)
+                self.assertEqual(d["import_geometry"]["grid"],[3,4])
+                self.assertEqual(d["import_geometry"]["width"],80)
+                self.assertEqual(d["import_geometry"]["height"],60)
+                self.assertEqual(d["import_geometry_mode"],"inferred-grid" if mode=="external" else "archive-metadata")
+                self.assertIsNone(result["metrics"])
 
     def test_authoritative_archive_metadata(self):
         with tempfile.TemporaryDirectory() as t:

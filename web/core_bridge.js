@@ -2,8 +2,8 @@
 "use strict";
 async function initShardelixCore(){
   try{
-    importScripts("./fl_core.js");
-    const m=await createShardelixCore({locateFile:f=>new URL(f,self.location.href).href});
+    importScripts(assetURL("fl_core.js"));
+    const m=await createShardelixCore({locateFile:f=>assetURL(f)});
     if(m._fl_abi()!==1)throw Error("C++ ABI mismatch");
     const copy=(v,ptrs)=>{const a=v instanceof Uint8Array?v:new Uint8Array(v);const p=m._malloc(a.byteLength);if(!p)throw Error("WASM allocation failed");ptrs.push(p);m.HEAPU8.set(a,p);return p;};
     const alloc=(n,ptrs)=>{const p=m._malloc(n);if(!p)throw Error("WASM allocation failed");ptrs.push(p);return p;};

@@ -30,7 +30,7 @@ main{max-width:1640px;margin:auto;padding:24px clamp(16px,3.8vw,56px) 30px}.eyeb
 <form id="configForm">
 <label class="drop" id="drop"><span class="upload-icon">↑</span><strong id="prompt">Choose image or PDF</strong><small id="fileLabel">Drop a file or click to browse</small><input id="upload" type="file" accept="image/*,.pdf"></label>
 <button class="quiet" type="button" id="sample">Use a synthetic sample</button>
-<div id="metadataWrap" hidden><label class="check"><input id="useMeta" type="checkbox" checked> Use archive metadata</label><div id="metadataInfo" class="callout">Select fragments or ZIP.</div></div>
+<div id="metadataWrap" hidden><label class="check"><input id="useMeta" type="checkbox" checked> Automatic setup (recommended)</label><p class="hint">Upload fragments, then run. The engine detects the grid or reads archive metadata. Uncheck only to override the geometry.</p><div id="metadataInfo" class="callout">Select fragments or ZIP.</div></div>
 <div id="geometryFields">
 <label class="label" for="cut">Cut family</label><select id="cut"><option value="grid">Rectangular grid</option><option value="strips">Vertical strips</option><option value="horizontal-strips">Horizontal strips</option><option value="jagged">Jagged</option><option value="wavy">Wavy</option><option value="jigsaw">Jigsaw</option><option value="random">Mixed irregular</option><option value="document" hidden>Document strips (unknown width)</option></select>
 <div id="manualFields" hidden><div id="inferredLayoutWrap" hidden><label class="label" for="inferredLayout">Suggested grid layout</label><select id="inferredLayout"></select><p class="hint">Estimated from opaque equal-size tiles; select the original aspect ratio or edit dimensions. Assumes no missing pieces.</p></div>
@@ -93,7 +93,7 @@ main{max-width:1640px;margin:auto;padding:24px clamp(16px,3.8vw,56px) 30px}.eyeb
 </main>
 <script>
 "use strict";
-const $=id=>document.getElementById(id),token="__SESSION_TOKEN__";
+const $=id=>document.getElementById(id),token="__SESSION_TOKEN__",buildRevision="__BUILD_REVISION__";
 const native=!token.startsWith("__"),visible=(id,on)=>$(id).hidden=!on,val=id=>$(id).value, checked=id=>$(id).checked;
 const cuts=["grid","strips","horizontal-strips","jagged","wavy","jigsaw","random"],angles=["none","quarter","continuous"];
 let genOutput=null,truthFile=null,genURLs=[],inputPreviewURL=null,tabStates={},resultStage={demo:"Ready to generate",blind:"Ready for fragments"};
@@ -103,7 +103,7 @@ const maxCount=cut=>Math.min(caps[cut]||0,native?262144:4096),batchLimit=native?
 $("engineBadge").textContent=native?"Native CPU":"Browser · WASM";
 $("foot").textContent=native?"Local Python engine":"Browser engine · first run downloads dependencies";
 function ensureWorker(){
-  if(!worker){worker=new Worker("./worker.js");worker.onmessage=({data:m})=>{
+  if(!worker){worker=new Worker("./worker.js?v="+encodeURIComponent(buildRevision));worker.onmessage=({data:m})=>{
     if(m.type==="progress"){if(busy)render(m.status);else if(metadataPending)$("stage").textContent=m.status.stage;return}
     const p=pending.get(m.id);if(!p)return;pending.delete(m.id);m.error?p.reject(new Error(m.error)):p.resolve(m.value);
   };worker.onerror=e=>{for(const p of pending.values())p.reject(new Error(e.message||"Browser engine failed"));pending.clear();worker?.terminate();worker=null;};}
@@ -123,7 +123,7 @@ function changeTask(t){
   if(t!==task)saveTab();
   const previous=task;task=t;const saved=tabStates[t];files=saved?[...saved.files]:[];metadata=saved?.metadata||null;truthFile=t==="blind"?saved?.truthFile||null:null;metadataPending=false;
   if(saved)for(const [id,v] of Object.entries(saved.values)){if($(id).type==="checkbox")$(id).checked=v;else $(id).value=v}
-  else if(t!==previous){$("batch").checked=false;$("useMeta").checked=false;$("profile").value="balanced"}
+  else if(t!==previous){$("batch").checked=false;$("useMeta").checked=true;$("profile").value="balanced"}
   $("upload").value="";$("truthUpload").value="";
   $("fileLabel").textContent=files.length===1?files[0].name:files.length?files.length+" files selected":"Drop a file or click to browse";
   $("imageTab").classList.toggle("active",t==="demo");$("fragmentTab").classList.toggle("active",t==="blind");
@@ -148,10 +148,10 @@ async function takeFiles(selected){
     if(inputPreviewURL)URL.revokeObjectURL(inputPreviewURL);inputPreviewURL=null;
     if(files.length===1&&files[0].type.startsWith("image/")){inputPreviewURL=URL.createObjectURL(files[0]);$("genSource").src=inputPreviewURL;visible("genSource",true);visible("genSourceEmpty",false)}else{visible("genSource",false);visible("genSourceEmpty",true)}
   }
-  if(task==="blind"){last=null;clearView();resultStage.blind="Ready for fragments";$("stage").textContent=resultStage.blind}
+  if(task==="blind"){$("useMeta").checked=true;$("angle").value="quarter";last=null;clearView();resultStage.blind="Ready for fragments";$("stage").textContent=resultStage.blind}
   if(task==="blind"&&files.length){
     const current=files;metadataPending=true;update();
-    try{const info=native?await nativePost("/api/inspect",{}):await ask("inspect",{files});if(files!==current)return;metadata=info; $("useMeta").checked=!!info.metadata;
+    try{const info=native?await nativePost("/api/inspect",{}):await ask("inspect",{files});if(files!==current)return;metadata=info;
       if(info.metadata){const m=info.metadata;
         $("cut").value=m.cut;$("height").value=m.height;$("width").value=m.width;
         $("angle").value=m.angle_mode||(m.rotations?"quarter":"none");$("sampling").value=m.sampling||1;
@@ -162,7 +162,7 @@ async function takeFiles(selected){
       }}
     catch(e){if(files===current)err("Import inspection: "+e.message)}
     finally{if(files===current){metadataPending=false;$("stage").textContent="Ready for input";update()}}
-  }else{$("useMeta").checked=false;update()}
+  }else{update()}
 }
 $("upload").onchange=()=>takeFiles($("upload").files);
 $("drop").ondragover=e=>{e.preventDefault();$("drop").classList.add("drag")};$("drop").ondragleave=()=>$("drop").classList.remove("drag");$("drop").ondrop=e=>{e.preventDefault();$("drop").classList.remove("drag");takeFiles(e.dataTransfer.files)};
@@ -180,8 +180,8 @@ function updateLayouts(show){
 function numericList(value,min,max){const a=value.split(",").map(s=>s.trim());if(a.some(s=>s===""||!Number.isInteger(+s)||+s<min||+s>max))throw Error("Use comma-separated integers from "+min+" to "+max);return [...new Set(a.map(Number))]}
 function choiceList(value,valid,fallback){if(!value.trim())return [fallback];const a=[...new Set(value.split(",").map(s=>s.trim()))];if(a.some(s=>!valid.includes(s)))throw Error("Unrecognized option in: "+value);return a}
 function config(){
-  const demo=task==="demo",locked=!demo&&checked("useMeta")&&metadata?.metadata,c=locked?metadata.metadata.cut:val("cut"),a=locked?(metadata.metadata.angle_mode||(metadata.metadata.rotations?"quarter":"none")):val("angle");
-  const x={task:demo?(checked("batch")?"demo":"generate"):"blind",cut:c,count:+val("count"),seed:+val("seed"),max_side:+val("maxSide"),page:+val("page"),width:+val("width"),height:+val("height"),rows:+val("rows"),cols:+val("cols"),expected_count:+val("expected"),angle_mode:a,rotations:a!=="none",sampling:a==="continuous"?(locked?(metadata.metadata.sampling||1):+val("sampling")):1,missing:demo?+val("missing")/100:0,profile:val("profile"),strategy:val("profile")==="custom"?val("strategy"):"auto",index_mode:val("profile")==="custom"&&c!=="document"&&["grid","strips","horizontal-strips"].includes(c)?val("edgeIndex"):"auto",tune:checked("tune"),use_metadata:!!locked};
+  const demo=task==="demo",auto=!demo&&checked("useMeta"),locked=auto&&metadata?.metadata,c=locked?metadata.metadata.cut:auto?"grid":val("cut"),a=locked?(metadata.metadata.angle_mode||(metadata.metadata.rotations?"quarter":"none")):auto?"quarter":val("angle");
+  const x={task:demo?(checked("batch")?"demo":"generate"):"blind",cut:c,count:+val("count"),seed:+val("seed"),max_side:+val("maxSide"),page:+val("page"),width:+val("width"),height:+val("height"),rows:+val("rows"),cols:+val("cols"),expected_count:+val("expected"),angle_mode:a,rotations:a!=="none",sampling:a==="continuous"?(locked?(metadata.metadata.sampling||1):+val("sampling")):1,missing:demo?+val("missing")/100:0,profile:val("profile"),strategy:val("profile")==="custom"?val("strategy"):"auto",index_mode:val("profile")==="custom"&&c!=="document"&&["grid","strips","horizontal-strips"].includes(c)?val("edgeIndex"):"auto",tune:checked("tune"),use_metadata:!!auto,auto_layout:!!auto};
   if(demo&&checked("batch")){
     const batchCuts=choiceList(val("batchCuts"),cuts,c),batchAngles=choiceList(val("batchAngles"),angles,a),ns=numericList(val("counts"),1,Math.min(...batchCuts.map(maxCount))),ss=numericList(val("seeds"),0,2147483647),ms=val("batchMissing").trim()?numericList(val("batchMissing"),0,95).map(v=>v/100):[x.missing];
     x.batch={counts:ns,seeds:ss,cuts:batchCuts,angles:batchAngles,profiles:checked("compareProfiles")?["fast","balanced","accurate"]:[x.profile],missing_rates:ms};
@@ -200,7 +200,12 @@ function validate(x){
   }else{
     const n=metadata?.observed_count||files.length,expected=x.cut==="grid"?x.rows*x.cols:x.expected_count||n;
 
-    if(x.use_metadata){const m=metadata.metadata;if((m.expected_count||m.piece_count)>maxCount(m.cut)||m.piece_count!==n)throw Error("Archive count invalid or beyond backend limit.");}
+    if(x.auto_layout){
+      const m=metadata?.metadata;if(m&&((m.expected_count||m.piece_count)>maxCount(m.cut)||m.piece_count!==n))throw Error("Archive count invalid or beyond backend limit.");
+      if(metadata&&metadata.observed_count>(native?262144:4096))throw Error("Fragment count exceeds backend limit.");
+      // Auto mode deliberately ignores stale manual grid/size values.
+      return;
+    }
     else if(x.cut!=="document"){
       if(files.some(f=>f.name.toLowerCase().endsWith(".zip"))&&!metadata)throw Error("Inspect ZIP before supplying overrides.");
       if(expected<n)throw Error("Grid/expected count has "+expected+" slots for "+n+" uploaded fragments. Increase the grid or select the suggested layout.");if(expected>maxCount(x.cut))throw Error("Complete count exceeds the backend cap.");
@@ -210,26 +215,26 @@ function validate(x){
   }
 }
 function update(){
-  const demo=task==="demo",locked=!!(!demo&&metadata?.metadata&&checked("useMeta")),c=locked?metadata.metadata.cut:val("cut"),a=locked?(metadata.metadata.angle_mode||(metadata.metadata.rotations?"quarter":"none")):val("angle"),rect=["grid","strips","horizontal-strips"].includes(c);
+  const demo=task==="demo",auto=!demo&&checked("useMeta"),locked=!!(auto&&metadata?.metadata),c=locked?metadata.metadata.cut:auto?"grid":val("cut"),a=locked?(metadata.metadata.angle_mode||(metadata.metadata.rotations?"quarter":"none")):auto?"quarter":val("angle"),rect=["grid","strips","horizontal-strips"].includes(c);
   const benchmarking=demo&&checked("batch");
   visible("generatorOutput",demo&&!benchmarking);visible("reconstructionOutput",!demo||benchmarking);visible("truthWrap",!demo);visible("profileWrap",!demo||benchmarking);
   $("run").textContent=demo?(benchmarking?"Run benchmark":"Generate fragments"):"Run reconstruction";
   $("resultTitle").textContent=demo?(benchmarking?"Benchmark results":"Fragment output"):"Reconstruction results";
   $("workspaceIntro").textContent=demo?(benchmarking?"Run controlled experiments on generated fragments.":"Create shuffled pieces and export a reproducible case. No solving takes place."):"Import fragments, configure the solver and optionally compare with independent ground truth.";
-  visible("metadataWrap",!demo);visible("sample",demo);visible("geometryFields",!locked);visible("manualFields",!demo&&c!=="document"&&!locked);visible("gridFields",c==="grid");visible("expectedWrap",c!=="grid");updateLayouts(!demo&&!locked&&c==="grid"&&!!metadata?.suggested_grid?.layouts?.length);
-  $("useMeta").disabled=!metadata?.metadata||busy;
-  $("metadataInfo").textContent=metadataPending?"Inspecting fragments…":metadata?.metadata?JSON.stringify({pieces:metadata.observed_count,cut:metadata.metadata.cut,canvas:[metadata.metadata.width,metadata.metadata.height],rotation:metadata.metadata.angle_mode||(metadata.metadata.rotations?"quarter":"none")}):metadata?.suggested_grid?metadata.observed_count+" opaque tiles · "+metadata.suggested_grid.tile_width+" × "+metadata.suggested_grid.tile_height+" px each. No metadata; grid layout below is estimated, not known.":files.length?(metadata?.observed_count?metadata.observed_count+" fragments · ":"")+"No public metadata: enter canvas constraints below.":"Select fragments or ZIP.";
+  visible("metadataWrap",!demo);visible("sample",demo);visible("geometryFields",!auto);visible("manualFields",!demo&&c!=="document"&&!auto);visible("gridFields",c==="grid");visible("expectedWrap",c!=="grid");updateLayouts(!demo&&!auto&&c==="grid"&&!!metadata?.suggested_grid?.layouts?.length);
+  $("useMeta").disabled=busy||metadataPending;
+  $("metadataInfo").textContent=metadataPending?"Inspecting fragments…":metadata?.metadata?JSON.stringify({pieces:metadata.observed_count,cut:metadata.metadata.cut,canvas:[metadata.metadata.width,metadata.metadata.height],rotation:metadata.metadata.angle_mode||(metadata.metadata.rotations?"quarter":"none")}):metadata?.suggested_grid?metadata.observed_count+" opaque tiles · "+metadata.suggested_grid.tile_width+" × "+metadata.suggested_grid.tile_height+" px each · "+(auto?"Auto grid: "+metadata.suggested_grid.layouts[0].rows+" × "+metadata.suggested_grid.layouts[0].cols+" ("+metadata.suggested_grid.layouts[0].width+" × "+metadata.suggested_grid.layouts[0].height+" px). Layout estimated; ready to run.":"Select an alternate layout or edit dimensions."):files.length?(metadata?.observed_count?metadata.observed_count+" fragments · ":"")+"No public metadata: "+(auto?"the engine will attempt automatic setup.":"enter canvas constraints below."):"Select fragments or ZIP.";
   visible("demoFields",demo);visible("pageWrap",demo&&!!files[0]?.name.toLowerCase().endsWith(".pdf"));visible("missingWrap",demo);$("cut").querySelector('[value=document]').hidden=demo;
   $("angle").querySelector('[value=continuous]').disabled=false;
   visible("rotationHint",a==="continuous");if(c==="document")$("rotationHint").textContent="Digital elongated RGBA strips of common height; unknown missing widths cannot be inferred.";else $("rotationHint").textContent="Continuous pose depends on alpha-mask quality; not universally accurate.";$("missingText").textContent=val("missing")+"%";$("count").max=maxCount(c);$("capHint").textContent="Resource cap: "+maxCount(c).toLocaleString()+" pieces · accuracy varies";
-  visible("batchWrap",demo);visible("batchFields",demo&&checked("batch"));$("count").disabled=demo&&checked("batch");visible("seedWrap",demo&&!checked("batch"));visible("sampleWrap",a==="continuous"&&!locked);visible("customWrap",(!demo||benchmarking)&&val("profile")==="custom"&&c!=="document");visible("indexWrap",rect);
+  visible("batchWrap",demo);visible("batchFields",demo&&checked("batch"));$("count").disabled=demo&&checked("batch");visible("seedWrap",demo&&!checked("batch"));visible("sampleWrap",a==="continuous"&&!auto);visible("customWrap",(!demo||benchmarking)&&val("profile")==="custom"&&c!=="document");visible("indexWrap",rect);
   $("strategy").querySelector('[value=sparse]').disabled=!rect;if(!rect){$("strategy").value="auto";$("edgeIndex").value="auto"}
   $("profileHint").textContent={fast:"Fewer hypotheses; one rescue attempt if an irregular solution is severely incomplete.",balanced:"Adaptive matching and bounded fallback.",accurate:"Extra bounded hypotheses where supported. Not an accuracy guarantee.",custom:"Manual experimental solver controls."}[val("profile")];
   if(val("profile")==="custom"){
     $("advanced").open=true;
     if(rect&&val("edgeIndex")!=="auto")$("strategy").value="sparse";
   }
-  try{validate(config());$("preflight").textContent="Ready · "+(native?"native":"browser")+" resource limits apply";$("preflight").className="callout";$("run").disabled=busy}catch(e){$("preflight").textContent=e.message;$("preflight").className=files.length?"callout warn":"callout";$("run").disabled=true}
+  try{validate(config());$("preflight").textContent=auto?"Ready · automatic geometry and rotation settings": "Ready · "+(native?"native":"browser")+" resource limits apply";$("preflight").className="callout";$("run").disabled=busy}catch(e){$("preflight").textContent=e.message;$("preflight").className=files.length?"callout warn":"callout";$("run").disabled=true}
 }
 $("configForm").addEventListener("input",update);$("configForm").addEventListener("change",update);
 function busyState(b){busy=b;$("cancel").disabled=!b;$("imageTab").disabled=b;$("fragmentTab").disabled=b;$("upload").disabled=b;$("sample").disabled=b;$("truthUpload").disabled=b;$("transfer").disabled=b;update()}

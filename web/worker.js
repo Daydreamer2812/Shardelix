@@ -2,19 +2,25 @@
 "use strict";
 const BASE = "https://cdn.jsdelivr.net/pyodide/v0.27.7/full/";
 let engine, loading;
+const revision=new URL(self.location.href).searchParams.get("v");
+function assetURL(name){
+  const url=new URL(name,self.location.href);
+  if(revision)url.searchParams.set("v",revision);
+  return url.href;
+}
 const post = (type, payload={}) => self.postMessage({type,...payload});
 self.sendProgress = (value) => post("progress", {status:JSON.parse(value)});
 async function load() {
   if (engine) return engine;
   if (!loading) loading = (async()=>{
     post("progress",{status:{state:"running",stage:"Loading Python / WebAssembly…"}});
-    importScripts("./core_bridge.js");
+    importScripts(assetURL("core_bridge.js"));
     await initShardelixCore();
     importScripts(BASE+"pyodide.js");
     const p = await loadPyodide({indexURL:BASE});
     post("progress",{status:{state:"running",stage:"Loading NumPy, SciPy and Pillow…"}});
     await p.loadPackage(["numpy","scipy","pillow"]);
-    const response = await fetch(new URL("engine.zip",self.location.href));
+    const response = await fetch(assetURL("engine.zip"),{cache:"no-cache"});
     if (!response.ok) throw new Error("Engine bundle missing; run scripts/build_web.py");
     p.FS.mkdirTree("/engine");
     p.unpackArchive(await response.arrayBuffer(),"zip",{extractDir:"/engine"});
