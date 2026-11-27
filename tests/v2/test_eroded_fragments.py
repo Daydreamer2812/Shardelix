@@ -66,6 +66,9 @@ class ErodedFragmentTests(unittest.TestCase):
             self.assertFalse(comp["accuracy_verified"])
             self.assertEqual(sum(len(g["members"]) for g in comp["components"]),2)
             self.assertIn("component_placements.json",state["files"])
+            # In the rendered singleton, both disconnected islands survive.
+            rendered=np.asarray(Image.open(root/"result"/"assembly.png"))
+            self.assertGreaterEqual(int((rendered[:,:,3]>0).sum()),int((a[:,:,3]>0).sum())-5)
             # Overview scans remain split into separate physical silhouettes.
             p=root/"overview.png";Image.fromarray(a).save(p)
             parts,rep=preprocess([p],root/"overview")

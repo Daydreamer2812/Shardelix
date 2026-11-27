@@ -39,3 +39,24 @@ orientation/missing policy, metrics and hardware.
 - [DAF Challenge official notice](https://vision.unipv.it/DAFchallenge/DAF-notice.html). The original challenge supplies the reference fresco. Blind recovery of this data in Shardelix is a different, harder protocol; reference and annotated poses are evaluation-only.
 
 See [eroded recovery design and results](ERODED_RECOVERY.md) for implementation scope and limitations.
+
+### Additional classical techniques for heavily eroded pieces
+
+- M. Khoroshiltseva, L. Palmieri, S. Aslan, S. Vascon and M. Pelillo,
+  [Nash Meets Wertheimer: Using Good Continuation in Jigsaw Puzzles](https://openaccess.thecvf.com/content/ACCV2024/papers/Khoroshiltseva_Nash_Meets_Wertheimer_Using_Good_Continuation_in_Jigsaw_Puzzles_ACCV_2024_paper.pdf), ACCV 2024.
+  Motivates continued pictorial lines across gaps. Shardelix extracts its own
+  classical multichannel structure-tensor line exits; it does not use DeepLSD
+  or reproduce their game-theoretic solver.
+- D. Padfield, [Masked Object Registration in the Fourier Domain](https://pubmed.ncbi.nlm.nih.gov/22203712/),
+  IEEE TIP 2012. Motivates evaluating masked correlations across translations
+  efficiently. Our spectral stage sweeps a discrete set of rotations, computes
+  weighted bidirectional band SSD and physical overlap, then verifies SE(2)
+  proposals on observed pixels.
+- B. S. Reddy and B. N. Chatterji, [An FFT-Based Technique for Translation,
+  Rotation, and Scale-Invariant Image Registration](https://doi.org/10.1109/83.506761),
+  IEEE TIP 1996. Classical frequency-domain alignment; our solver assumes
+  common working scale and does not implement Fourier-Mellin estimation.
+- A. Criminisi, P. Pérez and K. Toyama, [Region Filling and Object Removal
+  by Exemplar-Based Image Inpainting](https://doi.org/10.1109/TIP.2004.833105),
+  IEEE TIP 2004. Classical structure propagation motivates the distinction
+  between inferred appearance evidence and observed artifact material.

@@ -371,7 +371,7 @@ def _scan_single(root,files,conf,update,browser=False,truth_dir=None):
     pieces,report=preprocess(paths,case/"pieces",pixel_limit=WEB_INPUT_PIXELS if browser else MAX_PIXELS*3,
                              preserve_opaque=conf.get("auto_preserve_opaque",False),piece_rasters=piece_rasters)
     d=reconstruct(pieces,out,report,update,pixel_cap=WEB_PIXELS if browser else MAX_PIXELS,
-                  gap_recovery=conf.get("gap_recovery",True))
+                  gap_recovery=conf.get("gap_recovery",True),deep_recovery=conf.get("deep_recovery","always" if conf.get("profile")=="accurate" else conf.get("profile")!="fast"))
     _public_archive(case,out)
     d.update(compute_backend=backend(),workflow_elapsed_seconds=time.perf_counter()-started,performance_profile="scan-auto",
              input_detection={"route":"irregular","evidence":conf.get("input_evidence",{}),"warning":conf.get("metadata_warning")})

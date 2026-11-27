@@ -135,7 +135,11 @@ required in physical mode.
   evidence. It keeps missing pixels transparent and exports independent component
   poses in `component_placements.json` (also in the result ZIP). Explicit
   piece-raster folder layouts keep islands of damaged masks together; overview
-  scans still split multiple silhouettes. See [eroded recovery](ERODED_RECOVERY.md).
+  scans still split multiple silhouettes. High accuracy enables the deeper
+  no-ML continuation/FFT search; Balanced activates it automatically after
+  sparse/weak matching. This may take minutes; the padded field budget is
+  five million pixels and the stage is capped at 128 pieces.
+  See [eroded recovery](ERODED_RECOVERY.md).
 - The preview shows detected masks; download the normalized mask ZIP, scan
   processing report, reconstruction PNG, boundary overlay and affine poses.
   Poses are local cropped working-pixel vertex coordinates → output canvas;

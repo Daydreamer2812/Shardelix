@@ -360,9 +360,18 @@ def _render(shapes, poses, out, pixel_cap):
         theta=min(angles,key=lambda v:np.prod(np.ptp(hull@rotation(-v).T,axis=0)))
         Q=rotation(-theta)
     except (QhullError,ValueError):Q=np.eye(2)
-    # Use a fixed margin for antialiasing and the seam overlay.
-    lo=np.floor((vertices@Q.T).min(axis=0))-3
-    hi=np.ceil((vertices@Q.T).max(axis=0))+3
+    # The pose estimator uses the largest contour, but the renderer must
+    # include ALL surviving mask islands. Otherwise a tear separating two
+    # regions of a single raster can cause the small region to be clipped.
+    low=[];high=[]
+    for i,(R,t) in poses.items():
+        mask=shapes[i].fragment.mask
+        yy,xx=np.nonzero(mask&~ndi.binary_erosion(mask))
+        v=(np.column_stack([xx,yy])+.5)@(Q@R).T+Q@t
+        low.append(v.min(axis=0));high.append(v.max(axis=0))
+    # Fixed margin includes pixel footprints and the seam overlay.
+    lo=np.floor(np.min(low,axis=0))-3
+    hi=np.ceil(np.max(high,axis=0))+3
     w,h=map(int,hi-lo)
     if w*h>pixel_cap:raise ValueError("Proposed scan assembly exceeds canvas budget; use smaller scans.")
     canvas=np.zeros((h,w,4),np.uint8);labels=np.full((h,w),-1,np.int32)
@@ -442,7 +451,7 @@ def _indexed_pairs(shapes, forward, reverse, scales, *, keep=10):
     return sorted(pairs)
 
 
-def reconstruct(pieces,out:Path,report,update=lambda _:None,*,pixel_cap=8_000_000,gap_recovery=True):
+def reconstruct(pieces,out:Path,report,update=lambda _:None,*,pixel_cap=8_000_000,gap_recovery=True,deep_recovery=True):
     started=time.perf_counter()
     # Fixed sampling budget for all pieces, not per-piece rescaling.
     step=max(2.0, sum(2*sum(p.mask.shape) for p in pieces)/16000)
@@ -466,6 +475,7 @@ def reconstruct(pieces,out:Path,report,update=lambda _:None,*,pixel_cap=8_000_00
     exact_size=len(groups[0])
     recovery={"attempted":False,"selected":False,"exact_largest_component":exact_size}
     alternative=None
+    recovered=[]
     # Preserve the exact-contact route on clean data. A sparse, disconnected
     # assembly can trigger bounded gap-aware recovery without a known canvas.
     # Small irregular puzzles can also have a large but weak exact-contact
@@ -496,6 +506,29 @@ def reconstruct(pieces,out:Path,report,update=lambda _:None,*,pixel_cap=8_000_00
             else:
                 alternative=(ggroups,gjoins,"gap-aware")
     report["gap_recovery"]=recovery
+    assembly_model="gap-aware" if recovery["selected"] else "exact-contact"
+    deep={"attempted":False,"selected":False}
+    other_model=None
+    # This high-quality route is bounded and is activated automatically when
+    # the normal solver remains sparse. Keep routine intact cases fast.
+    if gap_recovery and deep_recovery and 2<=n<=128 and (
+          deep_recovery=="always" or (recovery["attempted"] and (weak_small or exact_size<max(2,math.ceil(.60*n))))):
+        from .continuation import recover
+        cg,cj,stats=recover(shapes,recovered,update)
+        deep.update(stats)
+        if cg is not None and len(cg[0])>=2:
+            members={shapes[i].fragment.id for i in cg[0]}
+            supported=[j for j in cj if j["a"] in members and j["b"] in members
+                       and (j.get("consensus_supported") or j.get("line_count",0)>=2 or j.get("contextual_growth"))]
+            if supported and len(cg[0])>=len(groups[0]):
+                other_model=alternative
+                alternative=(groups,joins,assembly_model)
+                groups,joins=cg,cj
+                assembly_model="classical-continuation"
+                deep["selected"]=True
+            else:
+                other_model=(cg,cj,"classical-continuation")
+    report["deep_recovery"]=deep
     update("Rendering scan reconstruction")
     main=groups[0]
     if len(groups)>1:
@@ -513,7 +546,6 @@ def reconstruct(pieces,out:Path,report,update=lambda _:None,*,pixel_cap=8_000_00
                                 "crop_xy":list(shapes[i].fragment.input_origin)}
                                 for i,(R,t) in g.items()}})
         return records
-    assembly_model="gap-aware" if recovery["selected"] else "exact-contact"
     # Each connected component has an independent rigid gauge. Do not pack
     # unrelated components into a fake reconstruction of the missing canvas.
     comp={"model":assembly_model,"accuracy_verified":False,
@@ -522,6 +554,9 @@ def reconstruct(pieces,out:Path,report,update=lambda _:None,*,pixel_cap=8_000_00
     if alternative is not None:
         ag,aj,am=alternative
         comp["alternative"]={"model":am,"components":component_records(ag,aj)}
+    if other_model is not None:
+        ag,aj,am=other_model
+        comp["other_model"]={"model":am,"components":component_records(ag,aj)}
     json_write(out/"component_placements.json",comp)
     report.update({"pair_search":"indexed-contour-color" if indexed else "all-pairs","searched_pairs":len(pairs),"possible_pairs":n*(n-1)//2,"candidate_poses":len(candidates),"candidate_pairs":len({(c[1],c[2]) for c in candidates}),"accepted_joins":joins,"component_sizes":[len(g) for g in groups],
                    "canvas_wh":wh,"orientation_ambiguous":True,"accuracy_verified":False,
@@ -535,10 +570,10 @@ def reconstruct(pieces,out:Path,report,update=lambda _:None,*,pixel_cap=8_000_00
         preview.paste(im,(x,y),im);draw.text(((i%cols)*tile+6,(i//cols+1)*tile-17),p.id,fill=(40,55,45))
     preview.save(out/"fragments_preview.png")
     json_write(out/"scan_report.json",report)
-    d={"algorithm":"physical-scan-gap-aware-se2" if recovery["selected"] else "physical-scan-se2-experimental","status":"unverified" if len(main)==len(pieces) else "partial",
+    d={"algorithm":"physical-scan-classical-continuation" if deep["selected"] else ("physical-scan-gap-aware-se2" if recovery["selected"] else "physical-scan-se2-experimental"),"status":"unverified" if len(main)==len(pieces) else "partial",
        "placed":len(main),"piece_count":len(pieces),"coverage":coverage,"render_collision_pixels":collision,
        "available_piece_recovery":len(main)/len(pieces),"runtime_seconds":time.perf_counter()-started,
-       "scan":{"kind":"irregular-fragments","gap_recovery":recovery,"input_images":report["input_images"],"detected_pieces":len(pieces),"components":len(groups),"pair_search":report["pair_search"],"searched_pairs":len(pairs),"possible_pairs":n*(n-1)//2,
+       "scan":{"kind":"irregular-fragments","gap_recovery":recovery,"deep_recovery":deep,"input_images":report["input_images"],"detected_pieces":len(pieces),"components":len(groups),"pair_search":report["pair_search"],"searched_pairs":len(pairs),"possible_pairs":n*(n-1)//2,
                "warnings":report["warnings"],"common_scale":report["common_scale"],"accuracy_verified":False}}
     json_write(out/"diagnostics.json",d)
     return d

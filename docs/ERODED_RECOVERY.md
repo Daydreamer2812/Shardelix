@@ -77,16 +77,90 @@ a broad accuracy claim. DAFNE includes 87 genuine fragments and 15 distractors
 in this test, and its official challenge permits a source-image reference;
 the blind setting here is different.
 
-## Next research steps
+## Deep classical search (no machine learning)
 
-- Improve broad-gap proposals with learned masked patch descriptors trained
-  on separately split source images and simulated erosion/distractors; include
-  calibrated hard negative mining and compare with the CPU fallback.
-- Learn compatibility from boundary extrapolation (e.g. Bridger et al.) and
-  test against partial contour retrieval; generated pixels should remain
-  evidence, not be presented as recovered historical content.
-- Improve cycle-supported global selection with explicit outlier variables,
-  multiple-object hypotheses and uncertainty-weighted pose constraints.
-- Evaluate on additional licensed archaeological and real shredded-scan data
-  (e.g. RePAIR-style physical fragments); separate reference-aided and blind
-  protocols, and report both component precision and recovered coverage.
+The newer high-quality stage is implemented in `continuation.py` and
+`spectral_gap.py`. Balanced automatically tries it after sparse or weak
+contact recovery. The High accuracy profile forces the additional search
+within the same resource budgets; Fast disables this additional stage.
+Pass `deep_recovery: "always"` or `false` to override the policy in the API.
+
+- A multi-channel **structure tensor** estimates the local direction of
+  isophotes. Outside the mask, rays project back into valid interior pixels;
+  unreliable rays fall back to nearest observed color. The inferred band is
+  evidence only and is never rendered.
+- Distinctive **line exits** (pictorial lines crossing the fragment boundary)
+  supply candidate orientations and translations. Two nonparallel exits can
+  determine translation by a 2x2 linear system instead of assuming contact.
+- A **masked spectral search** proposes additional transformations:
+  for each nominated pair, sample 24 angles and all translations on a coarse
+  grid using FFT correlations of observed and extrapolated bands. A weighted
+  RGB squared error, support, texture and true-mask collision are evaluated
+  over the translation grid, then retained hypotheses are checked at common
+  working resolution. This is a bounded proposal search, not exhaustive
+  continuous global optimization.
+- **Pose-mode consensus** combines evidence from point/line retrieval,
+  spectral retrieval, and previous gap verification. A robust, soft curvature
+  prior downweights angular pieces only when a sufficiently large majority is
+  smooth and compact; no input fragments are deleted. Contextual forest growth
+  rejects candidates that collide with existing members and requires multiple
+  line crossings or consistent independent pose evidence. Unanchored groups
+  and alternate model poses remain available in the JSON. Primary ranking
+  uses combined evidence with a weak-link penalty, not ground truth.
+- The stage is limited to 2–128 pieces and five million padded field pixels.
+  It can take minutes on large degraded data, and performance is hardware
+  dependent. It uses only NumPy/SciPy and does not train or load any model.
+
+Reproducible synthetic comparisons with the previous solver:
+```sh
+PYTHONPATH=src python scripts/benchmark_classical.py
+```
+Raw results: [classical_benchmark.json](../reports/classical_benchmark.json).
+The selected main result is unchanged on these 11 fixtures; alternate
+component predictions may have better precision at the cost of coverage.
+The 8px erosion cases remain unresolved despite the larger search.
+
+## Further research (classical only)
+
+- Improve local structure preservation with classical exemplar/patch search
+  or variational continuation, with uncertainty estimates.
+- Develop multiple-hypothesis component search with exact or bounded
+  combinatorial optimization, and validate longer cycles without forcing
+  unrelated fragments to align.
+- Introduce texture-frequency, contour curvature-scale-space and calibrated
+  local likelihood evidence. Benchmark each cue by ablation.
+- Evaluate on additional licensed artwork and real shredded-scan data, with
+  independent test splits and separate reference-aided vs blind protocols.
+  No trained networks or learned descriptors are required or planned.
+
+### Development-set result: DAFNE Resurrection
+
+With the same 102 input images (87 genuine, 15 distractors), comparing the
+previous commit with deep classical continuation:
+
+| Metric | Previous gap-aware | Deep classical |
+|---|---:|---:|
+| Correct primary poses (one global rigid gauge) | 2/87 | 3/87 |
+| Correct relative joins across all independent components | 3/11 | 6/16 |
+| Relative join precision | 27.3% | 37.5% |
+| Non-singleton components | 7 | 14 |
+| Median primary center error | 2.42 px | 1.60 px |
+| Wall time, this machine | 81.5 s | 292.3 s |
+
+The MIT regression remains 9/9 poses. The deep proposal set includes 24
+sampled rotations, 898 nominated Fourier pairs and 12,572 evaluated spectral
+proposals. A coherent rounded-population prior downweighted 15 pieces.
+All decisions used observed rasters only; labels were read afterward by
+the evaluator. Some of the secondary components are wrong, and the DAFNE
+global recovery remains poor (3/87); it is not a solved challenge.
+
+See [complete measurements](../reports/classical_real_development.json).
+To reproduce the external evaluation with the separate dataset-pack truth
+archive, unzip the solver's result ZIP and run:
+
+```sh
+python scripts/evaluate_dafne_components.py INPUT.zip TRUTH.zip RESULT_DIR
+```
+
+The evaluator accepts the DAFNE dataset-pack annotation JSON convention,
+not arbitrary external truth formats. No external dataset files are bundled.
