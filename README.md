@@ -2,17 +2,24 @@
 
 # Shardelix
 
-### Reference-free blind image & document reconstruction
+### Classical image & document reconstruction · blind by default
 
 **Reconstruct the unseen. Recover structure from fragments alone.**
 
 What if the original image no longer exists? No preview, no template, no answer key — just a collection of disconnected pieces.
 
-Shardelix is a classical computer vision research framework that estimates how shuffled, rotated and potentially incomplete digital fragments fit together, without ever seeing the original image during reconstruction.
+Shardelix is a classical computer vision research framework for shuffled, rotated and potentially incomplete fragments. Blind reconstruction requires only the observed pieces; when the original image is available, explicit optional reference-assisted registration uses the same workflow.
 
-**No reference image · No ground truth during inference · No pretrained model · No training dataset**
+**Blind mode: no reference image · No ground truth during inference · No pretrained model · No training dataset**
 
 CPU-first Python and C++20 · Native execution and in-browser WebAssembly
+
+> **One framework, one Studio:** Research algorithms are integrated into main.
+> Automatic reconstruction is blind by default. Enable **Use original image for matching (optional)** only when you have the intact artwork.
+> Ground truth remains a different, evaluation-only input. Choose Fast, Balanced
+> (recommended), or High accuracy; the engine selects the appropriate solver.
+> [Framework and routing](docs/FRAMEWORK.md) · [DAFNE reference-assisted benchmark](docs/DAFNE_INDEXED.md) (28 official cases; not a blind benchmark).
+
 
 [![Version](https://img.shields.io/badge/version-13.0.1-2463eb?style=flat-square)](pyproject.toml)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776ab?style=flat-square&logo=python&logoColor=white)](pyproject.toml)
@@ -63,7 +70,7 @@ If the available fragments do not uniquely determine the original arrangement, S
 
 ## Why Shardelix?
 
-Shardelix (formerly FragmentLab) brings **fragment generation, reference-free reconstruction, geometric verification and reproducible benchmarking** into a single research framework.
+Shardelix (formerly FragmentLab) brings **fragment generation, blind reconstruction, optional reference-assisted registration, geometric verification and reproducible benchmarking** into a single research framework.
 
 - **Beyond rectangular puzzles:** supports grids, vertical and horizontal strips, jagged, wavy, jigsaw and mixed irregular digital cuts.
 - **Unknown poses and incomplete inputs:** handles independent quarter-turns, experimental continuous in-plane rotations and missing fragments, subject to observable constraints.
@@ -96,7 +103,16 @@ python scripts/build_native.py   # optional C++20 compiler (g++ or clang++)
 python -m shardelix studio
 ```
 
-Open the local Studio at **http://127.0.0.1:8765**. To solve without a reference, open **Reconstruction**, import your fragment images or fragments ZIP, specify public geometry if required, and leave the optional ground-truth field empty. To create a reproducible experiment, use **Fragment generator** and **Send to reconstruction**; the generated reference is held separately for optional post-solve evaluation.
+Open **Reconstruction**, import your fragment images or ZIP, leave **Automatic detection** and **Balanced**, and click Run. Uploading ground truth is optional and only for evaluation. To use the original for matching, explicitly enable the original-image option and select the matching image. The **Fragment generator** transfers independent evaluation truth, never enabling assisted matching.
+
+The same workflow is available from one command:
+
+```bash
+python -m shardelix reconstruct fragments.zip --out outputs/blind
+python -m shardelix reconstruct fragments.zip --reference original.jpg --out outputs/assisted
+```
+
+Python: `from shardelix import reconstruct_files`, then `reconstruct_files("fragments.zip", "outputs/blind")`. See [the unified framework](docs/FRAMEWORK.md).
 
 ### 2. Run directly in a browser (static build)
 
@@ -284,7 +300,7 @@ If Shardelix helps your research or coursework, consider starring the repository
 
 In the Web Studio **Reconstruction → Input type**, leave **Automatic detection**
 for irregular scans or choose **Physical paper scans / photos** explicitly.
-The new branch segments separate paper pieces from a contrasting matte background
+The scan pipeline segments separate paper pieces from a contrasting matte background
 and estimates continuous rigid poses from complementary torn contours.
 It supports multiple non-touching pieces on one sheet, folder-wrapped scan ZIPs,
 and same-size binary foreground mask PNG sidecars (including scanned document strips).
@@ -293,6 +309,15 @@ tiles, unequal-width opaque or continuously rotated alpha strips, and foreground
 scans or color-keyed artwork fragments to the appropriate solver. Up to 256
 irregular pieces are supported with indexed contour/color retrieval for larger
 sets. Disconnected groups remain explicitly unanchored.
+For heavily damaged fragments, automatic gap-aware recovery evaluates inward
+color/gradient continuation across eroded edges and exports independent component
+poses without filling missing material. Explicit piece raster folders preserve
+disconnected surviving mask islands. This is experimental and limited to 128
+pieces in the gap-aware stage. A deeper classical continuation route adds
+structure tensors, line-exit voting, masked Fourier translation search and
+contextual pose consensus, with no ML or reference image. High accuracy
+forces this bounded route; Balanced activates it on difficult inputs.
+See [design and development results](docs/ERODED_RECOVERY.md).
 For text-bearing strips, default optional local English OCR scores words crossing
 candidate seams and helps resolve upright direction. If OCR is unavailable or
 insufficient, the pixel-only result remains available. It is slower and experimental.

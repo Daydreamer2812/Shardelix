@@ -28,9 +28,26 @@ const {execFileSync}=require('node:child_process');
   await page.locator('#transfer').click();
   await page.waitForFunction(()=>document.querySelector('#metadataInfo').textContent.includes('"pieces":16'),{},{timeout:60000});
   assert.equal(await page.locator('#truthLabel').textContent(),'ground_truth.zip');
+  // The same reconstruction tab supports opt-in matching without ever
+  // treating the generator's evaluation truth as a matching image.
+  assert.equal(await page.locator('#useMatchingReference').isChecked(),false);
+  assert.equal(await page.locator('#matchReferenceWrap').isHidden(),true);
+  await page.locator('#useMatchingReference').check();
+  assert.equal(await page.locator('#truthWrap').isHidden(),true);
+  assert.equal(await page.locator('#matchReferenceWrap').isVisible(),true);
+  assert.equal(await page.locator('#run').isEnabled(),false);
+  await page.locator('#profile').selectOption('accurate');
+  assert.match(await page.locator('#profileHint').textContent(),/micro-fragment/);
+  await page.locator('#matchReferenceUpload').setInputFiles(source);
+  assert.equal(await page.locator('#run').isEnabled(),true);
+  await page.locator('#useMatchingReference').uncheck();
+  await page.locator('#profile').selectOption('balanced');
+  assert.equal(await page.locator('#truthWrap').isVisible(),true);
+  assert.equal(await page.locator('#matchReferenceWrap').isHidden(),true);
   await page.locator('#run').click();await done('Reconstruction exported');
   await page.locator('#resultImg').waitFor({state:'visible'});assert.equal(await page.locator('#placed').textContent(),'16 / 16');assert.equal(await page.locator('#dpa').textContent(),'100.00%');
   assert.notEqual(await page.locator('#rawDpa').textContent(),'—');
+  assert.notEqual(JSON.parse(await page.locator('#diagnostics').textContent()).diagnostics.matching_reference_used,true);
   if(await page.locator('#alignedWrap').isVisible()){
    assert.match(await page.locator('#orientationLabel').textContent(),/Reference-aligned/);
    await page.locator('#alignedPreview').uncheck();

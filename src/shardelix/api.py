@@ -198,3 +198,58 @@ class Solver:
                 diag["extra_verification"]={"accepted":bool(accept),"primary_objective":a,"alternative_objective":b}
         diag.update(performance_profile=self.profile or "legacy",runtime_seconds=time.perf_counter()-started)
         return ReconstructionResult(fragments,poses,shape,diag,grid,rotations)
+
+
+def reconstruct_files(fragments, output, *, matching_reference=None, ground_truth=None,
+                      profile="balanced", input_mode="auto", notify=lambda status: None):
+    """Reconstruct file inputs with the same auto-routing as Studio.
+
+    Accept one ZIP, one image, a directory of fragment images, or a sequence
+    of image paths. Add a matching_reference explicitly to enable assisted
+    registration. ground_truth is evaluation-only, and is never a substitute
+    for matching_reference. Existing Solver.solve remains the geometry API.
+    """
+    import shutil
+    import tempfile
+    from .workflow12 import IMAGE_EXT, MAX_UPLOAD, run_job
+
+    if profile not in {"fast", "balanced", "accurate"}:
+        raise ValueError("Choose fast, balanced or accurate")
+    if input_mode not in {"auto", "digital", "scan"}:
+        raise ValueError("Choose auto, digital or scan; supply matching_reference explicitly for assisted mode")
+    if matching_reference is not None and ground_truth is not None:
+        raise ValueError("Use independent benchmark evaluation for reference-assisted results; do not mix matching and evaluation inputs")
+    if isinstance(fragments, (str, Path)):
+        path = Path(fragments)
+        files = sorted(p for p in path.iterdir() if p.is_file() and p.suffix.lower() in IMAGE_EXT) if path.is_dir() else [path]
+    else:
+        files = [Path(p) for p in fragments]
+    files = [Path(p) for p in files]
+    if not files or any(not p.is_file() for p in files):
+        raise ValueError("Provide existing fragment image files or one ZIP")
+    if len({p.name for p in files}) != len(files):
+        raise ValueError("Duplicate fragment filenames")
+    if not (len(files) == 1 and files[0].suffix.lower() == ".zip") and any(p.suffix.lower() not in IMAGE_EXT for p in files):
+        raise ValueError("Provide fragment images or one ZIP")
+    refs = [(slot, Path(p)) for slot, p in
+            (("matching_reference", matching_reference), ("truth", ground_truth)) if p is not None]
+    if any(not p.is_file() for _, p in refs):
+        raise ValueError("Reference/evaluation file does not exist")
+    if sum(p.stat().st_size for p in files + [p for _, p in refs]) > MAX_UPLOAD:
+        raise ValueError("Combined input exceeds native upload budget")
+    output = Path(output)
+    if output.exists() and (not output.is_dir() or any(output.iterdir())):
+        raise ValueError("Choose a new or empty output directory")
+    with tempfile.TemporaryDirectory(prefix="shardelix-") as tmp:
+        root = Path(tmp)
+        (root / "upload").mkdir()
+        for p in files:
+            shutil.copy2(p, root / "upload" / p.name)
+        for slot, p in refs:
+            (root / slot).mkdir()
+            shutil.copy2(p, root / slot / p.name)
+        state = run_job(root, {"task":"blind",
+                              "input_mode":"reference" if matching_reference is not None else input_mode,
+                              "auto_layout":True, "use_metadata":True, "profile":profile}, notify)
+        shutil.copytree(root / "result", output, dirs_exist_ok=True)
+    return state

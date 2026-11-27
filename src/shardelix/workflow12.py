@@ -13,12 +13,12 @@ WEB_INPUT_PIXELS=24_000_000
 WEB_BATCH=24
 WEB_BATCH_OUTPUT_BYTES=192*1024**2
 NATIVE_BATCH=64
-DOWNLOADS={"assembly.png","assembly_with_cuts.png","assembly_reference_aligned.png","assembly_reference_aligned_with_cuts.png","cut_lines.png","placements.json","unanchored_components.json","ambiguity.json","diagnostics.json","metrics.json","source.png","result.zip","fragments.zip","benchmark.csv","benchmark.json","fragments_preview.png","ground_truth.zip","comparison.json","scan_report.json"}
+DOWNLOADS={"assembly.png","assembly_with_cuts.png","assembly_reference_aligned.png","assembly_reference_aligned_with_cuts.png","cut_lines.png","placements.json","unanchored_components.json","component_placements.json","ambiguity.json","diagnostics.json","metrics.json","source.png","result.zip","fragments.zip","benchmark.csv","benchmark.json","fragments_preview.png","ground_truth.zip","comparison.json","scan_report.json"}
 
 # Auxiliary views and truth are never counted as fragments. Unknown nested
 # layouts are accepted only when one primary image directory is unambiguous.
 _MASK_DIRS={"bg_mask","bg_mask_vis","masks","mask","mask_vis","foreground_masks","alpha_masks","segmentation_masks"}
-_PRIMARY_DIRS={"pieces","fragments","tiles","patches","scans"}
+_PRIMARY_DIRS={"pieces","fragments","tiles","patches","scans","frag_eroded"}
 _AUX_DIRS={"evaluation","result","results","ground_truth","ground-truth","groundtruth","truth","__macosx",
            "preview","previews","thumbnails","reference","references","original","originals",
            "labels","gt","annotations","output","outputs"}|_MASK_DIRS
@@ -75,7 +75,12 @@ def safe_zip(source:Path,case:Path,*,browser=False,extract=True,inspect_geometry
             if suffix not in IMAGE_EXT or (leaf.lower() in _AUX_FILES and not explicit_dir):continue
             groups.setdefault(dirs,[]).append(e)
         explicit=[d for d in groups if _PRIMARY_DIRS.intersection(x.lower() for x in d)]
-        if explicit:chosen=explicit
+        dafne=[d for d in explicit if d and d[-1].lower()=="frag_eroded"]
+        if dafne:
+            if len(dafne)!=1:raise ValueError("DAFNE archive contains multiple cases; upload one frag_eroded directory or use the batch benchmark")
+            if len(explicit)!=1:raise ValueError("Ambiguous DAFNE and other primary fragment directories")
+            chosen=dafne
+        elif explicit:chosen=explicit
         elif () in groups:chosen=[()]
         else:
             # Standard folder-wrapped ZIPs produced by OS archive tools.
@@ -83,6 +88,7 @@ def safe_zip(source:Path,case:Path,*,browser=False,extract=True,inspect_geometry
             chosen=list(groups)
             if len(chosen)>1:raise ValueError("Multiple image directories in ZIP; put primary fragments in pieces/ or scans/")
         images=[(d,e) for d in chosen for e in groups[d]]
+        piece_rasters=bool(chosen) and all(any(x.lower() in {"pieces","fragments","tiles","patches","frag_eroded"} for x in d) and not any(x.lower()=="scans" for x in d) for d in chosen)
         num=len(images)
         if not num:raise ValueError("No supported fragments found in ZIP")
         if num>limit:raise ValueError("Archive exceeds fragment count budget")
@@ -141,16 +147,18 @@ def safe_zip(source:Path,case:Path,*,browser=False,extract=True,inspect_geometry
                     with z.open(e) as f,(target/leaf).open("wb") as out:shutil.copyfileobj(f,out,1024*1024)
         if inspect_geometry:
             openers=[lambda e=e:z.open(e) for _,e in images]
-            explicit_scans=any("scans" in tuple(x.lower() for x in d) for d,_ in images)
+            explicit_scans=any({"scans","frag_eroded"}.intersection(x.lower() for x in d) for d,_ in images)
             if meta is None:
                 extra=_inspect_rasters(openers,num,browser,mask_count=mask_count,explicit_scans=explicit_scans)
             else:
                 extra={"suggested_grid":None,"suggested_document":None,"foreground_mask_count":mask_count,
                        "route":"metadata","input_evidence":{}}
+            extra["piece_rasters"]=piece_rasters
             extra["metadata_warning"]=metadata_warning
             extra["partial_masks"]=bool(0<mask_count<num)
             suggestion=extra["suggested_grid"]
             return (meta,num,suggestion,extra) if details else (meta,num,suggestion)
+    if details:return meta,num,None,{"piece_rasters":piece_rasters}
     return meta,num
 
 def public_metadata(meta):
@@ -337,8 +345,10 @@ def _scan_single(root,files,conf,update,browser=False,truth_dir=None):
     from .native_core import backend
     started=time.perf_counter()
     case=root/"case";out=root/"result";out.mkdir(parents=True,exist_ok=True)
+    piece_rasters=False
     if len(files)==1 and files[0].suffix.lower()==".zip":
-        safe_zip(files[0],case,browser=browser,scan=True,extract_masks=True)
+        _,_,_,layout=safe_zip(files[0],case,browser=browser,scan=True,extract_masks=True,details=True)
+        piece_rasters=layout["piece_rasters"]
         (case/"pieces").rename(case/"scans")
         paths=sorted((case/"scans").iterdir())
     else:
@@ -364,8 +374,9 @@ def _scan_single(root,files,conf,update,browser=False,truth_dir=None):
             return d,None,out
     update("Segmenting paper from scan backgrounds")
     pieces,report=preprocess(paths,case/"pieces",pixel_limit=WEB_INPUT_PIXELS if browser else MAX_PIXELS*3,
-                             preserve_opaque=conf.get("auto_preserve_opaque",False))
-    d=reconstruct(pieces,out,report,update,pixel_cap=WEB_PIXELS if browser else MAX_PIXELS)
+                             preserve_opaque=conf.get("auto_preserve_opaque",False),piece_rasters=piece_rasters)
+    d=reconstruct(pieces,out,report,update,pixel_cap=WEB_PIXELS if browser else MAX_PIXELS,
+                  gap_recovery=conf.get("gap_recovery",True),deep_recovery=conf.get("deep_recovery","always" if conf.get("profile")=="accurate" else conf.get("profile")!="fast"))
     _public_archive(case,out)
     d.update(compute_backend=backend(),workflow_elapsed_seconds=time.perf_counter()-started,performance_profile="scan-auto",
              input_detection={"route":"irregular","evidence":conf.get("input_evidence",{}),"warning":conf.get("metadata_warning")})
@@ -374,12 +385,58 @@ def _scan_single(root,files,conf,update,browser=False,truth_dir=None):
         json_write(out/"comparison.json",{"pose_evaluated":False,"warning":"Scan mode does not evaluate digital ground truth: arbitrary rotation, scale and torn-edge loss require a separate physical benchmark."})
     return d,None,out
 
-def _single(root,files,conf,update,browser=False,truth_dir=None):
+def _reference_single(root,files,conf,update,browser=False,matching_reference_dir=None):
+    """Opt-in matching reference, isolated from the evaluation-only truth slot."""
+    from .reconstruction.scan import preprocess
+    from .reconstruction.reference_match import reconstruct_reference
+    from .reconstruction.reference_index import reconstruct_indexed, MAX_REFERENCE_PIECES, MAX_REFERENCE_PIXELS, MAX_REFERENCE_INPUT_PIXELS
+    from .reconstruction.common import json_write
+    from .native_core import backend
+    started=time.perf_counter()
+    refs=sorted(matching_reference_dir.iterdir()) if matching_reference_dir and matching_reference_dir.is_dir() else []
+    if len(refs)!=1 or refs[0].suffix.lower() not in IMAGE_EXT:
+        raise ValueError("Upload one original matching reference image in the separate reference slot")
+    case=root/"case";out=root/"result";out.mkdir(parents=True,exist_ok=True)
+    if len(files)==1 and files[0].suffix.lower()==".zip":
+        _,_,_,layout=safe_zip(files[0],case,browser=browser,scan=True,extract_masks=True,details=True)
+        (case/"pieces").rename(case/"scans")
+        paths=sorted((case/"scans").iterdir());piece_rasters=layout["piece_rasters"]
+    else:
+        if any(p.suffix.lower() not in IMAGE_EXT for p in files):
+            raise ValueError("Reference-assisted mode accepts fragment images or one ZIP")
+        paths=files;piece_rasters=True
+    update("Segmenting reference-assisted fragments")
+    # One public profile controls the internal recovery strategy. Preserve
+    # explicit engine overrides for reproducible historical benchmarks only.
+    profile=conf.get("profile") or "balanced"
+    engine=conf.get("reference_engine") or ("indexed-deep" if profile=="accurate" else "indexed")
+    if engine not in {"fft","indexed","indexed-deep"}:raise ValueError("Unknown reference recovery engine")
+    legacy=engine=="fft"
+    cap=256 if legacy else (4096 if browser else MAX_REFERENCE_PIECES)
+    pieces,report=preprocess(paths,case/"pieces",pixel_limit=WEB_INPUT_PIXELS if browser else MAX_REFERENCE_INPUT_PIXELS,
+                             preserve_opaque=True,piece_rasters=piece_rasters,max_pieces=cap,preserve_scale=not legacy)
+    if report["common_scale"]!=1.:
+        raise ValueError("Reference-assisted registration needs unchanged fragment scale; reduce input size and reference by the same factor")
+    if legacy:
+        d=reconstruct_reference(pieces,refs[0],out,report,update,pixel_cap=2_000_000)
+    else:
+        d=reconstruct_indexed(pieces,refs[0],out,report,update,pixel_cap=WEB_PIXELS if browser else MAX_REFERENCE_PIXELS,
+                              piece_cap=cap,use_sift=not browser,deep=engine=="indexed-deep")
+    _public_archive(case,out)
+    d.update(compute_backend=backend(),workflow_elapsed_seconds=time.perf_counter()-started,
+             performance_profile=profile,input_detection={"route":"reference-assisted","engine":engine})
+    json_write(out/"diagnostics.json",d)
+    return d,None,out
+
+
+def _single(root,files,conf,update,browser=False,truth_dir=None,matching_reference_dir=None):
     from .reconstruction.common import read_source,save_rgba,json_write
     detected=None
     if conf.get("task")=="blind":
         mode=conf.get("input_mode","digital")
-        if mode not in ("digital","auto","scan"):raise ValueError("Unknown reconstruction input mode")
+        if mode not in ("digital","auto","scan","reference"):raise ValueError("Unknown reconstruction input mode")
+        if mode=="reference":
+            return _reference_single(root,files,conf,update,browser,matching_reference_dir)
         if mode=="scan":
             return _scan_single(root,files,conf,update,browser,truth_dir)
         if conf.get("auto_layout",False):
@@ -557,7 +614,7 @@ def run_job(root:Path,conf,notify=lambda s:None,*,browser=False):
         row["case"]=i+1
         try:
             if browser and batch and retained>=WEB_BATCH_OUTPUT_BYTES:raise ValueError("Browser benchmark retained-output budget exhausted; use native Studio")
-            d,m,o=_single(dest,files,c,update,browser,root/"truth")
+            d,m,o=_single(dest,files,c,update,browser,root/"truth",root/"matching_reference")
             row.update(status="done",algorithm=d.get("algorithm"),runtime_seconds=d.get("runtime_seconds"),
                 elapsed_seconds=d.get("workflow_elapsed_seconds"),peak_process_rss_mib=d.get("process_peak_rss_mib"),placed=d.get("placed"),coverage=d.get("coverage"),**{k:m.get(k) for k in ("direct_position_accuracy","raw_position_accuracy","evaluation_rotation_cw_deg","adjacency_f1","pass_95","collision_pixels")} if m else {})
             if last is not None and batch:
@@ -591,5 +648,5 @@ def run_job(root:Path,conf,notify=lambda s:None,*,browser=False):
                         z.write(p,str(Path("cases")/directory.name/p.relative_to(directory/"result")))
     shutil.rmtree(root/"runs",ignore_errors=True)
     return {"state":"done","stage":"Benchmark complete" if batch else "Reconstruction exported",
-            "diagnostics":{k:v for k,v in d.items() if k in ("algorithm","runtime_seconds","status","placed","piece_count","coverage","collision_pixels","render_collision_pixels","identical_piece_count","sparse_high_consensus","reciprocal_seam_fraction","expected_count","missing_count","angle_mode","sampling","available_piece_recovery","normalization_seconds","index_mode","index_fallback_used","index_query_seconds","retrieval_seconds","assembly_seconds","performance_profile","process_peak_rss_mib","workflow_elapsed_seconds","frame_anchor_status","multigap_status","extra_verification","compute_backend","fast_rescue_v13","import_geometry_mode","import_geometry","input_detection","scan")},
+            "diagnostics":{k:v for k,v in d.items() if k in ("algorithm","runtime_seconds","status","placed","piece_count","coverage","collision_pixels","render_collision_pixels","identical_piece_count","sparse_high_consensus","reciprocal_seam_fraction","expected_count","missing_count","angle_mode","sampling","available_piece_recovery","normalization_seconds","index_mode","index_fallback_used","index_query_seconds","retrieval_seconds","assembly_seconds","performance_profile","process_peak_rss_mib","workflow_elapsed_seconds","frame_anchor_status","multigap_status","extra_verification","compute_backend","fast_rescue_v13","import_geometry_mode","import_geometry","input_detection","scan","matching_reference_used","accuracy_verified","matching_backend")},
             "metrics":m,"comparison":json.loads((result/"comparison.json").read_text()) if (result/"comparison.json").exists() else None,"benchmark":rows if batch else None,"files":sorted(p.name for p in result.iterdir() if p.name in DOWNLOADS)}

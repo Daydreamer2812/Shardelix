@@ -38,8 +38,12 @@ def chroma_mask(a):
     return None
 
 
-def preprocess(paths, target: Path, *, pixel_limit=24_000_000, preserve_opaque=False):
-    """Split separate foreground components, preserving common pixel scale."""
+def preprocess(paths, target: Path, *, pixel_limit=24_000_000, preserve_opaque=False, piece_rasters=False, max_pieces=MAX_SCAN_PIECES, preserve_scale=False):
+    """Split overview scans, or preserve each explicitly declared piece raster.
+
+    An eroded piece may have multiple surviving foreground islands. Joining
+    their bounding crop does not fill in the missing alpha pixels.
+    """
     target.mkdir(parents=True, exist_ok=True)
     sizes = []
     for path in paths:
@@ -48,7 +52,7 @@ def preprocess(paths, target: Path, *, pixel_limit=24_000_000, preserve_opaque=F
     total = sum(w*h for w,h in sizes)
     if total > pixel_limit:
         raise ValueError("Decoded scans exceed pixel budget; scan at lower DPI or use native Studio.")
-    scale = min(1., MAX_SCAN_SIDE/max(max(s) for s in sizes), math.sqrt(MAX_WORK_PIXELS/total))
+    scale = 1. if preserve_scale else min(1., MAX_SCAN_SIDE/max(max(s) for s in sizes), math.sqrt(MAX_WORK_PIXELS/total))
     pieces, scans, warnings = [], [], []
     for path in paths:
         with Image.open(path) as im:
@@ -139,6 +143,12 @@ def preprocess(paths, target: Path, *, pixel_limit=24_000_000, preserve_opaque=F
             mask[[0,-1],:] |= edge[[0,-1],:]
             mask[:,[0,-1]] |= edge[:,[0,-1]]
         labels,n = ndi.label(mask)
+        raw_components=int(n)
+        if piece_rasters and n:
+            labels=mask.astype(np.int32)
+            n=1
+            if raw_components>1:
+                warnings.append(f"{path.name}: preserved disconnected foreground within one declared piece raster.")
         count = 0
         # Reject speckle, not all small components. Keep holes in explicit alpha scans.
         minimum = max(36,round(h*w*0.0002))
@@ -146,8 +156,8 @@ def preprocess(paths, target: Path, *, pixel_limit=24_000_000, preserve_opaque=F
             if sl is None: continue
             local = labels[sl] == label
             if np.count_nonzero(local)<minimum or min(local.shape)<5:continue
-            if len(pieces)>=MAX_SCAN_PIECES:
-                raise ValueError(f"Scan mode supports up to {MAX_SCAN_PIECES} detected pieces; separate speckle and use smaller sets.")
+            if len(pieces)>=max_pieces:
+                raise ValueError(f"Scan mode supports up to {max_pieces} detected pieces; separate speckle and use smaller sets.")
             y,x=sl
             if method!="opaque-raster-preserved" and (x.start==0 or y.start==0 or x.stop==w or y.stop==h):
                 warnings.append(f"{path.name}: a piece touches the scan border; its edge may be clipped.")
@@ -159,13 +169,15 @@ def preprocess(paths, target: Path, *, pixel_limit=24_000_000, preserve_opaque=F
             pieces.append(frag);count+=1
             scans.append({"file":path.name,"id":frag.id,"method":method,"crop_xy":[x.start,y.start],
                           "crop_wh":[x.stop-x.start,y.stop-y.start],"mask_pixels":int(local.sum()),
-                          "background_rgb":bg.tolist() if bg is not None else None,"threshold":threshold})
+                          "background_rgb":bg.tolist() if bg is not None else None,"threshold":threshold,
+                          "foreground_components":raw_components,"piece_raster":bool(piece_rasters)})
         if count==0:
             warnings.append(f"{path.name}: no visible paper silhouette. Use a contrasting matte background and include a margin.")
     if not pieces:
         raise ValueError("No paper silhouettes detected. Use a flat, contrasting background with margins, or transparent PNG pieces.")
     return pieces,{"input_images":len(paths),"detected_pieces":len(pieces),"common_scale":scale,
-                   "original_pixel_sizes":[list(s) for s in sizes],"pieces":scans,"warnings":list(dict.fromkeys(warnings))}
+                   "original_pixel_sizes":[list(s) for s in sizes],"pieces":scans,"warnings":list(dict.fromkeys(warnings)),
+                   "piece_rasters":bool(piece_rasters)}
 
 
 def rotation(theta):
@@ -348,9 +360,18 @@ def _render(shapes, poses, out, pixel_cap):
         theta=min(angles,key=lambda v:np.prod(np.ptp(hull@rotation(-v).T,axis=0)))
         Q=rotation(-theta)
     except (QhullError,ValueError):Q=np.eye(2)
-    # Use a fixed margin for antialiasing and the seam overlay.
-    lo=np.floor((vertices@Q.T).min(axis=0))-3
-    hi=np.ceil((vertices@Q.T).max(axis=0))+3
+    # The pose estimator uses the largest contour, but the renderer must
+    # include ALL surviving mask islands. Otherwise a tear separating two
+    # regions of a single raster can cause the small region to be clipped.
+    low=[];high=[]
+    for i,(R,t) in poses.items():
+        mask=shapes[i].fragment.mask
+        yy,xx=np.nonzero(mask&~ndi.binary_erosion(mask))
+        v=(np.column_stack([xx,yy])+.5)@(Q@R).T+Q@t
+        low.append(v.min(axis=0));high.append(v.max(axis=0))
+    # Fixed margin includes pixel footprints and the seam overlay.
+    lo=np.floor(np.min(low,axis=0))-3
+    hi=np.ceil(np.max(high,axis=0))+3
     w,h=map(int,hi-lo)
     if w*h>pixel_cap:raise ValueError("Proposed scan assembly exceeds canvas budget; use smaller scans.")
     canvas=np.zeros((h,w,4),np.uint8);labels=np.full((h,w),-1,np.int32)
@@ -430,7 +451,7 @@ def _indexed_pairs(shapes, forward, reverse, scales, *, keep=10):
     return sorted(pairs)
 
 
-def reconstruct(pieces,out:Path,report,update=lambda _:None,*,pixel_cap=8_000_000):
+def reconstruct(pieces,out:Path,report,update=lambda _:None,*,pixel_cap=8_000_000,gap_recovery=True,deep_recovery=True):
     started=time.perf_counter()
     # Fixed sampling budget for all pieces, not per-piece rescaling.
     step=max(2.0, sum(2*sum(p.mask.shape) for p in pieces)/16000)
@@ -451,12 +472,92 @@ def reconstruct(pieces,out:Path,report,update=lambda _:None,*,pixel_cap=8_000_00
             update(f"Matching scan contours {z+1}/{len(pairs)} candidate pairs")
         for c in _pair(shapes[i],shapes[j],forward[i],reverse[j],tol):candidates.append((c[0],i,j,*c[1:]))
     groups,joins=_merge(shapes,candidates)
+    exact_size=len(groups[0])
+    recovery={"attempted":False,"selected":False,"exact_largest_component":exact_size}
+    alternative=None
+    recovered=[]
+    # Preserve the exact-contact route on clean data. A sparse, disconnected
+    # assembly can trigger bounded gap-aware recovery without a known canvas.
+    # Small irregular puzzles can also have a large but weak exact-contact
+    # tree. Search a second model when these joins have weak local evidence.
+    weak_small = n<=16 and any(q["color_difference"]>18 or
+                              q["contact_length"]<25 or q["median_gap"]>2
+                              for q in joins)
+    requested = gap_recovery=="always"
+    if gap_recovery and 2<=n<=128 and (requested or weak_small or exact_size<max(2,math.ceil(.60*n))):
+        from .eroded import gap_candidates, rank_components, refine_components
+        update("Recovering abraded seams and incomplete components")
+        recovered,stats=gap_candidates(shapes,update)
+        recovery.update(stats,attempted=True,trigger="always" if requested else "weak-small" if weak_small else "sparse-exact")
+        if recovered:
+            ggroups,gjoins=_merge(shapes,recovered)
+            ggroups=refine_components(shapes,ggroups,recovered)
+            ggroups=rank_components(shapes,ggroups,gjoins)
+            recovery.update(gap_largest_component=max(map(len,ggroups)),
+                            gap_primary_component=len(ggroups[0]),
+                            gap_nontrivial_components=sum(len(g)>1 for g in ggroups))
+            # Very sparse exact matches are not evidence of an intact object.
+            # Prefer an independently verified component; don't select by
+            # number of placed fragments alone. Otherwise retain exact.
+            if len(ggroups[0])>=2 and (exact_size<max(3,math.ceil(.12*n)) or len(ggroups[0])>=exact_size):
+                alternative=(groups,joins,"exact-contact")
+                groups,joins=ggroups,gjoins
+                recovery["selected"]=True
+            else:
+                alternative=(ggroups,gjoins,"gap-aware")
+    report["gap_recovery"]=recovery
+    assembly_model="gap-aware" if recovery["selected"] else "exact-contact"
+    deep={"attempted":False,"selected":False}
+    other_model=None
+    # This high-quality route is bounded and is activated automatically when
+    # the normal solver remains sparse. Keep routine intact cases fast.
+    if gap_recovery and deep_recovery and 2<=n<=128 and (
+          deep_recovery=="always" or (recovery["attempted"] and (weak_small or exact_size<max(2,math.ceil(.60*n))))):
+        from .continuation import recover
+        cg,cj,stats=recover(shapes,recovered,update)
+        deep.update(stats)
+        if cg is not None and len(cg[0])>=2:
+            members={shapes[i].fragment.id for i in cg[0]}
+            supported=[j for j in cj if j["a"] in members and j["b"] in members
+                       and (j.get("consensus_supported") or j.get("line_count",0)>=2 or j.get("contextual_growth"))]
+            if supported and len(cg[0])>=len(groups[0]):
+                other_model=alternative
+                alternative=(groups,joins,assembly_model)
+                groups,joins=cg,cj
+                assembly_model="classical-continuation"
+                deep["selected"]=True
+            else:
+                other_model=(cg,cj,"classical-continuation")
+    report["deep_recovery"]=deep
     update("Rendering scan reconstruction")
     main=groups[0]
     if len(groups)>1:
-        report["warnings"].append(f"Only the largest connected group ({len(main)}/{n} fragments) is rendered in the main image. Remaining groups are unanchored; missing material or distractors may prevent reliable joins.")
+        report["warnings"].append(f"Only the selected connected group ({len(main)}/{n} fragments) is rendered in the main image. Remaining groups are unanchored; missing material or distractors may prevent reliable joins.")
     collision,coverage,wh=_render(shapes,main,out,pixel_cap)
     json_write(out/"unanchored_components.json",[[shapes[i].fragment.id for i in g] for g in groups[1:]])
+    def component_records(gs,js):
+        records=[]
+        for k,g in enumerate(gs):
+            members={shapes[i].fragment.id for i in g}
+            local_joins=[q for q in js if q["a"] in members and q["b"] in members]
+            records.append({"id":k,"members":sorted(members),"joins":local_joins,
+                            "poses":{shapes[i].fragment.id:{
+                                "input_to_component_affine":np.column_stack([R,t]).tolist(),
+                                "crop_xy":list(shapes[i].fragment.input_origin)}
+                                for i,(R,t) in g.items()}})
+        return records
+    # Each connected component has an independent rigid gauge. Do not pack
+    # unrelated components into a fake reconstruction of the missing canvas.
+    comp={"model":assembly_model,"accuracy_verified":False,
+          "coordinate_system":"independent per-component SE(2); no placement between components",
+          "primary_component":0,"components":component_records(groups,joins)}
+    if alternative is not None:
+        ag,aj,am=alternative
+        comp["alternative"]={"model":am,"components":component_records(ag,aj)}
+    if other_model is not None:
+        ag,aj,am=other_model
+        comp["other_model"]={"model":am,"components":component_records(ag,aj)}
+    json_write(out/"component_placements.json",comp)
     report.update({"pair_search":"indexed-contour-color" if indexed else "all-pairs","searched_pairs":len(pairs),"possible_pairs":n*(n-1)//2,"candidate_poses":len(candidates),"candidate_pairs":len({(c[1],c[2]) for c in candidates}),"accepted_joins":joins,"component_sizes":[len(g) for g in groups],
                    "canvas_wh":wh,"orientation_ambiguous":True,"accuracy_verified":False,
                    "coverage_definition":"occupied fraction of estimated bounding box, not recovered original area"})
@@ -469,10 +570,10 @@ def reconstruct(pieces,out:Path,report,update=lambda _:None,*,pixel_cap=8_000_00
         preview.paste(im,(x,y),im);draw.text(((i%cols)*tile+6,(i//cols+1)*tile-17),p.id,fill=(40,55,45))
     preview.save(out/"fragments_preview.png")
     json_write(out/"scan_report.json",report)
-    d={"algorithm":"physical-scan-se2-experimental","status":"unverified" if len(main)==len(pieces) else "partial",
+    d={"algorithm":"physical-scan-classical-continuation" if deep["selected"] else ("physical-scan-gap-aware-se2" if recovery["selected"] else "physical-scan-se2-experimental"),"status":"unverified" if len(main)==len(pieces) else "partial",
        "placed":len(main),"piece_count":len(pieces),"coverage":coverage,"render_collision_pixels":collision,
        "available_piece_recovery":len(main)/len(pieces),"runtime_seconds":time.perf_counter()-started,
-       "scan":{"kind":"irregular-fragments","input_images":report["input_images"],"detected_pieces":len(pieces),"components":len(groups),"pair_search":report["pair_search"],"searched_pairs":len(pairs),"possible_pairs":n*(n-1)//2,
+       "scan":{"kind":"irregular-fragments","gap_recovery":recovery,"deep_recovery":deep,"input_images":report["input_images"],"detected_pieces":len(pieces),"components":len(groups),"pair_search":report["pair_search"],"searched_pairs":len(pairs),"possible_pairs":n*(n-1)//2,
                "warnings":report["warnings"],"common_scale":report["common_scale"],"accuracy_verified":False}}
     json_write(out/"diagnostics.json",d)
     return d

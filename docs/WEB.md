@@ -1,10 +1,10 @@
-# V13 Studio — GitHub Pages and local runs
+# Unified V13 Studio — GitHub Pages and local runs
 
 ## UI and solver routing
 
 Fragment generator → generate anonymous pieces → export fragments ZIP and independent ground truth ZIP.
 Reconstruction → direct transfer or import RGBA PNGs / ZIP + public metadata → Solver(profile) → optional independent evaluator.
-The source/reference image never enters matching.
+The source/reference image never enters blind matching. The optional **Use original image for matching** checkbox routes to [indexed reference-assisted registration](DAFNE_INDEXED.md), with the same profile control. It uses a dedicated matching image, not the evaluation-only ground truth slot. Automatic detection is the default. See [the unified framework](FRAMEWORK.md).
 
 The benchmark switch repeats the same generated-case workflow across selected
 counts, cuts, seeds and profiles. The independent evaluator reads known truth
@@ -12,7 +12,7 @@ only after solve; it is not a third solver. The browser and native Studio share
 `src/shardelix/workflow12.py` and the reconstruction package.
 All profiles use the same cut-specific algorithms and geometric validation.
 Fast reduces search; a bounded rescue runs only on severe irregular under-coverage; Balanced is the default;
-High accuracy adds bounded search and verifies candidate hypotheses against
+In reference-assisted mode Fast and Balanced use indexed registration; High accuracy enables experimental micro-fragment recovery. In blind mode, High accuracy adds bounded search and verifies candidate hypotheses against
 observable data. It is not a guarantee of better accuracy. Native optional MILP
 is not attempted in WebAssembly; browser and native results need not be identical.
 
@@ -130,6 +130,16 @@ required in physical mode.
   estimates continuous SE(2) transforms, checks opposed tangents and seam
   color, retains alternative poses, then joins components with interior
   collision checks. Unanchored groups are not arbitrarily placed on the canvas.
+- On sparse/weak exact-contact assemblies, a bounded experimental gap-aware
+  stage can estimate separated rigid poses from masked inward color and gradient
+  evidence. It keeps missing pixels transparent and exports independent component
+  poses in `component_placements.json` (also in the result ZIP). Explicit
+  piece-raster folder layouts keep islands of damaged masks together; overview
+  scans still split multiple silhouettes. High accuracy enables the deeper
+  no-ML continuation/FFT search; Balanced activates it automatically after
+  sparse/weak matching. This may take minutes; the padded field budget is
+  five million pixels and the stage is capped at 128 pieces.
+  See [eroded recovery](ERODED_RECOVERY.md).
 - The preview shows detected masks; download the normalized mask ZIP, scan
   processing report, reconstruction PNG, boundary overlay and affine poses.
   Poses are local cropped working-pixel vertex coordinates → output canvas;

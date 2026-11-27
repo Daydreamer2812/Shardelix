@@ -131,10 +131,16 @@ def solve_external_document(folder:Path,output:Path,rotations=False,params=None,
     return result
 
 def main(argv=None):
-    parser=argparse.ArgumentParser(prog="shardelix",description="Blind-only classical CPU fragment reconstruction")
+    parser=argparse.ArgumentParser(prog="shardelix",description="Classical CPU fragment reconstruction (blind by default)")
     sub=parser.add_subparsers(dest="command",required=True)
     p=sub.add_parser("studio",help="Launch local browser UI");p.add_argument("--port",type=int,default=8765);p.add_argument("--no-browser",action="store_true")
     p=sub.add_parser("generate");_gen_opts(p);p.add_argument("--out",type=Path,required=True)
+    p=sub.add_parser("reconstruct",help="Automatically reconstruct files or a ZIP; original image is optional")
+    p.add_argument("fragments",type=Path,nargs="+");p.add_argument("--out",type=Path,required=True)
+    p.add_argument("--reference",type=Path,help="Explicit original image for matching, not blind reconstruction")
+    p.add_argument("--ground-truth",type=Path,help="Independent evaluation only, not matching")
+    p.add_argument("--profile",choices=["fast","balanced","accurate"],default="balanced")
+    p.add_argument("--input-mode",choices=["auto","digital","scan"],default="auto")
     p=sub.add_parser("solve-document");p.add_argument("--pieces",type=Path,required=True);p.add_argument("--out",type=Path,required=True);p.add_argument("--rotations",action="store_true");p.add_argument("--params",type=json.loads);p.add_argument("--angle-mode",choices=["none","quarter","continuous"]);p.add_argument("--sampling",type=int,default=1);p.add_argument("--profile",choices=["fast","balanced","accurate","custom"])
     p=sub.add_parser("solve");_solve_opts(p);p.add_argument("--case",type=Path,required=True);p.add_argument("--out",type=Path,required=True)
     p=sub.add_parser("evaluate");p.add_argument("--case",type=Path,required=True);p.add_argument("--out",type=Path,required=True);p.add_argument("--require-95",action="store_true")
@@ -152,6 +158,12 @@ def main(argv=None):
     if a.command=="studio":
         from shardelix.studio import serve
         serve(a.port,not a.no_browser);return 0
+    if a.command=="reconstruct":
+        from shardelix import reconstruct_files
+        inputs=a.fragments[0] if len(a.fragments)==1 else a.fragments
+        state=reconstruct_files(inputs,a.out,matching_reference=a.reference,ground_truth=a.ground_truth,
+                                profile=a.profile,input_mode=a.input_mode)
+        print(json.dumps(state,indent=2));return 0
     if a.command in {"generate","run"}:
         src=read_source(a.source,a.max_side,a.page)
         fitted_grid=None

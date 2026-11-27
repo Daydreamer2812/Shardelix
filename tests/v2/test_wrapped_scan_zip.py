@@ -69,6 +69,23 @@ class WrappedScanZipTests(unittest.TestCase):
             self.assertEqual(inspect_uploads([p],True)["observed_count"],4)
             self.assertEqual(safe_zip(p,root/"case",browser=True),(None,4))
 
+    def test_dafne_single_case_zip_and_reference_exclusion(self):
+        with tempfile.TemporaryDirectory() as t:
+            root=Path(t);p=root/"dafne.zip"
+            data=png(np.full((10,10,3),255,np.uint8))
+            with zipfile.ZipFile(p,"w") as z:
+                z.writestr("painting/painting.jpg",data)
+                z.writestr("painting/frag_eroded/frag_eroded_0.png",data)
+                z.writestr("painting/fragments.txt",b"truth is not a fragment")
+            _,count,_,details=safe_zip(p,root/"case",details=True,scan=True)
+            self.assertEqual(count,1)
+            self.assertTrue(details["piece_rasters"])
+            self.assertEqual([x.name for x in (root/"case/pieces").iterdir()],["frag_eroded_0.png"])
+            with zipfile.ZipFile(p,"a") as z:
+                z.writestr("painting2/frag_eroded/frag_eroded_0.png",data)
+            with self.assertRaisesRegex(ValueError,"multiple cases"):
+                safe_zip(p,root/"case2",scan=True)
+
     def test_ambiguous_dirs_rejected(self):
         with tempfile.TemporaryDirectory() as t:
             p=Path(t)/"multiple.zip"
