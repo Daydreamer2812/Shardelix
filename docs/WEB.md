@@ -18,7 +18,7 @@ is not attempted in WebAssembly; browser and native results need not be identica
 
 ## Hosted Studio and self-hosting
 
-**[Open the official Web Studio](https://daydreamer2812.github.io/fragmentlab-official/).**
+**[Open the official Web Studio](https://daydreamer2812.github.io/Shardelix/).**
 
 For a separately hosted copy (subject to the repository license):
 

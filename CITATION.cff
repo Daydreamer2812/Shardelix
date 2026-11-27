@@ -6,8 +6,8 @@ authors:
   - name: "Daydreamer2812"
 version: "13.0.1"
 date-released: 2026-11-27
-repository-code: "https://github.com/Daydreamer2812/fragmentlab-official"
-url: "https://daydreamer2812.github.io/fragmentlab-official/"
+repository-code: "https://github.com/Daydreamer2812/Shardelix"
+url: "https://daydreamer2812.github.io/Shardelix/"
 abstract: "A CPU-only classical computer vision research framework for blind reconstruction of shuffled, rotated and partially missing digital image fragments, with a C++20 acceleration core, Python API, and WebAssembly Studio."
 keywords:
   - computer vision
