@@ -293,6 +293,11 @@ tiles, unequal-width opaque or continuously rotated alpha strips, and foreground
 scans or color-keyed artwork fragments to the appropriate solver. Up to 256
 irregular pieces are supported with indexed contour/color retrieval for larger
 sets. Disconnected groups remain explicitly unanchored.
+For heavily damaged fragments, automatic gap-aware recovery evaluates inward
+color/gradient continuation across eroded edges and exports independent component
+poses without filling missing material. Explicit piece raster folders preserve
+disconnected surviving mask islands. This is experimental and limited to 128
+pieces in the gap-aware stage. See [design and development results](docs/ERODED_RECOVERY.md).
 For text-bearing strips, default optional local English OCR scores words crossing
 candidate seams and helps resolve upright direction. If OCR is unavailable or
 insufficient, the pixel-only result remains available. It is slower and experimental.

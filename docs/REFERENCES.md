@@ -27,3 +27,15 @@ state-of-the-art comparison has been completed.
 Reported measurements from papers are not directly comparable with the
 synthetic V12 cases. A valid comparison requires matched input, split,
 orientation/missing policy, metrics and hardware.
+
+## Archaeological and degraded planar fragments
+
+- H. C. G. Leitão and J. Stolfi, [A Multiscale Method for the Reassembly of Two-Dimensional Fragmented Objects](https://doi.org/10.1109/TPAMI.2002.1033215), TPAMI 2002. Multi-resolution contour matching.
+- N. Derech, A. Tal and I. Shimshoni, [Solving Archaeological Puzzles](https://arxiv.org/abs/1812.10553), Pattern Recognition 2021. Extrapolate pictorial information beyond eroded edges, estimate pairwise rigid poses and account for competing matches. The new gap-aware matcher is an independent, bounded approximation, not their solver.
+- K. Zhang and X. Li, [A graph-based optimization algorithm for fragmented image reassembly](https://repository.lsu.edu/eecs_pubs/758/), 2015. Pairwise proposals and global consistency.
+- C.-H. Le and X. Li, [JigsawNet: Shredded Image Reassembly Using Convolutional Neural Network and Loop-Based Composition](https://arxiv.org/abs/1809.04137), 2019. Loop-based selection motivates geometric cycle checks; the learned model is not implemented.
+- S. Choi, Q.-Y. Zhou and V. Koltun, [Robust Reconstruction of Indoor Scenes](https://openaccess.thecvf.com/content_cvpr_2015/html/Choi_Robust_Reconstruction_of_2015_CVPR_paper.html), CVPR 2015. Inspiration for rejecting inconsistent graph edges and refining poses robustly; Shardelix uses soft-L1 least squares on local SE(2) components rather than their 3D line-process method.
+- D. Bridger, D. Danon and A. Tal, [Solving Jigsaw Puzzles With Eroded Boundaries](https://openaccess.thecvf.com/content_CVPR_2020/html/Bridger_Solving_Jigsaw_Puzzles_With_Eroded_Boundaries_CVPR_2020_paper.html), CVPR 2020. Learned boundary completion and compatibility are a promising future optional stage, not implemented.
+- [DAF Challenge official notice](https://vision.unipv.it/DAFchallenge/DAF-notice.html). The original challenge supplies the reference fresco. Blind recovery of this data in Shardelix is a different, harder protocol; reference and annotated poses are evaluation-only.
+
+See [eroded recovery design and results](ERODED_RECOVERY.md) for implementation scope and limitations.

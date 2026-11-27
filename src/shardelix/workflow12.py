@@ -13,7 +13,7 @@ WEB_INPUT_PIXELS=24_000_000
 WEB_BATCH=24
 WEB_BATCH_OUTPUT_BYTES=192*1024**2
 NATIVE_BATCH=64
-DOWNLOADS={"assembly.png","assembly_with_cuts.png","assembly_reference_aligned.png","assembly_reference_aligned_with_cuts.png","cut_lines.png","placements.json","unanchored_components.json","ambiguity.json","diagnostics.json","metrics.json","source.png","result.zip","fragments.zip","benchmark.csv","benchmark.json","fragments_preview.png","ground_truth.zip","comparison.json","scan_report.json"}
+DOWNLOADS={"assembly.png","assembly_with_cuts.png","assembly_reference_aligned.png","assembly_reference_aligned_with_cuts.png","cut_lines.png","placements.json","unanchored_components.json","component_placements.json","ambiguity.json","diagnostics.json","metrics.json","source.png","result.zip","fragments.zip","benchmark.csv","benchmark.json","fragments_preview.png","ground_truth.zip","comparison.json","scan_report.json"}
 
 # Auxiliary views and truth are never counted as fragments. Unknown nested
 # layouts are accepted only when one primary image directory is unambiguous.
@@ -83,6 +83,7 @@ def safe_zip(source:Path,case:Path,*,browser=False,extract=True,inspect_geometry
             chosen=list(groups)
             if len(chosen)>1:raise ValueError("Multiple image directories in ZIP; put primary fragments in pieces/ or scans/")
         images=[(d,e) for d in chosen for e in groups[d]]
+        piece_rasters=bool(chosen) and all(any(x.lower() in {"pieces","fragments","tiles","patches"} for x in d) and not any(x.lower()=="scans" for x in d) for d in chosen)
         num=len(images)
         if not num:raise ValueError("No supported fragments found in ZIP")
         if num>limit:raise ValueError("Archive exceeds fragment count budget")
@@ -147,10 +148,12 @@ def safe_zip(source:Path,case:Path,*,browser=False,extract=True,inspect_geometry
             else:
                 extra={"suggested_grid":None,"suggested_document":None,"foreground_mask_count":mask_count,
                        "route":"metadata","input_evidence":{}}
+            extra["piece_rasters"]=piece_rasters
             extra["metadata_warning"]=metadata_warning
             extra["partial_masks"]=bool(0<mask_count<num)
             suggestion=extra["suggested_grid"]
             return (meta,num,suggestion,extra) if details else (meta,num,suggestion)
+    if details:return meta,num,None,{"piece_rasters":piece_rasters}
     return meta,num
 
 def public_metadata(meta):
@@ -337,8 +340,10 @@ def _scan_single(root,files,conf,update,browser=False,truth_dir=None):
     from .native_core import backend
     started=time.perf_counter()
     case=root/"case";out=root/"result";out.mkdir(parents=True,exist_ok=True)
+    piece_rasters=False
     if len(files)==1 and files[0].suffix.lower()==".zip":
-        safe_zip(files[0],case,browser=browser,scan=True,extract_masks=True)
+        _,_,_,layout=safe_zip(files[0],case,browser=browser,scan=True,extract_masks=True,details=True)
+        piece_rasters=layout["piece_rasters"]
         (case/"pieces").rename(case/"scans")
         paths=sorted((case/"scans").iterdir())
     else:
@@ -364,8 +369,9 @@ def _scan_single(root,files,conf,update,browser=False,truth_dir=None):
             return d,None,out
     update("Segmenting paper from scan backgrounds")
     pieces,report=preprocess(paths,case/"pieces",pixel_limit=WEB_INPUT_PIXELS if browser else MAX_PIXELS*3,
-                             preserve_opaque=conf.get("auto_preserve_opaque",False))
-    d=reconstruct(pieces,out,report,update,pixel_cap=WEB_PIXELS if browser else MAX_PIXELS)
+                             preserve_opaque=conf.get("auto_preserve_opaque",False),piece_rasters=piece_rasters)
+    d=reconstruct(pieces,out,report,update,pixel_cap=WEB_PIXELS if browser else MAX_PIXELS,
+                  gap_recovery=conf.get("gap_recovery",True))
     _public_archive(case,out)
     d.update(compute_backend=backend(),workflow_elapsed_seconds=time.perf_counter()-started,performance_profile="scan-auto",
              input_detection={"route":"irregular","evidence":conf.get("input_evidence",{}),"warning":conf.get("metadata_warning")})

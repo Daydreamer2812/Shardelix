@@ -130,6 +130,12 @@ required in physical mode.
   estimates continuous SE(2) transforms, checks opposed tangents and seam
   color, retains alternative poses, then joins components with interior
   collision checks. Unanchored groups are not arbitrarily placed on the canvas.
+- On sparse/weak exact-contact assemblies, a bounded experimental gap-aware
+  stage can estimate separated rigid poses from masked inward color and gradient
+  evidence. It keeps missing pixels transparent and exports independent component
+  poses in `component_placements.json` (also in the result ZIP). Explicit
+  piece-raster folder layouts keep islands of damaged masks together; overview
+  scans still split multiple silhouettes. See [eroded recovery](ERODED_RECOVERY.md).
 - The preview shows detected masks; download the normalized mask ZIP, scan
   processing report, reconstruction PNG, boundary overlay and affine poses.
   Poses are local cropped working-pixel vertex coordinates → output canvas;
