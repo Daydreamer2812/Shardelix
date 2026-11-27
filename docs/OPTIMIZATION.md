@@ -1,5 +1,7 @@
 # Unified classical optimization — 2026-11-27
 
+The resource caps documented here are historical for this update. See [subsequent irregular scaling](IRREGULAR_SCALE.md) for current limits.
+
 This update keeps a single engine, default blind matching, optional explicitly
 reference-assisted registration, and independent post-solve evaluation. No
 OCR, trained model, text recognition, source-image matching in blind mode,

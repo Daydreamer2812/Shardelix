@@ -363,7 +363,7 @@ def _evaluate_external(case,out,meta,truth_dir,browser,allow_rotation):
     json_write(out/"comparison.json",comparison)
 
 def _scan_single(root,files,conf,update,browser=False,truth_dir=None):
-    from .reconstruction.scan import preprocess,reconstruct
+    from .reconstruction.scan import preprocess,reconstruct,MAX_SCAN_PIECES,WEB_SCAN_PIECES
     from .reconstruction.common import json_write
     from .native_core import backend
     started=time.perf_counter()
@@ -395,9 +395,12 @@ def _scan_single(root,files,conf,update,browser=False,truth_dir=None):
             return d,None,out
     update("Segmenting paper from scan backgrounds")
     pieces,report=preprocess(paths,case/"pieces",pixel_limit=WEB_INPUT_PIXELS if browser else MAX_PIXELS*3,
-                             preserve_opaque=conf.get("auto_preserve_opaque",False),piece_rasters=piece_rasters)
+                             preserve_opaque=conf.get("auto_preserve_opaque",False),piece_rasters=piece_rasters,
+                             max_pieces=WEB_SCAN_PIECES if browser else MAX_SCAN_PIECES,
+                             work_pixels=4_000_000 if len(paths)<=256 else 12_000_000 if browser else 48_000_000)
     d=reconstruct(pieces,out,report,update,pixel_cap=WEB_PIXELS if browser else MAX_PIXELS,
-                  gap_recovery=conf.get("gap_recovery",True),deep_recovery=conf.get("deep_recovery","always" if conf.get("profile")=="accurate" else conf.get("profile")!="fast"))
+                  gap_recovery=conf.get("gap_recovery",True),deep_recovery=conf.get("deep_recovery","always" if conf.get("profile")=="accurate" else conf.get("profile")!="fast"),
+                  profile=conf.get("profile") or "balanced")
     _public_archive(case,out)
     d.update(compute_backend=backend(),workflow_elapsed_seconds=time.perf_counter()-started,performance_profile="scan-auto",
              input_detection={"route":"irregular","evidence":conf.get("input_evidence",{}),"warning":conf.get("metadata_warning")})

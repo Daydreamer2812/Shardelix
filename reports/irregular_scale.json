@@ -1,0 +1,445 @@
+{
+  "baseline_commit": "b17a2ec5df7e4d71b09cc5c8b690b1e52649c1cb",
+  "protocol": "Synthetic development fixtures; anonymous piece-only ZIP, external truth read after reconstruction. Correct primary pose: center <=5 px and angle <=3 deg after a single global rigid alignment; relative joins <=10 px and 10 deg. Native Python with browser caps (not real browser) when browser_limits=true.",
+  "limits": {
+    "native_detected": 4096,
+    "browser_detected": 1024,
+    "sparse_gap": 512,
+    "deep_continuation": 128
+  },
+  "cases": [
+    {
+      "generated": 512,
+      "observed": 512,
+      "detected": 512,
+      "placed": 512,
+      "correct_global_poses_5px_3deg": 512,
+      "exact_global_poses": 512,
+      "collision_pixels": 0,
+      "seconds": 14.391,
+      "solver_seconds": 12.296485832001053,
+      "scan": {
+        "kind": "irregular-fragments",
+        "gap_recovery": {
+          "attempted": false,
+          "selected": false,
+          "exact_largest_component": 512
+        },
+        "deep_recovery": {
+          "attempted": false,
+          "selected": false
+        },
+        "input_images": 512,
+        "detected_pieces": 512,
+        "components": 1,
+        "lattice": {
+          "attempted": true,
+          "selected": true,
+          "arc_windows": [
+            32,
+            20
+          ],
+          "voted_poses": 7667,
+          "verified_poses": 4835,
+          "accepted_candidates": 1061,
+          "largest_component": 512
+        },
+        "spatial_merge": {
+          "spatial_overlap_tests": 6871,
+          "collision_rejections": 0
+        },
+        "pair_search": "exact-lattice",
+        "searched_pairs": 0,
+        "possible_pairs": 130816,
+        "common_scale": 1.0,
+        "accuracy_verified": false,
+        "warning_count": 1023,
+        "warnings": [
+          "Fragment contact sheet shows the first 256 pieces; all normalized pieces remain in fragments.zip."
+        ]
+      },
+      "seed": 827,
+      "tile": 44,
+      "cut": "jagged",
+      "missing": 0.0,
+      "browser_limits": false,
+      "profile": "balanced"
+    },
+    {
+      "generated": 512,
+      "observed": 435,
+      "detected": 435,
+      "placed": 431,
+      "correct_global_poses_5px_3deg": 431,
+      "exact_global_poses": 431,
+      "collision_pixels": 0,
+      "seconds": 8.427,
+      "solver_seconds": 6.684707036998589,
+      "scan": {
+        "kind": "irregular-fragments",
+        "gap_recovery": {
+          "attempted": false,
+          "selected": false,
+          "exact_largest_component": 431
+        },
+        "deep_recovery": {
+          "attempted": false,
+          "selected": false
+        },
+        "input_images": 435,
+        "detected_pieces": 435,
+        "components": 4,
+        "lattice": {
+          "attempted": true,
+          "selected": true,
+          "arc_windows": [
+            32,
+            20
+          ],
+          "voted_poses": 7527,
+          "verified_poses": 4183,
+          "accepted_candidates": 688,
+          "largest_component": 431
+        },
+        "spatial_merge": {
+          "spatial_overlap_tests": 4356,
+          "collision_rejections": 0
+        },
+        "pair_search": "exact-lattice",
+        "searched_pairs": 0,
+        "possible_pairs": 94395,
+        "common_scale": 1.0,
+        "accuracy_verified": false,
+        "warning_count": 708,
+        "warnings": [
+          "Only the selected connected group (431/435 fragments) is rendered in the main image. Remaining groups are unanchored; missing material or distractors may prevent reliable joins.",
+          "Fragment contact sheet shows the first 256 pieces; all normalized pieces remain in fragments.zip."
+        ]
+      },
+      "seed": 827,
+      "tile": 44,
+      "cut": "wavy",
+      "missing": 0.15,
+      "browser_limits": false,
+      "profile": "balanced"
+    },
+    {
+      "generated": 1024,
+      "observed": 1024,
+      "detected": 1024,
+      "placed": 1024,
+      "correct_global_poses_5px_3deg": 1024,
+      "exact_global_poses": 1024,
+      "collision_pixels": 0,
+      "seconds": 26.106,
+      "solver_seconds": 21.90666149699973,
+      "scan": {
+        "kind": "irregular-fragments",
+        "gap_recovery": {
+          "attempted": false,
+          "selected": false,
+          "exact_largest_component": 1024,
+          "reason": "gap search capped at 512 pieces for this profile"
+        },
+        "deep_recovery": {
+          "attempted": false,
+          "selected": false,
+          "reason": "deep continuation capped at 128 pieces"
+        },
+        "input_images": 1024,
+        "detected_pieces": 1024,
+        "components": 1,
+        "lattice": {
+          "attempted": true,
+          "selected": true,
+          "arc_windows": [
+            32,
+            20
+          ],
+          "voted_poses": 14131,
+          "verified_poses": 9620,
+          "accepted_candidates": 1999,
+          "largest_component": 1024
+        },
+        "spatial_merge": {
+          "spatial_overlap_tests": 11488,
+          "collision_rejections": 0
+        },
+        "pair_search": "exact-lattice",
+        "searched_pairs": 0,
+        "possible_pairs": 523776,
+        "common_scale": 1.0,
+        "accuracy_verified": false,
+        "warning_count": 2,
+        "warnings": [
+          "Preserved disconnected foreground islands within 762 declared piece rasters.",
+          "Fragment contact sheet shows the first 256 pieces; all normalized pieces remain in fragments.zip."
+        ]
+      },
+      "relative_joins_10px_10deg": {
+        "correct": 1023,
+        "accepted": 1023
+      },
+      "alternatives": {},
+      "angle_mode": "quarter",
+      "erosion_px": 0,
+      "seed": 827,
+      "tile": 40,
+      "cut": "random",
+      "missing": 0.0,
+      "browser_limits": true,
+      "profile": "balanced"
+    },
+    {
+      "generated": 4096,
+      "observed": 4096,
+      "detected": 4096,
+      "placed": 4093,
+      "correct_global_poses_5px_3deg": 4093,
+      "exact_global_poses": 4093,
+      "collision_pixels": 0,
+      "seconds": 94.957,
+      "solver_seconds": 80.230226751999,
+      "scan": {
+        "kind": "irregular-fragments",
+        "gap_recovery": {
+          "attempted": false,
+          "selected": false,
+          "exact_largest_component": 4093,
+          "reason": "gap search capped at 512 pieces for this profile"
+        },
+        "deep_recovery": {
+          "attempted": false,
+          "selected": false,
+          "reason": "deep continuation capped at 128 pieces"
+        },
+        "input_images": 4096,
+        "detected_pieces": 4096,
+        "components": 4,
+        "lattice": {
+          "attempted": true,
+          "selected": true,
+          "arc_windows": [
+            32,
+            20
+          ],
+          "voted_poses": 51257,
+          "verified_poses": 38128,
+          "accepted_candidates": 7628,
+          "largest_component": 4093
+        },
+        "spatial_merge": {
+          "spatial_overlap_tests": 67175,
+          "collision_rejections": 0
+        },
+        "pair_search": "exact-lattice",
+        "searched_pairs": 0,
+        "possible_pairs": 8386560,
+        "common_scale": 1.0,
+        "accuracy_verified": false,
+        "warning_count": 3,
+        "warnings": [
+          "Preserved disconnected foreground islands within 4066 declared piece rasters.",
+          "Only the selected connected group (4093/4096 fragments) is rendered in the main image. Remaining groups are unanchored; missing material or distractors may prevent reliable joins.",
+          "Fragment contact sheet shows the first 256 pieces; all normalized pieces remain in fragments.zip."
+        ]
+      },
+      "relative_joins_10px_10deg": {
+        "correct": 4092,
+        "accepted": 4092
+      },
+      "alternatives": {},
+      "angle_mode": "quarter",
+      "erosion_px": 0,
+      "seed": 827,
+      "tile": 36,
+      "cut": "jagged",
+      "missing": 0.0,
+      "browser_limits": false,
+      "profile": "balanced"
+    },
+    {
+      "generated": 144,
+      "observed": 137,
+      "detected": 137,
+      "placed": 2,
+      "correct_global_poses_5px_3deg": 1,
+      "exact_global_poses": 1,
+      "collision_pixels": 23,
+      "seconds": 56.831,
+      "solver_seconds": 56.0377145450002,
+      "scan": {
+        "kind": "irregular-fragments",
+        "gap_recovery": {
+          "attempted": true,
+          "selected": false,
+          "exact_largest_component": 2,
+          "sparse_degree": 6,
+          "gap_limit_px": 32.9,
+          "retrieved_pairs": 565,
+          "evaluated": 3366,
+          "verified_hypotheses": 0,
+          "corroborated_hypotheses": 0,
+          "cycle_supported": 0,
+          "trigger": "sparse-exact"
+        },
+        "deep_recovery": {
+          "attempted": false,
+          "selected": false,
+          "reason": "deep continuation capped at 128 pieces"
+        },
+        "input_images": 137,
+        "detected_pieces": 137,
+        "components": 129,
+        "lattice": {
+          "attempted": true,
+          "selected": false,
+          "arc_windows": [
+            32,
+            20
+          ],
+          "voted_poses": 1805,
+          "verified_poses": 1256,
+          "verified_pairs": 1061,
+          "accepted_candidates": 0,
+          "largest_component": 1,
+          "continuous_candidates": {
+            "before_confidence": 4422,
+            "after_confidence": 10
+          }
+        },
+        "spatial_merge": {
+          "spatial_overlap_tests": 9,
+          "collision_rejections": 1
+        },
+        "pair_search": "sparse-hybrid-se2",
+        "searched_pairs": 1112,
+        "possible_pairs": 9316,
+        "common_scale": 1.0,
+        "accuracy_verified": false,
+        "warning_count": 2,
+        "warnings": [
+          "Preserved disconnected foreground islands within 113 declared piece rasters.",
+          "Only the selected connected group (2/137 fragments) is rendered in the main image. Remaining groups are unanchored; missing material or distractors may prevent reliable joins."
+        ]
+      },
+      "relative_joins_10px_10deg": {
+        "correct": 0,
+        "accepted": 8
+      },
+      "alternatives": {},
+      "angle_mode": "continuous",
+      "erosion_px": 2,
+      "seed": 827,
+      "tile": 70,
+      "cut": "random",
+      "missing": 0.05,
+      "browser_limits": false,
+      "profile": "balanced"
+    },
+    {
+      "generated": 144,
+      "observed": 144,
+      "detected": 144,
+      "placed": 2,
+      "correct_global_poses_5px_3deg": 2,
+      "exact_global_poses": 1,
+      "collision_pixels": 25,
+      "seconds": 86.94,
+      "solver_seconds": 86.00683547500012,
+      "scan": {
+        "kind": "irregular-fragments",
+        "gap_recovery": {
+          "attempted": true,
+          "selected": true,
+          "exact_largest_component": 4,
+          "sparse_degree": 6,
+          "gap_limit_px": 35.875,
+          "retrieved_pairs": 549,
+          "evaluated": 3267,
+          "verified_hypotheses": 34,
+          "corroborated_hypotheses": 29,
+          "cycle_supported": 0,
+          "trigger": "sparse-exact",
+          "spatial_merge": {
+            "spatial_overlap_tests": 29,
+            "collision_rejections": 0
+          },
+          "gap_largest_component": 3,
+          "gap_primary_component": 2,
+          "gap_nontrivial_components": 20
+        },
+        "deep_recovery": {
+          "attempted": false,
+          "selected": false,
+          "reason": "deep continuation capped at 128 pieces"
+        },
+        "input_images": 144,
+        "detected_pieces": 144,
+        "components": 119,
+        "lattice": {
+          "attempted": true,
+          "selected": false,
+          "arc_windows": [
+            32,
+            20
+          ],
+          "voted_poses": 2026,
+          "verified_poses": 1328,
+          "verified_pairs": 1122,
+          "accepted_candidates": 0,
+          "largest_component": 1,
+          "continuous_candidates": {
+            "before_confidence": 4364,
+            "after_confidence": 17
+          }
+        },
+        "spatial_merge": {
+          "spatial_overlap_tests": 19,
+          "collision_rejections": 0
+        },
+        "pair_search": "sparse-hybrid-se2",
+        "searched_pairs": 1095,
+        "possible_pairs": 10296,
+        "common_scale": 1.0,
+        "accuracy_verified": false,
+        "warning_count": 2,
+        "warnings": [
+          "Preserved disconnected foreground islands within 116 declared piece rasters.",
+          "Only the selected connected group (2/144 fragments) is rendered in the main image. Remaining groups are unanchored; missing material or distractors may prevent reliable joins."
+        ]
+      },
+      "relative_joins_10px_10deg": {
+        "correct": 25,
+        "accepted": 25
+      },
+      "alternatives": {
+        "alternative": {
+          "model": "exact-contact",
+          "correct": 13,
+          "accepted": 15
+        }
+      },
+      "angle_mode": "continuous",
+      "erosion_px": 0,
+      "seed": 827,
+      "tile": 70,
+      "cut": "random",
+      "missing": 0.0,
+      "browser_limits": false,
+      "profile": "balanced"
+    }
+  ],
+  "notes": [
+    "The early 512 and missing-wavy exact-lattice measurements preceded additions confined to the continuous fallback; both kept the original pixel scale.",
+    "Lattice searched_pairs was reported as zero in earlier runs because no continuous pairs were checked. The new diagnostic reports verified lattice pair counts separately.",
+    "The severely damaged case did not recover any correct relative join. It is intentionally included, not averaged with intact digital tests."
+  ],
+  "tests": {
+    "native_passed": 117,
+    "python_passed": 114,
+    "python_skipped": 3,
+    "workflow_passed": 2,
+    "actual_browser_smoke": false
+  }
+}

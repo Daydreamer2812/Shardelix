@@ -16,6 +16,7 @@ from scipy.spatial import cKDTree
 
 # Bounded on both desktop and WebAssembly. Exact contact remains the fast path.
 MAX_GAP_PIECES = 128
+MAX_SPARSE_GAP_PIECES = 512
 MAX_PAIR_HYPOTHESES = 12
 MAX_GLOBAL_MATCHES = 120_000
 
@@ -114,7 +115,7 @@ def _windows(profiles, half, reverse=False, extension=5.):
     return tuple(np.concatenate(q) for q in (feats, ids, centers, directions, indices))
 
 
-def _hypotheses(profiles, max_gap, update):
+def _hypotheses(profiles, max_gap, update, *, sparse_degree=None):
     """Global nearest-neighbour retrieval followed by quantized SE(2) voting.
 
     A pose maps fragment j to fragment i.  No all-pairs raster correlation
@@ -131,20 +132,41 @@ def _hypotheses(profiles, max_gap, update):
         k = min(32, len(fb))
         if k < 2:
             continue
-        distance, nb = cKDTree(fb).query(fa, k=k)
-        valid = (ia[:, None] != ib[nb]) & (distance < .70)
-        a, slot = np.nonzero(valid)
-        b = nb[a, slot]
+        if sparse_degree is None:
+            distance, nb = cKDTree(fb).query(fa, k=k)
+            valid = (ia[:, None] != ib[nb]) & (distance < .70)
+            a, slot = np.nonzero(valid)
+            b = nb[a, slot]
+            dis = distance[a, slot]
+        else:
+            # Coarse descriptor subset followed by full-distance verification.
+            # Query batches keep temporary arrays independent of the total N.
+            cols=[1,3,6,8,10,11,12,13,17,18,19,23,24,25,29,32,38]
+            tree=cKDTree(fb[:,cols]);aa=[];bb=[];dd=[]
+            for start in range(0,len(fa),512):
+                f=fa[start:start+512]
+                _,nb=tree.query(f[:,cols],k=k,eps=.2)
+                distance=np.linalg.norm(f[:,None,:]-fb[nb],axis=2)
+                row,slot=np.nonzero((ia[start:start+len(f),None]!=ib[nb])&(distance<.70))
+                aa.append(row+start);bb.append(nb[row,slot]);dd.append(distance[row,slot])
+            a,b,dis=map(np.concatenate,(aa,bb,dd))
         if not len(a):
             continue
-        dis = distance[a, slot]
         # At most one neighbour from the same piece at a particular anchor;
         # suppress identical votes rather than favoring a large perimeter.
         order = np.lexsort((dis, ib[b], a))
         a, b, dis = a[order], b[order], dis[order]
         first = np.r_[True, (a[1:] != a[:-1]) | (ib[b[1:]] != ib[b[:-1]])]
         a, b, dis = a[first], b[first], dis[first]
-        if len(a) > MAX_GLOBAL_MATCHES//3:
+        if sparse_degree is not None:
+            # Divvy the global vote budget among source fragments so large
+            # perimeters and repetitive textures cannot starve small pieces.
+            limit=max(24,MAX_GLOBAL_MATCHES//(3*len(profiles)))
+            order=np.lexsort((dis,ia[a]))
+            starts=np.r_[0,np.flatnonzero(ia[a[order]][1:]!=ia[a[order]][:-1])+1,len(order)]
+            take=np.concatenate([order[l:min(r,l+limit)] for l,r in zip(starts[:-1],starts[1:])])
+            a,b,dis=a[take],b[take],dis[take]
+        elif len(a) > MAX_GLOBAL_MATCHES//3:
             # Deterministic confidence cut; complexity remains bounded.
             take = np.argsort(dis, kind="stable")[:MAX_GLOBAL_MATCHES//3]
             a, b, dis = a[take], b[take], dis[take]
@@ -182,6 +204,17 @@ def _hypotheses(profiles, max_gap, update):
     # Reward repeated votes, while keeping some strong single arc matches.
     rank = (1.+np.log1p(count))*np.exp(-2.6*val[:, 3])*(1.+.018*val[:, 4])
     order = np.lexsort((-rank, key[:, 1], key[:, 0]))
+    if sparse_degree is not None:
+        # Keep strongest incident pair nominations in either direction.
+        pairs=defaultdict(list);best={}
+        for k in order:
+            i,j=map(int,key[k,:2])
+            if (i,j) not in best:best[i,j]=float(rank[k])
+        for (i,j),v in best.items():
+            pairs[i].append((v,j));pairs[j].append((v,i))
+        allowed={(min(i,j),max(i,j)) for i,near in pairs.items()
+                 for _,j in sorted(near,reverse=True)[:sparse_degree]}
+        order=np.array([k for k in order if tuple(key[k,:2]) in allowed],dtype=int)
     out = []
     current = None
     kept = []
@@ -190,7 +223,7 @@ def _hypotheses(profiles, max_gap, update):
         pair = (int(key[k, 0]), int(key[k, 1]))
         if pair != current:
             current, kept = pair, []
-        if len(kept) >= MAX_PAIR_HYPOTHESES:
+        if len(kept) >= (6 if sparse_degree is not None else MAX_PAIR_HYPOTHESES):
             continue
         angle, tx, ty, dis, half = val[k]
         if any(abs(math.atan2(math.sin(angle-r), math.cos(angle-r))) < .10 and
@@ -396,16 +429,16 @@ def _consistent_candidates(shapes, candidates):
     return output
 
 
-def gap_candidates(shapes, update=lambda _:None):
+def gap_candidates(shapes, update=lambda _:None, *, sparse_degree=None):
     """Return independently corroborated hypotheses and search diagnostics."""
-    if len(shapes) < 2 or len(shapes) > MAX_GAP_PIECES:
+    if len(shapes) < 2 or len(shapes) > (MAX_SPARSE_GAP_PIECES if sparse_degree is not None else MAX_GAP_PIECES):
         return [], {"reason":"piece budget", "evaluated":0}
     profiles = _profiles(shapes)
     median_side = float(np.median([min(sh.fragment.mask.shape) for sh in shapes]))
     if sum(float(np.percentile(p.texture,80))>=4. for p in profiles)<2:
         return [], {"reason":"insufficient pictorial texture","evaluated":0}
     max_gap = min(36., max(5., median_side*.35))
-    hyps = _hypotheses(profiles,max_gap,update)
+    hyps = _hypotheses(profiles,max_gap,update,sparse_degree=sparse_degree)
     pairs = defaultdict(list)
     for i,j,angle,t,votes,dist in hyps:
         pairs[i,j].append((angle,t,votes,dist))
@@ -420,7 +453,8 @@ def gap_candidates(shapes, update=lambda _:None):
     # quantized proposal. Rotate about the moving fragment's center.
     from .scan import rotation
     refined=[]
-    for z in sorted(candidates,key=lambda q:-q[0])[:160]:
+    refine_count=64 if sparse_degree is not None else 160
+    for z in sorted(candidates,key=lambda q:-q[0])[:refine_count]:
         score,i,j,R,t,info=z
         center=profiles[j].points.mean(0)
         angle=float(np.arctan2(R[1,0],R[0,0]))
@@ -442,10 +476,10 @@ def gap_candidates(shapes, update=lambda _:None):
         refined.append(z)
     # Keep the lower-ranked geometrically valid alternatives for confidence
     # calibration, without counting a refinement twice.
-    top={id(z) for z in sorted(candidates,key=lambda q:-q[0])[:160]}
+    top={id(z) for z in sorted(candidates,key=lambda q:-q[0])[:refine_count]}
     candidates=[z for z in candidates if id(z) not in top]+refined
     accepted = _consistent_candidates(shapes,candidates)
-    return accepted, {"gap_limit_px":float(max_gap),"retrieved_pairs":len(pairs),
+    return accepted, {"sparse_degree":sparse_degree,"gap_limit_px":float(max_gap),"retrieved_pairs":len(pairs),
                       "evaluated":len(hyps),"verified_hypotheses":len(candidates),
                       "corroborated_hypotheses":len(accepted),
                       "cycle_supported":sum(c[-1]["loop_support"]>0 for c in accepted)}

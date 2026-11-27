@@ -144,9 +144,20 @@ required in physical mode.
   processing report, reconstruction PNG, boundary overlay and affine poses.
   Poses are local cropped working-pixel vertex coordinates → output canvas;
   crop offsets and common scale are in the report.
-- Physical/irregular mode has an experimental cap of 256 detected pieces, working scans
-  downscaled uniformly to at most 1,600 px per side and ~4 million total input
-  pixels. For up to 64 pieces, all pairs are tested. For 65–256 pieces a global multiscale contour/color index shortlists up to 10 neighbors per piece (8 above 128) before rigid-pose and collision verification. All processing is local.
+- Metadata-free physical/irregular mode accepts up to **4,096 detected pieces
+  in native Studio, 1,024 in browser** (not accuracy or throughput guarantees).
+  Scans share one scale; the working budget is 4 MP for up to 256 input rasters,
+  12 MP for larger browser sets and 48 MP for larger native sets, and each scan
+  side is capped at 1,600 px. Preserving resolution within those budgets avoids
+  destroying complementary pixel boundaries. Up to 64 pieces use all pairs;
+  above that, contour/color retrieval is sparse. Above 128 pieces, intact
+  lattice arcs can bypass continuous search; otherwise sparse SE(2) proposals
+  undergo ambiguity, cycle and spatial collision checks. The special sparse
+  gap fallback searches up to 512 damaged fragments in Balanced/High accuracy;
+  deep spectral continuation remains capped at 128. The mask contact sheet
+  previews at most 256 pieces, and the complete normalized raster ZIP and
+  component poses remain available. See [scaling evidence](IRREGULAR_SCALE.md).
+  All processing is local.
 - Paper touching the scan edge, overlapping/stacked pieces, near-identical
   foreground/background, strong shadows, nonplanarity, perspective and
   inconsistent DPI can cause segmentation or alignment failures. Missing

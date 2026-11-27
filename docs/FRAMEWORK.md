@@ -16,7 +16,7 @@ Shardelix provides one input pipeline for generation, reconstruction and evaluat
 |---|---|
 | Rectangular uniform tiles / public grid metadata | Sparse grid or dense grid matching, consensus and pose verification |
 | Document strips | Pixel-only strip ordering; foreground rectification, shadow-normalized row profiles, and observed-patch recurrence for scanned strips |
-| Irregular masks / physical scans | Segmentation, complementary contour and color matching; bounded eroded-edge continuation and SE(2) cycle verification |
+| Irregular masks / physical scans | Segmentation, exact lattice arcs and sparse continuous contour/color matching, spatial component merging; bounded eroded-edge recovery and SE(2) cycle verification |
 | Explicit original image enabled | Indexed rotation-invariant classical registration, continuous SE(2) refinement and distractor rejection |
 
 | Shared profile | Blind | Reference-assisted |
@@ -48,6 +48,7 @@ Accepts a ZIP, image directory or image paths. A new or empty output directory i
 
 - [Blind eroded recovery](ERODED_RECOVERY.md): reported failures and partial poses as well as successes. The severe 102-piece blind DAFNE development case remains unsolved.
 - [DAFNE indexed reference-assisted results](DAFNE_INDEXED.md): 6027/6029 genuine poses and 1154/1154 distractors rejected over 28 development cases. These are historical reference-assisted measurements, not the blind accuracy or a full dataset/SOTA claim.
+- [Irregular scaling](IRREGULAR_SCALE.md): metadata-free sparse assembly and large-set gap recovery, with separate measured limits.
 - [Optimization evidence](OPTIMIZATION.md): targeted native regression, physical strips, blind damaged fragments and reference-assisted tiny-fragment rescue.
 - [Web resources and hosting](WEB.md): browser limits differ from native; large DB2 cases require native Studio.
 

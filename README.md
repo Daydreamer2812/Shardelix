@@ -72,7 +72,7 @@ If the available fragments do not uniquely determine the original arrangement, S
 
 Shardelix (formerly FragmentLab) brings **fragment generation, blind reconstruction, optional reference-assisted registration, geometric verification and reproducible benchmarking** into a single research framework.
 
-- **Beyond rectangular puzzles:** supports grids, vertical and horizontal strips, jagged, wavy, jigsaw and mixed irregular digital cuts.
+- **Beyond rectangular puzzles:** supports grids, vertical and horizontal strips, jagged, wavy, jigsaw and mixed irregular digital cuts. Metadata-free irregular import uses sparse lattice/SE(2) matching with up to 4,096 native / 1,024 browser pieces; large damaged physical scans remain experimental. [Scaling evidence](docs/IRREGULAR_SCALE.md).
 - **Unknown poses and incomplete inputs:** handles independent quarter-turns, experimental continuous in-plane rotations and missing fragments, subject to observable constraints.
 - **Classical, explainable matching:** combines complementary boundary geometry, appearance continuity, sparse candidate graphs and consistency checks without neural training.
 - **Scalable CPU-first implementation:** selected computational kernels are accelerated in C++20, with a Python reference backend and WebAssembly deployment.
