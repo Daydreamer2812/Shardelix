@@ -4,6 +4,8 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/release.yml'
+      - 'pyproject.toml'
+      - 'docs/releases/**'
   workflow_dispatch:
 permissions:
   contents: write
@@ -59,13 +61,13 @@ jobs:
           test -s build/release-web/fl_core.wasm
           test -s build/release-web/fl_core.js
           cat > build/release-web/START_HERE.txt <<'EOF'
-          Shardelix V13 Web Studio
+          Shardelix Web Studio
           With Python 3 installed, open a terminal in this directory, then run:
             python -m http.server 8767 --bind 127.0.0.1
           Open http://127.0.0.1:8767/ in your browser.
           First use needs internet access to retrieve the pinned Pyodide dependencies.
           Input images remain in the browser worker.
-          Research source: https://github.com/Daydreamer2812/fragmentlab-official
+          Research source: https://github.com/${{ github.repository }}
           EOF
           (cd build/release-web && zip -qr "../../dist/shardelix-$TAG-web.zip" .)
           unzip -t "dist/shardelix-$TAG-source.zip"

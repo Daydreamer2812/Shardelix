@@ -8,7 +8,7 @@ Reassemble shuffled, rotated and partially missing digital image fragments<br>
 with a CPU-only C++20 / Python solver that also runs in your browser via WebAssembly.<br>
 No training data, GPU, API keys or neural models required.
 
-[![Version](https://img.shields.io/badge/version-13.0.0-2463eb?style=flat-square)](pyproject.toml)
+[![Version](https://img.shields.io/badge/version-13.0.1-2463eb?style=flat-square)](pyproject.toml)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776ab?style=flat-square&logo=python&logoColor=white)](pyproject.toml)
 [![CPU](https://img.shields.io/badge/engine-classical%20CV-139b85?style=flat-square)](#how-it-works)
 [![Tests](https://github.com/Daydreamer2812/fragmentlab-official/actions/workflows/ci.yml/badge.svg)](https://github.com/Daydreamer2812/fragmentlab-official/actions/workflows/ci.yml)

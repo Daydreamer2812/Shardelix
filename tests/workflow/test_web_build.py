@@ -19,5 +19,5 @@ class WebBuildTests(unittest.TestCase):
             p=subprocess.run([sys.executable,"-c","import shardelix;print(shardelix.__version__)"],cwd=d,
                          env={**os.environ,"PYTHONPATH":str(d/"engine.zip")},capture_output=True,text=True)
             self.assertEqual(p.returncode,0,p.stderr)
-            self.assertEqual(p.stdout.strip(),"13.0.0")
+            self.assertEqual(p.stdout.strip(),"13.0.1")
 if __name__=="__main__":unittest.main()
