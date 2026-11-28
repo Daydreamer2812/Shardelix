@@ -11,7 +11,7 @@ from pathlib import Path
 import numpy as np
 from scipy import ndimage as ndi
 from shardelix.reconstruction.common import Fragment
-from shardelix.reconstruction.scan import reconstruct, rotation
+from shardelix.reconstruction.irregular.scan import reconstruct, rotation
 
 def eroded_fixture(seed=9, erosion=5, keep=(0,1,2,3,4,6,7)):
     """Independent textured, curved partition, random rotation, missing part."""

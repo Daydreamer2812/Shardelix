@@ -15,10 +15,10 @@ import zipfile
 import numpy as np
 from scipy.ndimage import gaussian_filter, binary_erosion
 from shardelix.reconstruction.generator import generate
-from shardelix.reconstruction.geometry import R
-from shardelix.reconstruction.scan import rotation
+from shardelix.reconstruction.irregular.lattice import R
+from shardelix.reconstruction.irregular.scan import rotation
 from PIL import Image
-from shardelix.workflow12 import run_job
+from shardelix.workflow import run_job
 
 
 def trial(count, tile=44, cut="jagged", seed=827, missing=0., browser=False, profile="balanced",angle_mode="quarter",erosion=0):

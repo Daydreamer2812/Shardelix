@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 from scipy.ndimage import gaussian_filter
-from shardelix.workflow12 import inspect_uploads,run_job
+from shardelix.workflow import inspect_uploads,run_job
 from shardelix.reconstruction.generator import generate
 
 

@@ -11,9 +11,9 @@ import numpy as np
 import scipy
 import PIL
 
-from .common import json_write
-from .generator import generate
-from .cli import solve_case,evaluate_case
+from shardelix.reconstruction.common import json_write
+from shardelix.reconstruction.generator import generate
+from shardelix.reconstruction.case_io import solve_case,evaluate_case
 
 GRID_CONFIGS=[
     {"strategy":"straight","kind":"l1"},

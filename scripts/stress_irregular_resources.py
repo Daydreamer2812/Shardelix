@@ -13,8 +13,8 @@ import time
 
 import numpy as np
 from shardelix.reconstruction.common import Fragment
-from shardelix.reconstruction.geometry import R
-from shardelix.reconstruction.large_scan import lattice_candidates,merge_lattice,lattice_box
+from shardelix.reconstruction.irregular.lattice import R
+from shardelix.reconstruction.irregular.large_scan import lattice_candidates,merge_lattice,lattice_box
 from shardelix.reconstruction.resource_budget import resource_budget,MIB
 
 
@@ -83,7 +83,7 @@ def workflow(count,tile,seed,browser=False):
     import tempfile
     import zipfile
     from PIL import Image
-    from shardelix.workflow12 import run_job
+    from shardelix.workflow import run_job
     with tempfile.TemporaryDirectory() as tmp:
         root=Path(tmp);upload=root/"upload";upload.mkdir()
         pieces,truth,wh=fixture(count,tile,seed)

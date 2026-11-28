@@ -8,7 +8,7 @@ import time
 import numpy as np
 from PIL import Image
 from scipy import ndimage as ndi
-from shardelix.reconstruction.scan import preprocess, reconstruct, rotation
+from shardelix.reconstruction.irregular.scan import preprocess, reconstruct, rotation
 
 
 def fixture(folder, seed, count=4, noise=1.4, jpeg=True, layout="strips", loss=0):

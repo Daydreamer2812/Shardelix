@@ -7,7 +7,7 @@ import zipfile
 from pathlib import Path
 from PIL import Image
 import numpy as np
-from shardelix.workflow12 import inspect_uploads, safe_zip, run_job
+from shardelix.workflow import inspect_uploads, safe_zip, run_job
 
 
 def png(a):

@@ -8,7 +8,7 @@ from shardelix.reconstruction.generator import generate
 from shardelix.reconstruction.cli import solve_case,evaluate_case
 from shardelix.reconstruction.evaluation import evaluate
 from shardelix.reconstruction.overlay import cut_overlay
-from shardelix.reconstruction.verified import exact_holes,verify_pair
+from shardelix.reconstruction.irregular.verified import exact_holes,verify_pair
 
 class V4BlindTests(unittest.TestCase):
     def test_cut_overlay_is_predicted_only(self):

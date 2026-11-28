@@ -5,9 +5,9 @@ import numpy as np
 from scripts.benchmark_sparse_scan import trial
 from scripts.benchmark_eroded import eroded_fixture
 from shardelix.reconstruction.common import Fragment
-from shardelix.reconstruction.scan import _shape,_overlap,_descriptor,_indexed_pairs,_pair,_pair_vectorized
-from shardelix.reconstruction.large_scan import merge_spatial,strict_lattice_overlap,filter_continuous
-from shardelix.reconstruction.eroded import gap_candidates
+from shardelix.reconstruction.irregular.scan import _shape,_overlap,_descriptor,_indexed_pairs,_pair,_pair_vectorized
+from shardelix.reconstruction.irregular.large_scan import merge_spatial,strict_lattice_overlap,filter_continuous
+from shardelix.reconstruction.irregular.eroded import gap_candidates
 
 
 class SparseScanTests(unittest.TestCase):

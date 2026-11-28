@@ -4,9 +4,9 @@ import numpy as np
 from scipy.ndimage import gaussian_filter
 from shardelix import Solver,Fragment,Pose
 from shardelix.reconstruction.generator import generate,_split
-from shardelix.reconstruction.pose9 import _rectify,rotate_raster
+from shardelix.reconstruction.rectification import _rectify,rotate_raster
 from shardelix.reconstruction.cli import solve_case,evaluate_case
-from shardelix.reconstruction.tolerant9 import repair_boundary_ownership
+from shardelix.reconstruction.irregular.tolerant import repair_boundary_ownership
 from shardelix.reconstruction.common import render,load_fragments
 
 class Pose9Tests(unittest.TestCase):

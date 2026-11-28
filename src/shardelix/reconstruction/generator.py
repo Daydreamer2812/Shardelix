@@ -11,8 +11,8 @@ from pathlib import Path
 import numpy as np
 from scipy.ndimage import gaussian_filter
 
-from .common import json_write, save_rgba
-from .limits import max_count,validate_constraints
+from shardelix.reconstruction.common import json_write, save_rgba
+from shardelix.reconstruction.limits import max_count,validate_constraints
 
 CUTS = ("grid", "strips", "horizontal-strips", "jagged", "wavy", "jigsaw", "random")
 
@@ -178,7 +178,7 @@ def generate(source: np.ndarray, output: Path, count: int, cut: str, seed: int =
         ident=f"p_{rng.bytes(12).hex()}"
         if index in missing_indices:continue
         if angle_mode=="continuous":
-            from .pose9 import rotate_raster
+            from shardelix.reconstruction.rectification import rotate_raster
             save_rgba(folder/f"{ident}.png",rotate_raster(a,angle,sampling))
         else:save_rgba(folder/f"{ident}.png",np.rot90(a,-rotation))
         observed_indices.append((ident,int(index)))

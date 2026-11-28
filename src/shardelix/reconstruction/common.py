@@ -69,7 +69,7 @@ def read_source(path: Path, max_side: int = 0, page: int = 1) -> np.ndarray:
 
 def load_fragments(folder: Path, *, max_fragments=None, max_input_pixels=None) -> list[Fragment]:
     files = sorted(p for p in folder.iterdir() if p.suffix.lower() in {".png", ".tif", ".tiff", ".jpg", ".jpeg", ".webp", ".bmp"})
-    from .limits import GRID_MAX, MAX_PIXELS
+    from shardelix.reconstruction.limits import GRID_MAX, MAX_PIXELS
     limit = GRID_MAX if max_fragments is None else min(GRID_MAX, max_fragments)
     pixel_limit = MAX_PIXELS*3 if max_input_pixels is None else min(MAX_PIXELS*3, max_input_pixels)
     if not 1 <= len(files) <= limit:

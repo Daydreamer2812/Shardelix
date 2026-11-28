@@ -6,9 +6,9 @@ from shardelix import Solver,Fragment,Pose,ResourceLimits
 from shardelix.reconstruction.generator import generate,_split
 from shardelix.reconstruction.common import load_fragments,render
 from shardelix.reconstruction.evaluation import evaluate
-from shardelix.reconstruction.gridmetrics10 import evaluate_grid,grid_objective
-from shardelix.reconstruction.solver import objective
-from shardelix.reconstruction.index10 import query_edges
+from shardelix.reconstruction.tiles.metrics import evaluate_grid,grid_objective
+from shardelix.reconstruction.quality import objective
+from shardelix.reconstruction.tiles.edge_index import query_edges
 from shardelix.reconstruction.overlay import cut_overlay
 
 class Framework10Tests(unittest.TestCase):
@@ -47,7 +47,7 @@ class Framework10Tests(unittest.TestCase):
         with self.assertRaises(ValueError):Solver(index_mode="bad").solve([p],shape=(4,5),grid=(1,1),cut="grid")
     def test_adaptive_fallback_uses_only_observable_scores(self):
         from unittest.mock import patch
-        from shardelix.reconstruction.sparse_grid import solve_indexed_grid
+        from shardelix.reconstruction.tiles.sparse import solve_indexed_grid
         class Large(list):
             def __len__(self):return 2048
         pieces=Large()
@@ -57,8 +57,8 @@ class Framework10Tests(unittest.TestCase):
             return {"index_mode":mode,"shortlist_seam_fraction":.5,
                     "reciprocal_seam_fraction":.5,"retrieval_seconds":1.0,
                     "assembly_seconds":1.0}
-        with patch("shardelix.reconstruction.sparse_grid.solve_sparse_grid",side_effect=[(p,diag("midpoint")),(q,diag("legacy"))]) as call:
-            with patch("shardelix.reconstruction.gridmetrics10.grid_objective",side_effect=[.9,.4]):
+        with patch("shardelix.reconstruction.tiles.sparse.solve_sparse_grid",side_effect=[(p,diag("midpoint")),(q,diag("legacy"))]) as call:
+            with patch("shardelix.reconstruction.tiles.metrics.grid_objective",side_effect=[.9,.4]):
                 poses,d=solve_indexed_grid(pieces,(512,1024),(32,64),True)
         self.assertEqual(call.call_count,2)
         self.assertEqual(poses,q);self.assertEqual(d["index_mode"],"legacy")

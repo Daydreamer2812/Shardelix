@@ -9,7 +9,7 @@ from shardelix.reconstruction.common import Pose, Fragment, render, load_fragmen
 from shardelix.reconstruction.generator import CUTS, generate
 from shardelix.reconstruction.cli import solve_case, evaluate_case
 from shardelix.reconstruction.solver import solve
-from shardelix.reconstruction.geometry import contours, R, _vertex_to_pose
+from shardelix.reconstruction.irregular.lattice import contours, R, _vertex_to_pose
 from shardelix.reconstruction.evaluation import evaluate
 
 

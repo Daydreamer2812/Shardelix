@@ -6,8 +6,8 @@ import zipfile
 from pathlib import Path
 import numpy as np
 from PIL import Image
-from shardelix.reconstruction.scan import preprocess
-from shardelix.workflow12 import run_job
+from shardelix.reconstruction.irregular.scan import preprocess
+from shardelix.workflow import run_job
 from scripts.benchmark_scan import trial
 
 

@@ -3,8 +3,8 @@ from pathlib import Path
 import numpy as np
 from shardelix.reconstruction.common import load_fragments,read_source,Pose,Fragment
 from shardelix.reconstruction.generator import generate
-from shardelix.reconstruction.grid_consensus import solve_consensus_grid
-from shardelix.reconstruction.document import oriented_path_milp
+from shardelix.reconstruction.tiles.consensus import solve_consensus_grid
+from shardelix.reconstruction.strips.ordering import oriented_path_milp
 from shardelix.reconstruction.evaluation import evaluate
 import json
 

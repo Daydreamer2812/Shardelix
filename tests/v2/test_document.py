@@ -6,7 +6,7 @@ import numpy as np
 from PIL import Image
 from scipy.ndimage import gaussian_filter
 from shardelix.reconstruction.common import Fragment,render
-from shardelix.reconstruction.document import chain,solve_document_strips
+from shardelix.reconstruction.strips.ordering import chain,solve_document_strips
 from shardelix.reconstruction.generator import CUTS,generate
 from shardelix.reconstruction.cli import solve_external_document
 

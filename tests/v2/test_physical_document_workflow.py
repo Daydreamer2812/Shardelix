@@ -9,7 +9,7 @@ from unittest.mock import patch
 import numpy as np
 from PIL import Image
 
-from shardelix.workflow12 import run_job, inspect_uploads
+from shardelix.workflow import run_job, inspect_uploads
 
 
 class PhysicalDocumentWorkflowTests(unittest.TestCase):
@@ -68,7 +68,7 @@ class PhysicalDocumentWorkflowTests(unittest.TestCase):
                 self.assertEqual(im.size,(56,128))
 
     def test_patch_similarity_is_bounded_and_finite(self):
-        from shardelix.reconstruction.physical_document import _patch_recurrence
+        from shardelix.reconstruction.strips.physical import _patch_recurrence
         images=[]
         for k in range(4):
             a=np.zeros((92,26),np.float32)

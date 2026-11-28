@@ -5,11 +5,11 @@ import numpy as np
 from shardelix.reconstruction.common import load_fragments,read_source,Pose,render
 from shardelix.reconstruction.generator import generate
 from shardelix.reconstruction.evaluation import evaluate
-from shardelix.reconstruction.frontier import complete_frontier
-from shardelix.reconstruction.grid_refine import refine_grid_lines,refine_grid_phase
-from shardelix.reconstruction.grid_consensus import edge_costs,dimension_filter,score_grid
-from shardelix.reconstruction.straight import _grid_bounds
-from shardelix.reconstruction.strip_refine import refine_strip_blocks,_lcp
+from shardelix.reconstruction.irregular.frontier import complete_frontier
+from shardelix.reconstruction.tiles.refinement import refine_grid_lines,refine_grid_phase
+from shardelix.reconstruction.tiles.consensus import edge_costs,dimension_filter,score_grid
+from shardelix.reconstruction.tiles.straight import _grid_bounds
+from shardelix.reconstruction.strips.refinement import refine_strip_blocks,_lcp
 
 def fixture(src,folder,count,cut,seed=234,rot=True):
     meta=generate(src,folder,count,cut,seed,rot)

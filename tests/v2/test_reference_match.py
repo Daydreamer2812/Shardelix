@@ -8,7 +8,7 @@ import numpy as np
 from PIL import Image
 from scipy.ndimage import gaussian_filter
 
-from shardelix.workflow12 import run_job
+from shardelix.workflow import run_job
 
 
 class ReferenceModeTests(unittest.TestCase):
@@ -50,7 +50,7 @@ class ReferenceModeTests(unittest.TestCase):
     def test_adaptive_tiny_retry_rescues_collision_without_eviction(self):
         from unittest.mock import patch
         from shardelix.reconstruction.common import Fragment
-        from shardelix.reconstruction.reference_index import IndexedMatch,reconstruct_indexed
+        from shardelix.reconstruction.reference.index import IndexedMatch,reconstruct_indexed
         def match(x,y,err):
             return IndexedMatch(0.,np.array([x,y],np.float32),err,3.,"test")
         class Index:
@@ -64,7 +64,7 @@ class ReferenceModeTests(unittest.TestCase):
             root=Path(tmp);src=root/"reference.png";Image.new("RGB",(64,64)).save(src)
             a=np.full((8,8,4),255,np.uint8)
             ps=[Fragment(k,a.copy()) for k in ("a","b","c")]
-            with patch("shardelix.reconstruction.reference_index.ReferenceIndex",Index):
+            with patch("shardelix.reconstruction.reference.index.ReferenceIndex",Index):
                 d=reconstruct_indexed(ps,src,root/"out",{"input_images":3,"common_scale":1.},adaptive_micro=True)
             self.assertEqual(d["placed"],2)
             self.assertEqual(d["micro_rescue"],{"attempted":2,"placed":1,"eligible":2})

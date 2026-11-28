@@ -10,7 +10,7 @@ A CPU-first, training-free classical computer vision framework for shuffled,
 rotated, irregular and incomplete fragments. No original image, ground-truth
 poses, OCR, trained model or GPU is required for blind reconstruction.
 
-[![Version](https://img.shields.io/badge/version-14.0.0-2463eb?style=flat-square)](pyproject.toml)
+[![Version](https://img.shields.io/badge/version-14.0.1-2463eb?style=flat-square)](pyproject.toml)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776ab?style=flat-square&logo=python&logoColor=white)](pyproject.toml)
 [![C++20](https://img.shields.io/badge/C%2B%2B-20-00599C?style=flat-square&logo=cplusplus)](cpp/)
 [![WebAssembly](https://img.shields.io/badge/WebAssembly-SIMD-654FF0?style=flat-square&logo=webassembly)](docs/WEB.md)
@@ -37,6 +37,10 @@ poses, OCR, trained model or GPU is required for blind reconstruction.
 
 ## What's new in V14
 
+**14.0.1 maintenance update:** the same reconstruction engine is now organized
+by fragment geometry instead of historical solver versions. The Python API, CLI,
+Studio workflow and output contracts remain stable. See [architecture and migration](docs/ARCHITECTURE.md).
+
 - **One adaptive reconstruction engine:** automatic input detection and routing
   for grids, document strips, exact irregular cuts and degraded scanned fragments.
   No separate research app or OCR pipeline.
@@ -54,7 +58,7 @@ poses, OCR, trained model or GPU is required for blind reconstruction.
 - **Unified UI/API:** a generator and reconstruction tab, direct ZIP transfer,
   optional evaluation-only ground truth and a separately enabled matching image.
 
-[Detailed V14 results](docs/V14_RESULTS.md) · [Release notes](docs/releases/v14.0.0.md)
+[Detailed V14 results](docs/V14_RESULTS.md) · [Release notes](docs/releases/v14.0.1.md)
 
 ## What makes Shardelix blind?
 
@@ -303,7 +307,18 @@ components. Independent ground truth is required for accuracy metrics.
 
 ```text
 cpp/                     Portable C++20 kernels
-src/shardelix/            Python API, routing, algorithms and Studio
+src/shardelix/
+  api.py                 Public Solver and file API
+  uploads.py             Input safety, ZIP import and geometry inspection
+  workflow.py            Shared dispatch, evaluation and export
+  reconstruction/
+    tiles/               Rectangular and sparse grid matching
+    strips/              Document and strip ordering, gap recovery
+    irregular/           Exact contour graph, scan and eroded-edge recovery
+    reference/           Explicit assisted registration and image comparison
+    solver.py            Geometry-known blind dispatcher
+    pose.py              Arbitrary-angle and missing-aware dispatcher
+    case_io.py           Shared case operations (not CLI parsing)
 web/                     Browser bridge and worker
 scripts/                 Build, benchmark and evaluation runners
 tests/                   Regression and parity tests
@@ -323,8 +338,8 @@ python scripts/smoke_studio.py
 
 | Topic | Docs |
 |:--|:--|
-| Current release / evidence | [V14 results](docs/V14_RESULTS.md) · [Release notes](docs/releases/v14.0.0.md) |
-| Engine | [Framework](docs/FRAMEWORK.md) · [API](docs/FRAMEWORK_API.md) · [Optimization](docs/OPTIMIZATION.md) |
+| Current release / evidence | [V14 results](docs/V14_RESULTS.md) · [Release notes](docs/releases/v14.0.1.md) |
+| Engine | [Architecture](docs/ARCHITECTURE.md) · [Framework](docs/FRAMEWORK.md) · [API](docs/FRAMEWORK_API.md) · [Optimization](docs/OPTIMIZATION.md) |
 | Difficult inputs | [Eroded recovery](docs/ERODED_RECOVERY.md) · [Irregular scaling](docs/IRREGULAR_SCALE.md) · [DAFNE](docs/DAFNE_INDEXED.md) |
 | Deployment | [Web Studio](docs/WEB.md) · [Resource policy](docs/RESOURCE_SCALING.md) |
 | Research | [Datasets](docs/DATASETS.md) · [References](docs/REFERENCES.md) · [V13](docs/V13_RESULTS.md) · [V12](docs/V12_RESULTS.md) |

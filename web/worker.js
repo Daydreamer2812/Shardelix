@@ -62,16 +62,16 @@ async function handle(m){
     const p=await load();
     if(m.action==="inspect"){
       await putFiles(p,"/inspect",m.files);
-      const json=p.runPython("import json\nfrom shardelix.workflow12 import inspect_uploads\njson.dumps(inspect_uploads(list((Path(bridge_root)/'upload').iterdir()),browser=True))");
+      const json=p.runPython("import json\nfrom shardelix.uploads import inspect_uploads\njson.dumps(inspect_uploads(list((Path(bridge_root)/'upload').iterdir()),browser=True))");
       post("reply",{id:m.id,value:JSON.parse(json)});
       p.runPython("shutil.rmtree('/inspect',ignore_errors=True)");
     } else if(m.action==="run"){
       await putFiles(p,"/job",m.files,m.truth,m.matchingReference);
       p.globals.set("bridge_config",JSON.stringify(m.config));
-      const json=await p.runPythonAsync("import json\nfrom js import sendProgress\nfrom shardelix.workflow12 import run_job\njson.dumps(run_job(Path(bridge_root),json.loads(bridge_config),lambda s:sendProgress(json.dumps(s)),browser=True),allow_nan=False)");
+      const json=await p.runPythonAsync("import json\nfrom js import sendProgress\nfrom shardelix.workflow import run_job\njson.dumps(run_job(Path(bridge_root),json.loads(bridge_config),lambda s:sendProgress(json.dumps(s)),browser=True),allow_nan=False)");
       post("reply",{id:m.id,value:JSON.parse(json)});
     } else if(m.action==="file"){
-      const allowed=p.runPython("import json\nfrom shardelix.workflow12 import DOWNLOADS\njson.dumps(sorted(DOWNLOADS))");
+      const allowed=p.runPython("import json\nfrom shardelix.workflow import DOWNLOADS\njson.dumps(sorted(DOWNLOADS))");
       if(!JSON.parse(allowed).includes(m.name))throw new Error("Unknown export");
       const bytes=p.FS.readFile("/job/result/"+m.name);
       const buffer=bytes.slice().buffer;

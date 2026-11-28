@@ -9,7 +9,7 @@ The source/reference image never enters blind matching. The optional **Use origi
 The benchmark switch repeats the same generated-case workflow across selected
 counts, cuts, seeds and profiles. The independent evaluator reads known truth
 only after solve; it is not a third solver. The browser and native Studio share
-`src/shardelix/workflow12.py` and the reconstruction package.
+`src/shardelix/workflow.py`, `src/shardelix/uploads.py` and the reconstruction package.
 All profiles use the same cut-specific algorithms and geometric validation.
 Fast reduces search; a bounded rescue runs only on severe irregular under-coverage; Balanced is the default;
 In reference-assisted mode Fast uses indexed registration, Balanced adds bounded tiny-fragment rescue, and High accuracy enables wider experimental micro-fragment recovery. In blind mode, High accuracy adds bounded search and verifies candidate hypotheses against

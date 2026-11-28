@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import numpy as np
 
-from .common import Fragment, Pose, render
-from .geometry import R
+from shardelix.reconstruction.common import Fragment, Pose, render
+from shardelix.reconstruction.irregular.lattice import R
 
 
 def adjacency(labels):

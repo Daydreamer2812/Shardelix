@@ -11,8 +11,8 @@ from PIL import Image
 from shardelix.reconstruction.common import Fragment, Pose, render
 from shardelix.reconstruction.evaluation import evaluate
 from shardelix.reconstruction.generator import fit_generation_canvas
-from shardelix.reconstruction.reference_alignment import compare_reference
-from shardelix.workflow12 import run_job
+from shardelix.reconstruction.reference.evaluation import compare_reference
+from shardelix.workflow import run_job
 
 
 class StudioFitOrientationTests(unittest.TestCase):

@@ -11,9 +11,9 @@ from PIL import Image
 from scipy import ndimage as ndi
 
 from shardelix.reconstruction.common import Fragment
-from shardelix.reconstruction.eroded import gap_candidates, rank_components
-from shardelix.reconstruction.scan import preprocess, _shape, _merge, rotation
-from shardelix.workflow12 import run_job
+from shardelix.reconstruction.irregular.eroded import gap_candidates, rank_components
+from shardelix.reconstruction.irregular.scan import preprocess, _shape, _merge, rotation
+from shardelix.workflow import run_job
 
 
 from scripts.benchmark_eroded import eroded_fixture
@@ -46,7 +46,7 @@ class ErodedFragmentTests(unittest.TestCase):
 
     def test_rounded_damage_does_not_prefer_a_larger_weak_contact_tree(self):
         from unittest.mock import patch
-        from shardelix.reconstruction.scan import reconstruct
+        from shardelix.reconstruction.irregular.scan import reconstruct
         y,x=np.indices((36,36))
         mask=(x-18)**2+(y-18)**2<16**2
         rgba=np.dstack([np.repeat((70+3*x)[...,None],3,axis=-1).astype(np.uint8),
@@ -57,7 +57,7 @@ class ErodedFragmentTests(unittest.TestCase):
         small=[{i:pose(i) for i in range(2)}]+[{i:pose(0)} for i in range(2,20)]
         edge={"a":"p0","b":"p1","score":15.,"consensus_supported":True}
         for rounded,expected in ((True,2),(False,5)):
-            with tempfile.TemporaryDirectory() as tmp,                  patch("shardelix.reconstruction.scan._pair",return_value=[]),                  patch("shardelix.reconstruction.scan._merge",return_value=(large,[])),                  patch("shardelix.reconstruction.eroded.gap_candidates",return_value=([],{})),                  patch("shardelix.reconstruction.continuation.recover",return_value=(small,[edge],
+            with tempfile.TemporaryDirectory() as tmp,                  patch("shardelix.reconstruction.irregular.scan._pair",return_value=[]),                  patch("shardelix.reconstruction.irregular.scan._merge",return_value=(large,[])),                  patch("shardelix.reconstruction.irregular.eroded.gap_candidates",return_value=([],{})),                  patch("shardelix.reconstruction.irregular.continuation.recover",return_value=(small,[edge],
                        {"attempted":True,"population_prior":rounded,"accepted_joins":1})):
                 out=Path(tmp)
                 diag=reconstruct(pieces,out,{"input_images":20,"warnings":[],"common_scale":1.})

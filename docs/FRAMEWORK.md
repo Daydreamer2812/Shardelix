@@ -1,6 +1,6 @@
 # Unified V14 framework
 
-Shardelix provides one input pipeline for generation, reconstruction and evaluation. The web worker, native Studio, Python file API and CLI all run the same workflow. The specialized modules are retained internally so that grid, document strip and torn-edge methods use the geometry appropriate to the input. They are not separate apps.
+Shardelix provides one input pipeline for generation, reconstruction and evaluation. The web worker, native Studio, Python file API and CLI all run the same workflow. The specialized modules are retained internally so that grid, document strip and torn-edge methods use the geometry appropriate to the input. They are not separate apps. The 14.0.1 maintenance update removes version-numbered runtime module names and splits upload validation, case operations, and dispatch. See the [architecture map](ARCHITECTURE.md) for code entry points and migration notes.
 
 ## Everyday workflow
 

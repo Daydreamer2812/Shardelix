@@ -20,9 +20,10 @@ from email.policy import default
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
 from urllib.parse import urlparse,parse_qs
 from . import __version__
-from .reconstruction.limits import GRID_MAX,MAX_PIXELS
+from shardelix.reconstruction.limits import GRID_MAX,MAX_PIXELS
 
-from .workflow12 import native_upload_limit, DOWNLOADS, run_job, inspect_uploads, safe_zip
+from shardelix.workflow import DOWNLOADS, run_job
+from shardelix.uploads import native_upload_limit, inspect_uploads, safe_zip
 def atomic_json(path,value):
     tmp=path.with_suffix(".tmp");tmp.write_text(json.dumps(value,allow_nan=False),encoding="utf-8");tmp.replace(path)
 

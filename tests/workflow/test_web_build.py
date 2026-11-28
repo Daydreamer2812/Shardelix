@@ -23,9 +23,9 @@ class WebBuildTests(unittest.TestCase):
             self.assertNotIn("refineScan",worker)
             with zipfile.ZipFile(d/"engine.zip") as z:
                 self.assertNotIn("shardelix/reconstruction/physical_ocr.py",z.namelist())
-                for f in ("shardelix/api.py","shardelix/native_core.py","shardelix/workflow12.py","shardelix/reconstruction/recovery12.py","shardelix/reconstruction/physical_document.py","shardelix/reconstruction/eroded.py","shardelix/reconstruction/continuation.py","shardelix/reconstruction/spectral_gap.py","shardelix/reconstruction/reference_match.py","shardelix/reconstruction/reference_index.py"):
+                for f in ("shardelix/api.py","shardelix/native_core.py","shardelix/workflow.py","shardelix/uploads.py","shardelix/reconstruction/case_io.py","shardelix/reconstruction/pose.py","shardelix/reconstruction/rectification.py","shardelix/reconstruction/irregular/frame_anchor.py","shardelix/reconstruction/strips/multi_gap.py","shardelix/reconstruction/tiles/verification.py","shardelix/reconstruction/strips/physical.py","shardelix/reconstruction/irregular/eroded.py","shardelix/reconstruction/irregular/continuation.py","shardelix/reconstruction/irregular/spectral_gap.py","shardelix/reconstruction/reference/fft.py","shardelix/reconstruction/reference/index.py"):
                     self.assertEqual(z.read(f),(ROOT/"src"/f).read_bytes())
-            p=subprocess.run([sys.executable,"-c","import shardelix;print(shardelix.__version__)"],cwd=d,
+            p=subprocess.run([sys.executable,"-c","import importlib,pkgutil,shardelix; import shardelix.reconstruction as r; [importlib.import_module(m.name) for m in pkgutil.walk_packages(r.__path__,r.__name__+'.')]; print(shardelix.__version__)"],cwd=d,
                          env={**os.environ,"PYTHONPATH":str(d/"engine.zip")},capture_output=True,text=True)
             self.assertEqual(p.returncode,0,p.stderr)
             with (ROOT/"pyproject.toml").open("rb") as project:

@@ -16,7 +16,7 @@ import zipfile
 
 import numpy as np
 from PIL import Image
-from shardelix.reconstruction.physical_document import reconstruct_strips
+from shardelix.reconstruction.strips.physical import reconstruct_strips
 
 
 def metrics(order, truth):

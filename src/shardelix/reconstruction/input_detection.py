@@ -61,7 +61,7 @@ def scan_evidence(im):
     if min(w,h)<8:return None
     corners=np.array([rgb.getpixel((x,y)) for x,y in ((0,0),(w-1,0),(0,h-1),(w-1,h-1))])
     if ((corners[:,0]>=250)&(corners[:,1]<=5)&(corners[:,2]>=250)).sum()>=3:
-        from .scan import chroma_mask
+        from shardelix.reconstruction.irregular.scan import chroma_mask
         if chroma_mask(np.array(rgb)) is not None:return "chroma-key"
     # Use original sampling for small inputs and a bounded thumbnail for larger ones.
     if max(w,h)>96:
@@ -220,7 +220,7 @@ def select_visual_grid(layouts,pieces,profile=None):
     and normalized seam/coverage objective, not a source image.
     """
     from shardelix.api import Solver
-    from .solver import objective
+    from shardelix.reconstruction.quality import objective
     prior=layouts[0]
     n=len(pieces)
     if not 4<=n<=64 or prior["width"]*prior["height"]>500_000 or profile=="fast":

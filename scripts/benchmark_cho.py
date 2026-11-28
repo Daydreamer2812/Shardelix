@@ -11,7 +11,7 @@ from shardelix.reconstruction.overlay import write_cut_outputs
 from shardelix.reconstruction.solver import solve
 from shardelix.reconstruction.generator import generate
 from shardelix.reconstruction.cli import solve_case,evaluate_case
-from shardelix.reconstruction.straight import solve_straight
+from shardelix.reconstruction.tiles.straight import solve_straight
 from shardelix.reconstruction.rotation import solve_rotated_tiles
 
 def features(pieces):
@@ -45,7 +45,7 @@ def run(case,out,method,rotate,previews=True,params=None):
             from shardelix.reconstruction.solver import _solve_v5
             poses,diag=_solve_v5(pieces,shape,"grid",grid,False,auto_tune=True)
     elif method=="candidate":
-        from shardelix.reconstruction.grid_consensus import solve_consensus_grid
+        from shardelix.reconstruction.tiles.consensus import solve_consensus_grid
         poses,diag=solve_consensus_grid(pieces,shape,grid,rotate,**(params or {}))
     else:poses,diag=solve(pieces,shape,"grid",grid,rotate,auto_tune=True)
     runtime=time.perf_counter()-start

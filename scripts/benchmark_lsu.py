@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 from shardelix.reconstruction.common import Fragment,render,save_rgba,json_write
-from shardelix.reconstruction.document import solve_document_strips,DEFAULT
+from shardelix.reconstruction.strips.ordering import solve_document_strips,DEFAULT
 from shardelix.reconstruction.overlay import write_cut_outputs
 
 def split(name):
@@ -38,7 +38,7 @@ def run(folder,params=None,output=None,baseline=False):
     rotate=part=="orientation"
     start=time.perf_counter()
     # Both methods receive only anonymous pieces. No proof of pixel truth for physical/orientation.
-    from shardelix.reconstruction.document import _solve_document_v5
+    from shardelix.reconstruction.strips.ordering import _solve_document_v5
     solver=_solve_document_v5 if baseline else solve_document_strips
     poses,diag=solver(pieces,rotations=rotate,**(params or {}))
     elapsed=time.perf_counter()-start

@@ -10,7 +10,7 @@ from shardelix.reconstruction.common import load_fragments
 from shardelix.reconstruction.generator import generate
 from shardelix.reconstruction.evaluation import evaluate
 from shardelix.reconstruction.cli import solve_case
-from shardelix.reconstruction.geometry import _keys
+from shardelix.reconstruction.irregular.lattice import _keys
 from shardelix.studio import safe_zip,worker
 from shardelix.reconstruction.limits import validate_constraints
 

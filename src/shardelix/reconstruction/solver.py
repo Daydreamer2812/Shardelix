@@ -4,49 +4,17 @@ from __future__ import annotations
 import time
 import numpy as np
 
-from .common import Pose, render
-from .geometry import solve_geometry
-from .grid import solve_grid,solve_rotated_grid
-from .straight import solve_straight
-from .rotation import solve_rotated_strips,solve_rotated_tiles
-from .verified import solve_verified,exact_holes
-from .document import is_documentlike,solve_document_strips
+from shardelix.reconstruction.common import Pose
+from shardelix.reconstruction.quality import objective,orient_to_canvas
+from shardelix.reconstruction.irregular.lattice import solve_geometry
+from shardelix.reconstruction.tiles.legacy import solve_grid,solve_rotated_grid
+from shardelix.reconstruction.tiles.straight import solve_straight
+from shardelix.reconstruction.rotation import solve_rotated_strips,solve_rotated_tiles
+from shardelix.reconstruction.irregular.verified import solve_verified,exact_holes
+from shardelix.reconstruction.strips.ordering import is_documentlike,solve_document_strips
 
 
-def orient_to_canvas(pieces,poses,shape):
-    """Choose a canvas-fitting global orientation without ground truth."""
-    if not poses:return poses
-    from .geometry import R
-    lookup={p.id:p for p in pieces}
-    candidates=[]
-    for r in range(4):
-        rotated={}
-        for key,pose in poses.items():
-            h,w=lookup[key].rotated(pose.k).shape[:2]
-            corners=np.array([[pose.x,pose.y],[pose.x+w,pose.y],[pose.x,pose.y+h],[pose.x+w,pose.y+h]])
-            xy=(corners@R[r].T).min(axis=0)
-            rotated[key]=Pose(int(xy[0]),int(xy[1]),(pose.k+r)%4)
-        from .common import normalize_pose_set
-        normalized,extent=normalize_pose_set(pieces,rotated)
-        if extent[0]<=shape[0] and extent[1]<=shape[1]:
-            candidates.append((abs(shape[0]-extent[0])+abs(shape[1]-extent[1]),r,normalized))
-    return min(candidates,key=lambda a:a[:2])[2] if candidates else poses
-
-
-def objective(pieces,poses,shape):
-    """No reference or truth: reward coverage, punish collisions and rough seams."""
-    image,labels,collision=render(pieces,poses,shape)
-    coverage=np.mean(labels>=0)
-    m1=(labels[:,:-1]!=labels[:,1:])&(labels[:,:-1]>=0)&(labels[:,1:]>=0)
-    m2=(labels[:-1,:]!=labels[1:,:])&(labels[:-1,:]>=0)&(labels[1:,:]>=0)
-    im=image[:,:,:3].astype(np.int16)
-    a=np.abs(im[:,:-1]-im[:,1:])[m1]
-    b=np.abs(im[:-1,:]-im[1:,:])[m2]
-    seam=(a.sum()+b.sum())/(255*max(1,a.size+b.size))
-    return float(coverage-2*collision/labels.size-.1*seam)
-
-
-def _solve_v5(pieces,shape,cut="random",grid=None,rotations=False,
+def _solve_baseline(pieces,shape,cut="random",grid=None,rotations=False,
           mode="blind",reference=None,auto_tune=True,params=None,template=None):
     start=time.perf_counter()
     params=params or {}
@@ -122,29 +90,29 @@ def _solve_v5(pieces,shape,cut="random",grid=None,rotations=False,
                   "blind_objective":score}
 
 
-def _solve_v7(pieces,shape,cut="random",grid=None,rotations=False,
+def solve_classic(pieces,shape,cut="random",grid=None,rotations=False,
           mode="blind",reference=None,auto_tune=True,params=None,template=None):
-    """V7: V6 baseline plus blind strip-block, grid-line and frontier refinement."""
+    """Small-case consensus and targeted strip, grid and contour refinement."""
     if mode!="blind" or reference is not None or template is not None:
         raise ValueError("Shardelix V7 is blind only; source and template are prohibited")
     if not pieces:raise ValueError("Expected at least one piece")
     if not grid or min(grid)==1 or (params and params.get("strategy")!="consensus"):
         start=time.perf_counter()
-        poses,diag=_solve_v5(pieces,shape,cut,grid,rotations,mode,reference,auto_tune,params,template)
+        poses,diag=_solve_baseline(pieces,shape,cut,grid,rotations,mode,reference,auto_tune,params,template)
         if auto_tune and not params:
             if grid and min(grid)==1 and len(pieces)>=64 and not is_documentlike(pieces):
                 # Thin digital strips: contiguous block/order errors remain
                 # even when nearly all immediate adjacencies are correct.
-                from .straight import _grid_bounds
+                from shardelix.reconstruction.tiles.straight import _grid_bounds
                 ys,xs=_grid_bounds(*shape,*grid)
                 widths=np.diff(xs) if grid[0]==1 else np.diff(ys)
                 if widths.min()<=3:
-                    from .strip_refine import refine_strip_blocks
+                    from shardelix.reconstruction.strips.refinement import refine_strip_blocks
                     pp,dd=refine_strip_blocks(pieces,poses,shape,grid,rotations)
                     if dd.get("block_moves",0) or dd.get("adjacent_swaps",0):
                         poses=pp;diag={**diag,**dd,"algorithm":"strip-block-curvature-v7"}
             elif not grid and .60*len(pieces)<=len(poses)<len(pieces):
-                from .frontier import complete_frontier,repair_small_gaps
+                from shardelix.reconstruction.irregular.frontier import complete_frontier,repair_small_gaps
                 pp,dd=complete_frontier(pieces,poses,shape,rotations)
                 pp,gap=repair_small_gaps(pieces,pp,shape,rotations)
                 dd.update(gap)
@@ -152,7 +120,7 @@ def _solve_v7(pieces,shape,cut="random",grid=None,rotations=False,
                     poses=pp;diag={**diag,**dd,"algorithm":"exact-frontier-v7"}
         return poses,{**diag,"blind_objective":objective(pieces,poses,shape),
                       "runtime_seconds":time.perf_counter()-start}
-    from .grid_consensus import solve_consensus_grid,edge_costs,score_grid
+    from shardelix.reconstruction.tiles.consensus import solve_consensus_grid,edge_costs,score_grid
     start=time.perf_counter()
     c=dict(params or {});c.pop("strategy",None)
     configs=[c]
@@ -175,7 +143,7 @@ def _solve_v7(pieces,shape,cut="random",grid=None,rotations=False,
             if not np.isfinite(ss):ss=1e8
             trials.append({"params":{"strategy":"consensus",**cc},"blind_grid_energy":ss,"placed":len(pp)})
             if ss<best[0]:best=(ss,pp,dd)
-        pp,dd=_solve_v5(pieces,shape,cut,grid,rotations,auto_tune=True)
+        pp,dd=_solve_baseline(pieces,shape,cut,grid,rotations,auto_tune=True)
         ss=score_grid(pieces,pp,shape,grid,rotations,raw)
         if not np.isfinite(ss):ss=1e8
         trials.append({"params":{"strategy":"v5-fallback"},"blind_grid_energy":ss,"placed":len(pp)})
@@ -183,7 +151,7 @@ def _solve_v7(pieces,shape,cut="random",grid=None,rotations=False,
     # V7 uncertainty refinement is targeted at large, difficult grids.
     # Keep V6 small-grid behavior and all high-confidence solutions.
     if auto_tune and not params and uncertain and len(pieces)>=512 and max(grid)<=64:
-        from .grid_refine import refine_grid_lines,refine_grid_regions,refine_grid_phase
+        from shardelix.reconstruction.tiles.refinement import refine_grid_lines,refine_grid_regions,refine_grid_phase
         def consider(pp,dd,tag,cc=None):
             nonlocal best
             pp,rr=refine_grid_lines(pieces,pp,shape,grid,rotations,raw)
@@ -212,11 +180,66 @@ def _solve_v7(pieces,shape,cut="random",grid=None,rotations=False,
                   "blind_objective":objective(pieces,poses,shape),"auto_tune":auto_tune,
                   "trials":trials}
 
+def _solve_large_irregular(pieces,shape,cut,rotations,auto_tune,start):
+    """Bounded exact arc graph and verified frontier recovery."""
+    n=len(pieces)
+    # Bounded large mask pipeline. Never enter the expensive exhaustive
+    # component-packing fallback on thousands of unresolved fragments.
+    from shardelix.reconstruction.irregular.lattice import solve_geometry
+    from shardelix.reconstruction.irregular.frontier import complete_frontier
+    best=None
+    # Smooth jigsaw edges generate repeated arc codes; verify full seam
+    # photometry and collision before committing a rigid merge.
+    if cut in {"jigsaw","wavy"}:
+        pp,dd=solve_verified(pieces,shape,rotations,k=16,max_bucket=14,pack=False)
+        score=objective(pieces,pp,shape);best=(score,pp,dd)
+    if best is None or (auto_tune and len(best[1])<.98*n):
+        for kk in (18,24) if auto_tune and cut=="jagged" else (18,):
+            pp,dd=solve_geometry(pieces,shape,rotations,k=kk,min_votes=2,max_bucket=8)
+            if rotations:pp=orient_to_canvas(pieces,pp,shape)
+            pp,filled=exact_holes(pieces,pp,shape,rotations)
+            score=objective(pieces,pp,shape)
+            if best is None or score>best[0]:best=(score,pp,dd)
+            if len(pp)>=.98*n:break
+    if cut in {"random","custom"} and auto_tune and len(best[1])<.97*n:
+        pp,dd=solve_verified(pieces,shape,rotations,k=16,max_bucket=14,pack=False)
+        score=objective(pieces,pp,shape)
+        if score>best[0]:best=(score,pp,dd)
+    score,pp,dd=best
+    if .85*n<=len(pp)<n:
+        pp0,ff=complete_frontier(pieces,pp,shape,rotations,rounds=6)
+        ss=objective(pieces,pp0,shape)
+        if ss>score:pp,score,dd=pp0,ss,{**dd,**ff}
+    return pp,{**dd,"algorithm":"bounded-mask-graph-v8","mode":"blind",
+               "source_reference_used":False,"auto_tune":auto_tune,
+               "runtime_seconds":time.perf_counter()-start,"blind_objective":score}
+
+
+def _solve_sparse_grid(pieces,shape,cut,grid,rotations,auto_tune,params,forced,start):
+    """Sparse shortlist with classic fallback only when consensus is weak."""
+    from shardelix.reconstruction.limits import LEGACY_MAX
+    from shardelix.reconstruction.tiles.sparse import solve_indexed_grid
+    n=len(pieces)
+    pp,dd=solve_indexed_grid(pieces,shape,grid,rotations,int((params or {}).get("shortlist",24 if n>32768 else 40)),index_mode=(params or {}).get("index_mode","auto"),auto_tune=auto_tune)
+    confident=(len(pp)==n and dd.get("reciprocal_seam_fraction",0)>=.94 and
+               dd.get("shortlist_seam_fraction",0)>=.96 and dd.get("median_reciprocal_margin",0)>=.12 and
+               not dd["identical_piece_count"])
+    if forced or n>LEGACY_MAX or confident:
+        from shardelix.reconstruction.tiles.metrics import grid_objective
+        score=grid_objective(pieces,pp,shape,grid)
+        return pp,{**dd,"mode":"blind","source_reference_used":False,"auto_tune":auto_tune,
+                   "sparse_high_consensus":confident,"runtime_seconds":time.perf_counter()-start,
+                   "blind_objective":score}
+    p,d=solve_classic(pieces,shape,cut,grid,rotations,auto_tune=auto_tune,params=params)
+    return p,{**d,"sparse_attempt_seconds":dd["retrieval_seconds"]+dd["assembly_seconds"],
+              "runtime_seconds":time.perf_counter()-start}
+
+
 def solve(pieces,shape,cut="random",grid=None,rotations=False,
           mode="blind",reference=None,auto_tune=True,params=None,template=None):
-    """Adaptive sparse-grid accelerator; retain V7 for ambiguous small cases."""
-    from .limits import validate_constraints,LEGACY_MAX
-    from .sparse_grid import eligible,solve_indexed_grid
+    """Dispatch known geometry to exact, sparse or classic reconstruction."""
+    from shardelix.reconstruction.limits import validate_constraints,LEGACY_MAX
+    from shardelix.reconstruction.tiles.sparse import eligible
     if mode!="blind" or reference is not None or template is not None:
         raise ValueError("Blind only: source/reference/template prohibited")
     start=time.perf_counter()
@@ -233,48 +256,11 @@ def solve(pieces,shape,cut="random",grid=None,rotations=False,
         ks=[k for k in range(4 if rotations else 1) if p.rotated(k).shape[:2]==tuple(shape)]
         if ks:return {p.id:Pose(0,0,ks[0])},{"algorithm":"single","mode":"blind","runtime_seconds":time.perf_counter()-start,"source_reference_used":False}
     if not grid and n>LEGACY_MAX:
-        # Bounded large mask pipeline. Never enter the expensive exhaustive
-        # component-packing fallback on thousands of unresolved fragments.
-        from .geometry import solve_geometry
-        from .frontier import complete_frontier
-        best=None
-        # Smooth jigsaw edges generate repeated arc codes; verify full seam
-        # photometry and collision before committing a rigid merge.
-        if cut in {"jigsaw","wavy"}:
-            pp,dd=solve_verified(pieces,shape,rotations,k=16,max_bucket=14,pack=False)
-            score=objective(pieces,pp,shape);best=(score,pp,dd)
-        if best is None or (auto_tune and len(best[1])<.98*n):
-            for kk in (18,24) if auto_tune and cut=="jagged" else (18,):
-                pp,dd=solve_geometry(pieces,shape,rotations,k=kk,min_votes=2,max_bucket=8)
-                if rotations:pp=orient_to_canvas(pieces,pp,shape)
-                pp,filled=exact_holes(pieces,pp,shape,rotations)
-                score=objective(pieces,pp,shape)
-                if best is None or score>best[0]:best=(score,pp,dd)
-                if len(pp)>=.98*n:break
-        if cut in {"random","custom"} and auto_tune and len(best[1])<.97*n:
-            pp,dd=solve_verified(pieces,shape,rotations,k=16,max_bucket=14,pack=False)
-            score=objective(pieces,pp,shape)
-            if score>best[0]:best=(score,pp,dd)
-        score,pp,dd=best
-        if .85*n<=len(pp)<n:
-            pp0,ff=complete_frontier(pieces,pp,shape,rotations,rounds=6)
-            ss=objective(pieces,pp0,shape)
-            if ss>score:pp,score,dd=pp0,ss,{**dd,**ff}
-        return pp,{**dd,"algorithm":"bounded-mask-graph-v8","mode":"blind",
-                   "source_reference_used":False,"auto_tune":auto_tune,
-                   "runtime_seconds":time.perf_counter()-start,"blind_objective":score}
+        return _solve_large_irregular(pieces,shape,cut,rotations,auto_tune,start)
     if forced or fast or (grid and n>LEGACY_MAX):
-        pp,dd=solve_indexed_grid(pieces,shape,grid,rotations,int((params or {}).get("shortlist",24 if n>32768 else 40)),index_mode=(params or {}).get("index_mode","auto"),auto_tune=auto_tune)
-        confident=(len(pp)==n and dd.get("reciprocal_seam_fraction",0)>=.94 and
-                   dd.get("shortlist_seam_fraction",0)>=.96 and dd.get("median_reciprocal_margin",0)>=.12 and
-                   not dd["identical_piece_count"])
-        if forced or n>LEGACY_MAX or confident:
-            from .gridmetrics10 import grid_objective
-            score=grid_objective(pieces,pp,shape,grid)
-            return pp,{**dd,"mode":"blind","source_reference_used":False,"auto_tune":auto_tune,
-                       "sparse_high_consensus":confident,"runtime_seconds":time.perf_counter()-start,
-                       "blind_objective":score}
-        p,d=_solve_v7(pieces,shape,cut,grid,rotations,mode,reference,auto_tune,params,template)
-        return p,{**d,"sparse_attempt_seconds":dd["retrieval_seconds"]+dd["assembly_seconds"],
-                  "runtime_seconds":time.perf_counter()-start}
-    return _solve_v7(pieces,shape,cut,grid,rotations,mode,reference,auto_tune,params,template)
+        return _solve_sparse_grid(pieces,shape,cut,grid,rotations,auto_tune,params,forced,start)
+    return solve_classic(pieces,shape,cut,grid,rotations,mode,reference,auto_tune,params,template)
+
+# Historical benchmark hooks. New code uses semantic stage names.
+_solve_v5 = _solve_baseline
+_solve_v7 = solve_classic

@@ -7,7 +7,7 @@ import numpy as np
 from PIL import Image
 from scipy.ndimage import gaussian_filter
 from shardelix import reconstruct_files
-from shardelix.workflow12 import run_job
+from shardelix.workflow import run_job
 
 class UnifiedFrameworkTests(unittest.TestCase):
     def test_api_automatic_grid_and_evaluation_isolation(self):

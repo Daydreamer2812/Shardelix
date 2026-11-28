@@ -5,13 +5,13 @@ import numpy as np
 
 from scripts.stress_irregular_resources import fixture
 from shardelix.native_core import arc_votes,arc_votes_available,lattice_contact
-from shardelix.reconstruction.geometry import R,propose
+from shardelix.reconstruction.irregular.lattice import R,propose
 from shardelix.reconstruction.common import Fragment
-from shardelix.reconstruction.large_scan import (
+from shardelix.reconstruction.irregular.large_scan import (
     _packed_contours,_exact_contact,lattice_candidates,merge_lattice,
     merge_spatial,lattice_box)
 from shardelix.reconstruction.resource_budget import resource_budget,ResourceBudget,MIB
-from shardelix.reconstruction.scan import _shape,_overlap
+from shardelix.reconstruction.irregular.scan import _shape,_overlap
 
 
 class ResourceTests(unittest.TestCase):
@@ -24,10 +24,10 @@ class ResourceTests(unittest.TestCase):
         with self.assertRaises(ValueError):resource_budget(override_mib=16)
 
     def test_native_archive_budget(self):
-        from shardelix.workflow12 import native_upload_limit
+        from shardelix.workflow import native_upload_limit
         from collections import namedtuple
         Usage=namedtuple("Usage","total used free")
-        with patch("shardelix.workflow12.shutil.disk_usage",return_value=Usage(16*1024*MIB,4*1024*MIB,12*1024*MIB)):
+        with patch("shardelix.workflow.shutil.disk_usage",return_value=Usage(16*1024*MIB,4*1024*MIB,12*1024*MIB)):
             with patch("shardelix.reconstruction.resource_budget.available_memory",return_value=6*1024*MIB):
                 self.assertEqual(native_upload_limit(),1536*MIB)
                 self.assertEqual(native_upload_limit(multipart=True),512*MIB)

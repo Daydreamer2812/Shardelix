@@ -11,7 +11,7 @@ import tempfile
 import time
 
 from benchmark_eroded import eroded_fixture, score
-from shardelix.reconstruction.scan import reconstruct
+from shardelix.reconstruction.irregular.scan import reconstruct
 
 
 def main():

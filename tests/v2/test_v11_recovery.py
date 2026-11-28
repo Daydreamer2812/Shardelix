@@ -2,16 +2,16 @@ import unittest
 import numpy as np
 from scipy.ndimage import gaussian_filter
 from shardelix import Fragment,Pose
-from shardelix.reconstruction.sparse_grid import candidates,_links_reference
-from shardelix.reconstruction.links11 import reciprocal_links
-from shardelix.reconstruction.grid_consensus import edge_costs
-from shardelix.reconstruction.dense11 import exact_mgc_candidates
-from shardelix.reconstruction.anchor11 import anchored_complete,soft_pack
-from shardelix.reconstruction.strip_gap11 import solve_thin_missing
+from shardelix.reconstruction.tiles.sparse import candidates,_links_reference
+from shardelix.reconstruction.tiles.links import reciprocal_links
+from shardelix.reconstruction.tiles.consensus import edge_costs
+from shardelix.reconstruction.tiles.dense_recovery import exact_mgc_candidates
+from shardelix.reconstruction.irregular.anchor import anchored_complete,soft_pack
+from shardelix.reconstruction.strips.single_gap import solve_thin_missing
 from shardelix.reconstruction.common import render
 from shardelix.reconstruction.evaluation import canvas_align
-from shardelix.reconstruction.gridmetrics10 import grid_objective
-from shardelix.reconstruction.solver import objective
+from shardelix.reconstruction.tiles.metrics import grid_objective
+from shardelix.reconstruction.quality import objective
 
 def texture(h,w,seed=51):
     rng=np.random.default_rng(seed)

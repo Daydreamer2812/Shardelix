@@ -8,8 +8,8 @@ from pathlib import Path
 
 import numpy as np
 from PIL import Image
-from shardelix.workflow12 import inspect_uploads, run_job
-from shardelix.reconstruction.scan import chroma_mask
+from shardelix.workflow import inspect_uploads, run_job
+from shardelix.reconstruction.irregular.scan import chroma_mask
 
 
 def fixture_archive(path,n,size=30):

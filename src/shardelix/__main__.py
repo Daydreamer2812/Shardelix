@@ -1,4 +1,4 @@
-from .reconstruction.cli import main
+from shardelix.reconstruction.cli import main
 
 if __name__ == "__main__":
     raise SystemExit(main())

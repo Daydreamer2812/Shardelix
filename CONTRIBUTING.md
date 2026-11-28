@@ -13,8 +13,10 @@ python -m pip install -e ".[dev]"
 
 ## Before opening a pull request
 
-1. Keep algorithms under `src/shardelix` and generated artifacts under `outputs/` or
-   `data/synthetic/`.
+1. Put algorithm changes in the appropriate geometry package under
+   `src/shardelix/reconstruction/`; see [architecture](docs/ARCHITECTURE.md).
+   Avoid version-numbered runtime modules and parallel workflow entry points.
+   Keep generated artifacts under `outputs/` or `data/synthetic/`.
 2. Do not expose ground truth to blind inference code.
 3. Add a regression test for bug fixes and seeded evaluation for solver changes.
 4. Run `python -m unittest discover -s tests/v2 && python -m unittest discover -s tests/workflow`.

@@ -1,7 +1,7 @@
 """Render cut lines solely from the reconstructed labels."""
 import numpy as np
 from pathlib import Path
-from .common import save_rgba
+from shardelix.reconstruction.common import save_rgba
 
 def cut_overlay(image,labels,scale=1):
     """Internal predicted seams, exactly aligned with the reconstructed pixels.

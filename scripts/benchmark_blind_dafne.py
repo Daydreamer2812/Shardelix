@@ -19,7 +19,7 @@ import zipfile
 
 from benchmark_official_dafne import cases
 from evaluate_dafne_components import evaluate
-from shardelix.workflow12 import run_job
+from shardelix.workflow import run_job
 
 
 def run(archive, suffix, out):

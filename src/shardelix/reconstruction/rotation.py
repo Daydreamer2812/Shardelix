@@ -2,9 +2,9 @@
 from __future__ import annotations
 import numpy as np
 from scipy.spatial.distance import cdist
-from .common import Fragment,Pose
-from .straight import solve_straight
-from .grid import solve_rotated_grid
+from shardelix.reconstruction.common import Fragment,Pose
+from shardelix.reconstruction.tiles.straight import solve_straight
+from shardelix.reconstruction.tiles.legacy import solve_rotated_grid
 
 
 def _signed_tree(same,flipped,neighbors=12):
@@ -75,7 +75,7 @@ def _edge_pair_costs(pieces,axis,samples=512):
 
 def _canonical_tiles(pieces,shape,grid):
     rows,cols=grid;h,w=shape
-    from .straight import _grid_bounds
+    from shardelix.reconstruction.tiles.straight import _grid_bounds
     y,x=_grid_bounds(h,w,rows,cols)
     allowed=set((int(a),int(b)) for a in np.diff(y) for b in np.diff(x))
     canonical=[];turns=[];ambiguous=False
@@ -88,7 +88,7 @@ def _canonical_tiles(pieces,shape,grid):
 
 
 def _strip_cost_tensor(canonical,axis,samples,kind):
-    from .straight import _edge,_descriptor
+    from shardelix.reconstruction.tiles.straight import _edge,_descriptor
     left,right=("left","right") if axis==0 else ("top","bottom")
     A=np.stack([_descriptor(_edge(p.rgba,left),samples)[0] for p in canonical])
     B=np.stack([_descriptor(_edge(p.rgba,right),samples)[0] for p in canonical])
@@ -117,8 +117,8 @@ def _orientation_dp(raw,order):
 
 def solve_rotated_strips(pieces,shape,grid,kind="l1",samples=1024,**kwargs):
     """Joint binary orientation and constrained Hamiltonian path refinement."""
-    from .solver import objective
-    from .straight import _grid_bounds,_strip_assignment
+    from shardelix.reconstruction.quality import objective
+    from shardelix.reconstruction.tiles.straight import _grid_bounds,_strip_assignment
     canonical,turns,ambiguous=_canonical_tiles(pieces,shape,grid)
     if len(pieces)==1:
         return {pieces[0].id:Pose(0,0,int(turns[0]))},{"algorithm":"rotated-strip-single"}
@@ -155,9 +155,9 @@ def solve_rotated_tiles(pieces,shape,grid,samples=24,gradient_weight=.25,top_k=3
     canvas-compatible global orientations are tested. Missing orientation
     states use the permitted dimension orientation as an initialization.
     """
-    from .solver import orient_to_canvas,objective
+    from shardelix.reconstruction.quality import orient_to_canvas,objective
     canonical,turns,ambiguous=_canonical_tiles(pieces,shape,grid)
-    from .straight import _grid_bounds
+    from shardelix.reconstruction.tiles.straight import _grid_bounds
     ys,xs=_grid_bounds(*shape,*grid)
     allowed=set((int(a),int(b)) for a in np.diff(ys) for b in np.diff(xs))
     best=None
@@ -214,9 +214,9 @@ def solve_rotated_tiles(pieces,shape,grid,samples=24,gradient_weight=.25,top_k=3
 
 def _oriented_grid_graph(pieces,shape,grid,kind="l1",top_k=4):
     """Graph with only physically permitted quarter-turn states, full edge profiles."""
-    from .straight import straight_costs,normalized_costs,_cycle_edges,_grid_bounds
-    from .geometry import R,assemble
-    from .grid import _grid_edges
+    from shardelix.reconstruction.tiles.straight import straight_costs,normalized_costs,_cycle_edges,_grid_bounds
+    from shardelix.reconstruction.irregular.lattice import R,assemble
+    from shardelix.reconstruction.tiles.legacy import _grid_edges
     ys,xs=_grid_bounds(*shape,*grid)
     allowed=set((int(a),int(b)) for a in np.diff(ys) for b in np.diff(xs))
     states=[];mapping=[]
@@ -252,7 +252,7 @@ def _oriented_grid_graph(pieces,shape,grid,kind="l1",top_k=4):
 
 def _refine_grid_turns(pieces,poses,shape,grid,costs,mapping):
     """Optimize orientations for a fixed valid grid and return chosen state indices."""
-    from .straight import _grid_bounds
+    from shardelix.reconstruction.tiles.straight import _grid_bounds
     ys,xs=_grid_bounds(*shape,*grid)
     arr=np.full(grid,-1,int)
     ixs={p.id:i for i,p in enumerate(pieces)}
@@ -287,7 +287,7 @@ def _refine_grid_turns(pieces,poses,shape,grid,costs,mapping):
 def _joint_grid_refine(pieces,poses,shape,grid,costs,mapping,rounds=5):
     """Optimize both unique piece assignment and quarter-turn state per grid slot."""
     from scipy.optimize import linear_sum_assignment
-    from .straight import _grid_bounds,normalized_costs
+    from shardelix.reconstruction.tiles.straight import _grid_bounds,normalized_costs
     ys,xs=_grid_bounds(*shape,*grid);rows,cols=grid;n=len(pieces)
     rh,cw=np.diff(ys),np.diff(xs)
     ixs={p.id:i for i,p in enumerate(pieces)};mi={ik:j for j,ik in enumerate(mapping)}
@@ -340,7 +340,7 @@ def solve_unknown_color_strips(pieces):
     RGB/luminance-chrominance seam profiles and binary orientation synchronization
     operate on the canonical vertical strips. No uniform column grid is imposed.
     """
-    from .document import chain
+    from shardelix.reconstruction.strips.ordering import chain
     canonical=[];turns=[]
     for p in pieces:
         k=int(p.rgba.shape[0]<p.rgba.shape[1])

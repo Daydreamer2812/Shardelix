@@ -6,10 +6,10 @@ from typing import Sequence
 from collections import Counter
 import hashlib
 import numpy as np
-from .reconstruction.common import Fragment,Pose,render,save_rgba,json_write,load_fragments
-from .reconstruction.overlay import write_cut_outputs
-from .reconstruction.solver import solve
-from .reconstruction.limits import validate_constraints,MAX_PIXELS,ResourceLimits,max_count
+from shardelix.reconstruction.common import Fragment,Pose,render,save_rgba,json_write,load_fragments
+from shardelix.reconstruction.overlay import write_cut_outputs
+from shardelix.reconstruction.solver import solve
+from shardelix.reconstruction.limits import validate_constraints,MAX_PIXELS,ResourceLimits,max_count
 
 def result_status(pieces,poses,shape,diagnostics,labels,collision,rotations):
     # Canonical rotational copies are indistinguishable from observable data.
@@ -58,7 +58,7 @@ class ReconstructionResult:
         if groups is not None:
             json_write(output/"unanchored_components.json",{"note":"Relative grid-cell positions only; absolute location and orientation unknown", "components":groups})
         if diag.get("identical_piece_count",0) or groups is not None or diag.get("sparse_high_consensus") is False or any(diag.get("anchor_translation_slack",[0,0])):
-            from .reconstruction.ambiguity11 import describe_ambiguity
+            from shardelix.reconstruction.ambiguity import describe_ambiguity
             json_write(output/"ambiguity.json",describe_ambiguity(self.fragments,diag,self.rotations))
         diag.update(render_collision_pixels=coll,cut_overlay_scale=scale)
         result={"mode":"blind","poses":{i:p.as_dict() for i,p in self.poses.items()},"diagnostics":diag}
@@ -138,34 +138,27 @@ class Solver:
             if self.strategy=="classic":raise ValueError("Classic route does not support continuous angles or missing input")
             if self.strategy not in {"auto","sparse"}:raise ValueError("Unknown strategy")
             if self.strategy=="sparse" and not grid:raise ValueError("Sparse strategy requires grid")
-            from .reconstruction.pose9 import solve_pose9
-            if not fragments or len({p.id for p in fragments})!=len(fragments):raise ValueError("Empty or duplicate fragments")
-            if any(p.rgba.ndim!=3 or p.rgba.shape[2]!=4 or p.rgba.dtype!=np.uint8 or not p.mask.any() for p in fragments):raise ValueError("Invalid fragment")
-            rotations=angle_mode!="none"
-            pp,poses,diag,angles,affines=solve_pose9(fragments,shape,cut,grid,angle_mode,sampling,expected_count,rotations,params,auto_tune)
+            from shardelix.reconstruction.pose import solve_pose
+            pp,poses,diag,angles,affines=solve_pose(fragments,shape,cut,grid,angle_mode,sampling,expected_count,rotations,params,auto_tune)
             if self.profile=="accurate" and grid and not params:
-                from .reconstruction.recovery12 import verify_extra_grid
+                from shardelix.reconstruction.tiles.verification import verify_extra_grid
                 poses,diag=verify_extra_grid(pp,poses,diag,shape,grid,rotations,expected_count)
             diag.update(performance_profile=self.profile or "legacy",runtime_seconds=time.perf_counter()-started)
             return ReconstructionResult(pp,poses,shape,diag,grid,rotations,angles,affines)
         validate_constraints(len(fragments),shape,cut,grid,rotations)
         for p in fragments:
-            if p.rgba.ndim!=3 or p.rgba.shape[2]!=4 or p.rgba.dtype!=np.uint8 or not p.mask.any():
-                raise ValueError(f"Invalid RGBA fragment: {p.id}")
             if grid and not p.mask.all():raise ValueError("Rectangular cuts require fully opaque rectangular fragments")
             if grid and shape[0]%grid[0]==0 and shape[1]%grid[1]==0:
                 cell=(shape[0]//grid[0],shape[1]//grid[1]);dims=p.rgba.shape[:2]
                 if dims!=cell and (not rotations or dims!=cell[::-1]):raise ValueError("Piece dimensions do not match public uniform cells")
-        if len({p.id for p in fragments})!=len(fragments):raise ValueError("Duplicate fragment IDs")
-        if self.strategy not in {"auto","classic","sparse"}:raise ValueError("Unknown strategy")
         if self.strategy=="sparse":
             if not grid:raise ValueError("Sparse strategy requires a rectangular grid")
             params={"strategy":"sparse",**(params or {})}
         if self.strategy=="classic":
-            from .reconstruction.solver import _solve_v7
-            from .reconstruction.limits import LEGACY_MAX
+            from shardelix.reconstruction.solver import solve_classic
+            from shardelix.reconstruction.limits import LEGACY_MAX
             if len(fragments)>LEGACY_MAX:raise ValueError("Classic strategy is limited to 1024 pieces")
-            poses,diag=_solve_v7(fragments,shape,cut,grid,rotations,auto_tune=auto_tune,params=params)
+            poses,diag=solve_classic(fragments,shape,cut,grid,rotations,auto_tune=auto_tune,params=params)
         else:
             poses,diag=solve(fragments,shape,cut,grid,rotations,auto_tune=auto_tune,params=params)
         # Fast normally evaluates one hypothesis. On catastrophic irregular
@@ -174,8 +167,8 @@ class Solver:
         if (self.profile=="fast" and not grid and cut in {"jigsaw","wavy","random","jagged"}
                 and not params and self.strategy!="classic" and 8<=len(fragments)<=1024
                 and len(poses)<.60*len(fragments)):
-            from .reconstruction.verified import solve_verified
-            from .reconstruction.solver import objective,orient_to_canvas
+            from shardelix.reconstruction.irregular.verified import solve_verified
+            from shardelix.reconstruction.quality import objective,orient_to_canvas
             q,d=solve_verified(fragments,shape,rotations,k=16,max_bucket=18,pack=False)
             if rotations:q=orient_to_canvas(fragments,q,shape)
             a,b=objective(fragments,poses,shape),objective(fragments,q,shape)
@@ -185,11 +178,11 @@ class Solver:
             diag["fast_rescue_v13"]=trial
         if self.profile=="accurate" and not params and self.strategy!="classic":
             if grid:
-                from .reconstruction.recovery12 import verify_extra_grid
+                from shardelix.reconstruction.tiles.verification import verify_extra_grid
                 poses,diag=verify_extra_grid(fragments,poses,diag,shape,grid,rotations,expected_count)
             elif 8<=len(fragments)<=1024 and len(poses)<.98*len(fragments):
-                from .reconstruction.verified import solve_verified
-                from .reconstruction.solver import objective,orient_to_canvas
+                from shardelix.reconstruction.irregular.verified import solve_verified
+                from shardelix.reconstruction.quality import objective,orient_to_canvas
                 q,d=solve_verified(fragments,shape,rotations,k=24,max_bucket=24,pack=False)
                 if rotations:q=orient_to_canvas(fragments,q,shape)
                 a,b=objective(fragments,poses,shape),objective(fragments,q,shape)
@@ -211,7 +204,8 @@ def reconstruct_files(fragments, output, *, matching_reference=None, ground_trut
     """
     import shutil
     import tempfile
-    from .workflow12 import IMAGE_EXT, native_upload_limit, run_job
+    from shardelix.workflow import run_job
+    from shardelix.uploads import IMAGE_EXT, native_upload_limit
 
     if profile not in {"fast", "balanced", "accurate"}:
         raise ValueError("Choose fast, balanced or accurate")
