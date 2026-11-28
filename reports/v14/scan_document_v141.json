@@ -1,0 +1,265 @@
+{
+  "baseline_version": "14.0.1",
+  "baseline_commit": "271a37104d39cf6f6a516998e8aee226042d924f",
+  "candidate_version": "14.1.0",
+  "profile": "balanced",
+  "scope": "native CPU, blind physical document strips",
+  "limitations": [
+    "Development cases, not held-out evaluation or SOTA claim.",
+    "Synthetic stress cases are composed from DocDataset crops; severe corruption remains challenging.",
+    "Timings are illustrative with varying concurrent workload; no speedup claim.",
+    "Actual browser performance has not been benchmarked on this dataset."
+  ],
+  "real": {
+    "baseline": {
+      "dataset": "DocDataset, physical stripes",
+      "seed": 624,
+      "profile": "balanced",
+      "source": "https://people.tamu.edu/~xinli/DocReassembly/data/DocDataset.zip",
+      "protocol": "Anonymized scan pixels + foreground masks only; truth read after reconstruction.",
+      "results": [
+        {
+          "case": "real1_27",
+          "pixel_only": {
+            "directed_correct": 16,
+            "undirected_correct": 17,
+            "positions_correct": 12,
+            "total_joins": 26,
+            "total_pieces": 27
+          },
+          "runtime_seconds": 4.86503269800005
+        },
+        {
+          "case": "real2_56",
+          "pixel_only": {
+            "directed_correct": 50,
+            "undirected_correct": 50,
+            "positions_correct": 0,
+            "total_joins": 55,
+            "total_pieces": 56
+          },
+          "runtime_seconds": 19.01757280899983
+        },
+        {
+          "case": "real3_39",
+          "pixel_only": {
+            "directed_correct": 22,
+            "undirected_correct": 23,
+            "positions_correct": 1,
+            "total_joins": 38,
+            "total_pieces": 39
+          },
+          "runtime_seconds": 11.918968003999908
+        }
+      ]
+    },
+    "candidate": {
+      "dataset": "DocDataset, physical stripes",
+      "seed": 624,
+      "profile": "balanced",
+      "source": "https://people.tamu.edu/~xinli/DocReassembly/data/DocDataset.zip",
+      "protocol": "Anonymized scan pixels + foreground masks only; truth read after reconstruction.",
+      "results": [
+        {
+          "case": "real1_27",
+          "pixel_only": {
+            "directed_correct": 20,
+            "undirected_correct": 20,
+            "positions_correct": 14,
+            "total_joins": 26,
+            "total_pieces": 27
+          },
+          "runtime_seconds": 8.376133008000124
+        },
+        {
+          "case": "real2_56",
+          "pixel_only": {
+            "directed_correct": 55,
+            "undirected_correct": 55,
+            "positions_correct": 56,
+            "total_joins": 55,
+            "total_pieces": 56
+          },
+          "runtime_seconds": 25.99860297500004
+        },
+        {
+          "case": "real3_39",
+          "pixel_only": {
+            "directed_correct": 34,
+            "undirected_correct": 34,
+            "positions_correct": 22,
+            "total_joins": 38,
+            "total_pieces": 39
+          },
+          "runtime_seconds": 15.60399983100001
+        }
+      ]
+    }
+  },
+  "synthetic": {
+    "baseline": [
+      {
+        "case": "pageA-20",
+        "seed": 617,
+        "severity": 1,
+        "correct": 8,
+        "total": 19,
+        "positions_aligned": 5,
+        "seconds": 2.860171563999984,
+        "algorithm": "physical-document-foreground-multiscale"
+      },
+      {
+        "case": "pageA-32",
+        "seed": 619,
+        "severity": 2,
+        "correct": 6,
+        "total": 31,
+        "positions_aligned": 2,
+        "seconds": 1.447410679000086,
+        "algorithm": "physical-document-foreground-multiscale"
+      },
+      {
+        "case": "pageB-24",
+        "seed": 721,
+        "severity": 1,
+        "correct": 6,
+        "total": 23,
+        "positions_aligned": 4,
+        "seconds": 2.018991632000052,
+        "algorithm": "physical-document-foreground-multiscale"
+      },
+      {
+        "case": "pageB-36",
+        "seed": 725,
+        "severity": 2,
+        "correct": 5,
+        "total": 35,
+        "positions_aligned": 3,
+        "seconds": 1.1469662979998247,
+        "algorithm": "physical-document-foreground-multiscale"
+      },
+      {
+        "case": "pageC-24",
+        "seed": 813,
+        "severity": 1,
+        "correct": 3,
+        "total": 23,
+        "positions_aligned": 3,
+        "seconds": 2.0447417540001425,
+        "algorithm": "physical-document-foreground-multiscale"
+      },
+      {
+        "case": "pageC-40",
+        "seed": 819,
+        "severity": 2,
+        "correct": 5,
+        "total": 39,
+        "positions_aligned": 4,
+        "seconds": 1.2175976989999526,
+        "algorithm": "physical-document-foreground-multiscale"
+      },
+      {
+        "case": "pageD-32",
+        "seed": 917,
+        "severity": 1,
+        "correct": 7,
+        "total": 31,
+        "positions_aligned": 4,
+        "seconds": 1.3549686080000356,
+        "algorithm": "physical-document-foreground-multiscale"
+      },
+      {
+        "case": "pageD-48",
+        "seed": 919,
+        "severity": 2,
+        "correct": 2,
+        "total": 47,
+        "positions_aligned": 2,
+        "seconds": 1.265454003000059,
+        "algorithm": "physical-document-foreground-multiscale"
+      }
+    ],
+    "candidate": [
+      {
+        "case": "pageA-20",
+        "seed": 617,
+        "severity": 1,
+        "correct": 16,
+        "total": 19,
+        "positions_aligned": 9,
+        "seconds": 3.8611505459998625,
+        "algorithm": "physical-document-foreground-multiscale"
+      },
+      {
+        "case": "pageA-32",
+        "seed": 619,
+        "severity": 2,
+        "correct": 12,
+        "total": 31,
+        "positions_aligned": 4,
+        "seconds": 3.969956567000054,
+        "algorithm": "physical-document-foreground-multiscale"
+      },
+      {
+        "case": "pageB-24",
+        "seed": 721,
+        "severity": 1,
+        "correct": 20,
+        "total": 23,
+        "positions_aligned": 19,
+        "seconds": 3.372299107000117,
+        "algorithm": "physical-document-foreground-multiscale"
+      },
+      {
+        "case": "pageB-36",
+        "seed": 725,
+        "severity": 2,
+        "correct": 6,
+        "total": 35,
+        "positions_aligned": 6,
+        "seconds": 1.9449130860000423,
+        "algorithm": "physical-document-foreground-multiscale"
+      },
+      {
+        "case": "pageC-24",
+        "seed": 813,
+        "severity": 1,
+        "correct": 5,
+        "total": 23,
+        "positions_aligned": 3,
+        "seconds": 3.5908178940001108,
+        "algorithm": "physical-document-foreground-multiscale"
+      },
+      {
+        "case": "pageC-40",
+        "seed": 819,
+        "severity": 2,
+        "correct": 8,
+        "total": 39,
+        "positions_aligned": 4,
+        "seconds": 1.292355354999927,
+        "algorithm": "physical-document-foreground-multiscale"
+      },
+      {
+        "case": "pageD-32",
+        "seed": 917,
+        "severity": 1,
+        "correct": 7,
+        "total": 31,
+        "positions_aligned": 5,
+        "seconds": 1.6604374369999277,
+        "algorithm": "physical-document-foreground-multiscale"
+      },
+      {
+        "case": "pageD-48",
+        "seed": 919,
+        "severity": 2,
+        "correct": 3,
+        "total": 47,
+        "positions_aligned": 2,
+        "seconds": 1.3946976619999987,
+        "algorithm": "physical-document-foreground-multiscale"
+      }
+    ]
+  }
+}

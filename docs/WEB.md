@@ -196,6 +196,10 @@ It rectifies the foreground silhouette per row, estimates relative 180° text
 orientation from cleaned whole-strip row projections, compares shadow-normalized
 ink-edge profiles, and in Balanced/High accuracy uses nearby observed interior
 patches to score likely stroke continuations without recognizing characters.
+V14.1 adds local shadow suppression, bounded vertical text-row registration,
+shift-tolerant foreground overlap and conditionally enabled page-margin priors.
+A budgeted sparse global path refinement competes with the existing chain;
+it does not replace it unless the observed objective improves.
 Color photographs use chromatic strip matching instead. Fast skips the patch index.
 The solver optimizes a directed chain. It supports 2–128 scanned strips. For other
 shapes, the irregular scan route remains available. Physical strip ordering
@@ -214,7 +218,9 @@ The original [DocDataset](https://people.tamu.edu/~xinli/DocReassembly/) is
 not redistributed. The script anonymizes inputs before reconstruction, then
 reads the answer ordering only after the pixel-only solver finishes. See
 [`reports/scan_strips.json`](../reports/scan_strips.json) for measured
-results: 90/119 correct undirected seams vs 22/119 before the optimization.
+historical results: 90/119 correct undirected seams vs 22/119 before the optimization.
+V14.1 further improves to 109/119 (91.6%) in Balanced native runs;
+see the [paired scan report](../reports/v14/scan_document_v141.json).
 This is not 100% page-order recovery, and the stronger search costs more CPU time. These are native pixel-only results, not a claim of identical browser
 performance or verified accuracy on arbitrary uploads.
 

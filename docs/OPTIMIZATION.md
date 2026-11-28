@@ -1,5 +1,8 @@
 # Unified classical optimization — 2026-11-27
 
+For the subsequent V14.1 scan improvements and paired evidence, see the
+[14.1.0 release notes](releases/v14.1.0.md).
+
 The resource caps documented here are historical for this update. See [subsequent irregular scaling](IRREGULAR_SCALE.md) for current limits.
 
 This update keeps a single engine, default blind matching, optional explicitly

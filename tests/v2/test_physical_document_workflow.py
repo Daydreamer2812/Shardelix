@@ -19,7 +19,7 @@ class PhysicalDocumentWorkflowTests(unittest.TestCase):
             with self.subTest(browser=browser), tempfile.TemporaryDirectory() as t:
                 root = Path(t)
                 (root/"upload").mkdir()
-                for i in range(5):
+                for i in range(8):
                     a = np.full((320, 48, 4), 255, np.uint8)
                     for y in range(15, 300, 23):
                         a[y:y+5, 3+i:24+i, :3] = 0
@@ -33,7 +33,12 @@ class PhysicalDocumentWorkflowTests(unittest.TestCase):
                 d = result["diagnostics"]
                 self.assertEqual(d["algorithm"], "physical-document-foreground-multiscale")
                 self.assertEqual(d["scan"]["kind"], "document-strips")
-                self.assertEqual(d["placed"], 5)
+                self.assertEqual(d["placed"], 8)
+                matching = d["scan"]["matching"]
+                self.assertTrue(matching["patch_recurrence"])
+                self.assertTrue(matching["local_shadow_normalization"])
+                self.assertIn("global_path", matching)
+                self.assertIn("vertical_registration", matching)
                 self.assertEqual(d["render_collision_pixels"], 0)
                 self.assertFalse(d["accuracy_verified"])
                 self.assertNotIn("ocr", d["scan"])
@@ -81,6 +86,55 @@ class PhysicalDocumentWorkflowTests(unittest.TestCase):
         self.assertTrue(np.isfinite(c).all())
         self.assertGreaterEqual(float(c.min()),0)
         np.testing.assert_allclose(c,_patch_recurrence(images,6,0))
+
+
+    def test_local_shadow_normalization_preserves_ink(self):
+        from shardelix.reconstruction.strips.physical import _local_ink
+        y,x=np.indices((450,32))
+        paper=.15+.07*np.sin(y/38)+.12*np.exp(-x/4)
+        ink=np.zeros_like(paper,dtype=bool)
+        ink[45:48,5:27]=True
+        ink[117:120,3:25]=True
+        ink[203:208,9:26]=True
+        evidence=_local_ink(np.where(ink,.94,paper).astype(np.float32))
+        self.assertGreater(float(evidence[ink].mean()),.7)
+        self.assertLess(float(evidence[~ink].mean()),.03)
+        self.assertTrue(np.isfinite(evidence).all())
+
+    def test_text_row_registration_and_abstention(self):
+        from shardelix.reconstruction.strips.physical import _align_text_rows, _shift_rows
+        a=np.zeros((420,24),np.float32)
+        for y in (23,61,96,155,187,229,286,327,378):
+            a[y:y+5,3:21]=1
+        expected=np.array([-5,-4,-3,-2,-1,0,1,2,3,4,5,0])
+        images=[_shift_rows(a,-int(d)) for d in expected]
+        offsets,d=_align_text_rows(images)
+        np.testing.assert_array_equal(offsets,expected)
+        self.assertTrue(d["applied"])
+        offsets,d=_align_text_rows([a]*len(images))
+        self.assertFalse(d["applied"])
+        self.assertFalse(offsets.any())
+
+    def test_global_chain_matches_small_exhaustive_oracle(self):
+        import itertools
+        from shardelix.reconstruction.strips.ordering import (
+            _chain_energy, _priority, refine_chain_global,
+        )
+        costs=np.random.default_rng(7).uniform(.05,2,(6,6))
+        np.fill_diagonal(costs,np.inf)
+        initial=np.array([3,5,2,1,0,4])
+        priority=np.zeros((7,7))
+        priority[:6,:6]=_priority(costs,.5)
+        def energy(order):
+            return _chain_energy(priority,np.asarray(order))
+        oracle=min(energy(o) for o in itertools.permutations(range(6)))
+        result,diag=refine_chain_global(costs,initial,seconds=5)
+        self.assertEqual(sorted(result.tolist()),list(range(6)))
+        self.assertAlmostEqual(energy(result),oracle)
+        self.assertTrue(diag["accepted"])
+        fallback,diag=refine_chain_global(costs,initial,seconds=0)
+        np.testing.assert_array_equal(fallback,initial)
+        self.assertFalse(diag["accepted"])
 
 
 if __name__ == "__main__":

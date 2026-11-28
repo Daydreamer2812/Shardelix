@@ -191,6 +191,78 @@ def chain(m,normalization=.5, widths=None,slots=None,borders=None):
     best=min(candidates,key=lambda o:_chain_energy(c,o))
     return _relocate(c,best,passes=16 if n<=128 else 2)
 
+def refine_chain_global(m, order, borders=None, *, normalization=.5, top_k=8, seconds=1.5):
+    """Bounded sparse directed Hamiltonian path refinement.
+
+    Degree constraints create a cycle cover with a dummy page endpoint. Add
+    subtour cuts lazily until a single connected path is found. Always include
+    the existing feasible chain and return it on timeout, unavailable MILP
+    backend, or a non-improving solution. Optimality is over the shortlist,
+    not all possible edges and not ground-truth accuracy.
+    """
+    import time
+    n=len(m)
+    if n<3:return order,{"method":"sparse-subtour-elimination","accepted":False,"status":"not-applicable"}
+    c=np.zeros((n+1,n+1))
+    c[:n,:n]=_priority(m,normalization);c[n,n]=np.inf
+    if borders is not None:c[n,:n],c[:n,n]=borders
+    before=_chain_energy(c,order)
+    diag={"method":"sparse-subtour-elimination","initial_energy":before,
+          "selected_energy":before,"accepted":False,"status":"budget"}
+    try:
+        from scipy.optimize import milp, Bounds, LinearConstraint
+        from scipy.sparse import coo_matrix
+    except (ImportError, RuntimeError):
+        return order,{**diag,"status":"backend-unavailable"}
+    arcs=set(zip(map(int,order[:-1]),map(int,order[1:])))
+    for i in range(n):
+        arcs.update((i,int(j)) for j in np.argsort(c[i,:n],kind="stable")[:top_k]
+                    if i!=j and np.isfinite(c[i,j]))
+        arcs.update((int(j),i) for j in np.argsort(c[:n,i],kind="stable")[:top_k]
+                    if i!=j and np.isfinite(c[j,i]))
+        arcs.update(((n,i),(i,n)))
+    arcs=np.asarray(sorted(arcs),dtype=np.int32);a,b=arcs.T;count=len(a)
+    rows=np.r_[a,b+n+1];cols=np.tile(np.arange(count),2);vals=np.ones(len(rows))
+    lo=[1.]*(2*n+2);hi=lo.copy()
+    deadline=time.monotonic()+seconds
+    diag["candidate_arcs"]=count
+    try:
+        for iteration in range(20):
+            remaining=deadline-time.monotonic()
+            if remaining<.04:break
+            mat=coo_matrix((vals,(rows,cols)),shape=(len(lo),count)).tocsr()
+            result=milp(c[a,b],integrality=np.ones(count),
+                        bounds=Bounds(np.zeros(count),np.ones(count)),
+                        constraints=LinearConstraint(mat,lo,hi),
+                        options={"time_limit":remaining,"mip_rel_gap":0.0})
+            diag["iterations"]=iteration+1
+            if result.x is None:break
+            chosen=arcs[result.x>.5]
+            if len(chosen)!=n+1:break
+            succ=np.full(n+1,-1,dtype=int);succ[chosen[:,0]]=chosen[:,1]
+            if np.any(succ<0) or len(set(succ))!=n+1:break
+            cycles=_cycle_components(succ)
+            if len(cycles)==1:
+                path=[];j=int(succ[n])
+                while j!=n:path.append(j);j=int(succ[j])
+                path=np.asarray(path,dtype=int)
+                energy=_chain_energy(c,path)
+                accept=energy<before-1e-9
+                diag.update(status="shortlist-optimal" if result.status==0 else "feasible",
+                            selected_energy=energy if accept else before,accepted=bool(accept))
+                return (path if accept else order),diag
+            # Multiple disconnected cycles are invalid. Each cut forbids that
+            # entire cycle, without fixing its internal order.
+            for cycle in cycles:
+                idx=np.flatnonzero(np.isin(a,cycle)&np.isin(b,cycle))
+                rows=np.r_[rows,np.full(len(idx),len(lo))]
+                cols=np.r_[cols,idx];vals=np.r_[vals,np.ones(len(idx))]
+                lo.append(-np.inf);hi.append(len(cycle)-1)
+    except (RuntimeError,ValueError,OSError,NotImplementedError):
+        diag["status"]="backend-unavailable"
+    return order,diag
+
+
 def _projection_cost(images):
     """Text-line row projection under 0/180 rotations, sensitive to line baseline."""
     h=min(1400,max(len(x) for x in images))
