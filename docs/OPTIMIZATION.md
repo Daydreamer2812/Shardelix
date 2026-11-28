@@ -1,5 +1,7 @@
 # Unified classical optimization — 2026-11-27
 
+For the V14.2 curved missing-boundary update, see [14.2.0 release notes](releases/v14.2.0.md).
+
 For the subsequent V14.1 scan improvements and paired evidence, see the
 [14.1.0 release notes](releases/v14.1.0.md).
 

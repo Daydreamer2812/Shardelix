@@ -653,9 +653,9 @@ def reconstruct(pieces,out:Path,report,update=lambda _:None,*,pixel_cap=8_000_00
     # assembly can trigger bounded gap-aware recovery without a known canvas.
     # Small irregular puzzles can also have a large but weak exact-contact
     # tree. Search a second model when these joins have weak local evidence.
-    weak_small = n<=16 and any(q["color_difference"]>18 or
-                              q["contact_length"]<25 or q["median_gap"]>2
-                              for q in joins)
+    weak_contacts = sum(q.get("color_difference",0)>18 or q.get("contact_length",float("inf"))<25 or
+                        q.get("median_gap",0)>2 for q in joins)
+    weak_small = n<=16 and weak_contacts>0
     requested = gap_recovery=="always"
     sparse_gap=n>MAX_GAP_PIECES
     if gap_recovery and 2<=n and gap_allowed and (requested or weak_small or exact_size<max(2,math.ceil(.60*n))):
@@ -690,7 +690,10 @@ def reconstruct(pieces,out:Path,report,update=lambda _:None,*,pixel_cap=8_000_00
     if gap_recovery and deep_recovery and gap_allowed and 2<=n and hasattr(shapes[0],"points") and (
           deep_recovery=="always" or (recovery["attempted"] and (weak_small or exact_size<max(2,math.ceil(.60*n))))):
         from shardelix.reconstruction.irregular.continuation import recover
-        cg,cj,stats=recover(shapes,recovered,update,memory_budget=memory_budget,profile=profile)
+        try_offsets=(not recovery["selected"] and
+                     (exact_size<math.ceil(.60*n) or weak_contacts>=max(1,math.ceil(.5*len(joins)))))
+        cg,cj,stats=recover(shapes,recovered,update,memory_budget=memory_budget,profile=profile,
+                            offset_search=try_offsets)
         deep.update(stats)
         if cg is not None:
             # Rounded, compact populations have lost much of their original
@@ -700,11 +703,12 @@ def reconstruct(pieces,out:Path,report,update=lambda _:None,*,pixel_cap=8_000_00
             members={shapes[i].fragment.id for i in cg[0]}
             supported=[j for j in cj if j["a"] in members and j["b"] in members
                        and (j.get("consensus_supported") or j.get("line_count",0)>=2 or j.get("contextual_growth"))]
-            if rounded_damage or (supported and len(cg[0])>=len(groups[0])):
+            offset_verified=bool(deep.get("offset_recovery",{}).get("selected")) and bool(cj)
+            if rounded_damage or offset_verified or (supported and len(cg[0])>=len(groups[0])):
                 groups,joins=cg,cj
                 assembly_model="classical-continuation"
                 deep["selected"]=True
-                deep["selection_reason"]="rounded damaged population; confidence before component size" if rounded_damage else "corroborated component"
+                deep["selection_reason"]="rounded damaged population; confidence before component size" if rounded_damage else ("verified curved offset seams" if offset_verified else "corroborated component")
                 recovery["selected"]=False
     # Do not fall back to isolated approximate-contact pairs merely because
     # a sparse damaged search returned no corroborated seam. In particular,

@@ -22,6 +22,50 @@ class ClassicalContinuationTests(unittest.TestCase):
         self.assertTrue(any(d<10. and da<math.radians(10.) for d,da in errors))
         self.assertTrue(all(np.isfinite(f.rgb).all() for f in fields))
 
+    def test_offset_recovers_eroded_seams_without_rendering_expanded_pixels(self):
+        from shardelix.reconstruction.irregular.offset_contours import offset_recovery
+        from shardelix.reconstruction.resource_budget import ResourceBudget
+        pieces,truth=eroded_fixture(seed=3,erosion=8,keep=(0,1,2))
+        original=[p.rgba.copy() for p in pieces]
+        shapes=[_shape(p,2.) for p in pieces]
+        fields=[make_field(s,36.) for s in shapes]
+        candidates,diag=offset_recovery(shapes,fields,36.,ResourceBudget(256*1024**2,"test",None))
+        self.assertTrue(diag["attempted"])
+        self.assertGreaterEqual(len(candidates),2)
+        for _,i,j,R,t,info in candidates:
+            self.assertIsNotNone(truth[i]);self.assertIsNotNone(truth[j])
+            A,a=truth[i];B,b=truth[j]
+            distance,angle=pose_difference(shapes,j,R,t,A.T@B,A.T@(b-a))
+            self.assertLess(distance,10.)
+            self.assertLess(angle,math.radians(10.))
+            self.assertGreater(info["median_gap"],2.)
+        for p,raster in zip(pieces,original):
+            np.testing.assert_array_equal(p.rgba,raster)
+
+    def test_offset_search_bounds_pair_and_memory_work(self):
+        from shardelix.reconstruction.irregular.offset_contours import offset_recovery
+        from shardelix.reconstruction.resource_budget import ResourceBudget
+        pieces,_=eroded_fixture(seed=3,erosion=5,keep=(0,1,2))
+        shapes=[_shape(p,2.) for p in pieces]
+        result,diag=offset_recovery(shapes*25,[],36.,ResourceBudget(256*1024**2,"test",None))
+        self.assertFalse(result)
+        self.assertFalse(diag["attempted"])
+        self.assertEqual(diag["reason"],"offset search budget")
+
+    def test_rounded_seed_bridge_rejects_opposite_contrast(self):
+        from shardelix.reconstruction.irregular.continuation import verify_rounded_seeds
+        y,x=np.indices((60,45))
+        rgb=np.repeat((128+70*np.sin(y/9.))[...,None],3,axis=2).astype(np.uint8)
+        alpha=np.full((60,45,1),255,np.uint8)
+        shapes=[_shape(Fragment(str(i),np.concatenate([a,alpha],axis=2)),2.)
+                for i,a in enumerate((rgb,rgb,255-rgb))]
+        fields=[make_field(s,20.) for s in shapes]
+        R=np.eye(2);t=np.array([53.,0.])
+        candidates=[(10.,0,1,R,t,{"line_count":0}),(10.,0,2,R,t,{"line_count":0})]
+        selected=verify_rounded_seeds(shapes,fields,candidates,20.)
+        self.assertEqual(len(selected),1)
+        self.assertEqual(selected[0][1:3],(0,1))
+
     def test_fft_workspace_counts_unique_nominations(self):
         pieces,_=eroded_fixture(seed=3,erosion=3,keep=(0,1,2))
         shapes=[_shape(p,2.) for p in pieces[:3]]

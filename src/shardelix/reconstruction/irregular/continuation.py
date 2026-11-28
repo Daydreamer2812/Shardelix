@@ -669,7 +669,27 @@ def confidence_forest(shapes, seeds, modes, fields=None, max_gap=36.):
     return groups,joins
 
 
-def recover(shapes,previous,update=lambda _:None,*,memory_budget=None,profile="balanced"):
+def verify_rounded_seeds(shapes, fields, seeds, max_gap):
+    """Reject seam seeds lacking contrast evidence on smooth eroded fragments.
+
+    Distinct line crossings can still establish a seam despite weak texture
+    correlation. Rejected seeds stay among the competing pose modes.
+    """
+    accepted=[]
+    for s,i,j,R,t,info in seeds:
+        evidence=bridge_evidence(shapes[i],shapes[j],fields[i],fields[j],R,t,max_gap)
+        if evidence is not None:
+            corr,derivative,error,variance=evidence
+            if info.get("line_count",0)<2 and (
+                (corr<.50 and derivative<.25) or derivative<.07):
+                continue
+            info={**info,"seed_bridge_correlation":corr,
+                  "seed_bridge_derivative_correlation":derivative}
+        accepted.append((s,i,j,R,t,info))
+    return accepted
+
+
+def recover(shapes,previous,update=lambda _:None,*,memory_budget=None,profile="balanced",offset_search=False):
     """Bounded high-quality classical search; useful when contact is sparse."""
     from shardelix.reconstruction.irregular.eroded import _hypotheses,_profiles
     from shardelix.reconstruction.irregular.spectral_gap import fft_proposals,spectral_workspace
@@ -760,7 +780,25 @@ def recover(shapes,previous,update=lambda _:None,*,memory_budget=None,profile="b
     legacy=[(float(s*math.sqrt(weights[i]*weights[j])),i,j,R,t,{**info,"source":"legacy",
              "population_weight":float(math.sqrt(weights[i]*weights[j]))})for s,i,j,R,t,info in previous]
     seeds,modes=independent_consensus(shapes,ranked+sf+legacy,sparse=sparse)
+    seed_count=len(seeds)
+    if prior_on:
+        seeds=verify_rounded_seeds(shapes,fields,seeds,max_gap)
     groups,joins=confidence_forest(shapes,seeds,modes,fields,max_gap)
+    offset_stats={"attempted":False}
+    # An eroded but still curved cut can preserve an offset of its original
+    # contour. Compact rounded fragments lack enough such shape evidence.
+    if offset_search and not prior_on and profile!="fast":
+        from shardelix.reconstruction.irregular.offset_contours import offset_recovery
+        from shardelix.reconstruction.irregular.scan import _merge
+        offset_seeds,offset_stats=offset_recovery(shapes,fields,max_gap,budget,update)
+        if offset_seeds:
+            # The conservative offset seeds have a separate physical
+            # contour constraint. Merge them into a single graph, retaining
+            # only collision-free placements. Do not invent global locations.
+            og,oj=_merge(shapes,offset_seeds)
+            if oj:
+                groups,joins=og,oj
+                offset_stats["selected"]=True
     stats={"attempted":True,"gap_limit_px":max_gap,"requested_gap_limit_px":requested_gap,"field_pixels":int(pixels),"field_pixel_budget":int(field_limit),"estimated_workspace_bytes":int(workspace),
            "spectral_estimated_workspace_bytes":int(spectral_bytes),
            "sparse_degree":degree if sparse else None,"spectral_skipped_for_memory":bool(spectral_skipped),"line_tokens":sum(len(f.points)for f in fields),
@@ -768,7 +806,8 @@ def recover(shapes,previous,update=lambda _:None,*,memory_budget=None,profile="b
            "spectral_pairs":len(pairs),"spectral_proposals":sum(map(len,spectral.values())),
            "spectral_verified":len(sr),"population_prior":prior_on,
            "population_downweighted":int(np.count_nonzero(weights<.5)),
-           "pose_modes":len(modes),"seed_hypotheses":len(seeds),"accepted_joins":len(joins),
+           "pose_modes":len(modes),"seed_hypotheses":len(seeds),"seed_bridge_rejections":seed_count-len(seeds),
+           "offset_recovery":offset_stats,"accepted_joins":len(joins),
            "contextual_growth_joins":sum(bool(j.get("contextual_growth"))for j in joins),
            "closed_loop_joins":sum(j.get("loop_support",0)>0 for j in joins),
            "direct_bridge_joins":sum(j.get("direct_bridge_support",0)>0 for j in joins),

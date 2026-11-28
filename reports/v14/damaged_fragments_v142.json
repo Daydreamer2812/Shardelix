@@ -1,0 +1,1382 @@
+{
+  "baseline_version": "14.1.0",
+  "baseline_commit": "c5006134e22462c341ce0999dec0236abe136db5",
+  "candidate_version": "14.2.0",
+  "protocol": "Blind CPU, classical CV. Relative pose accepted if center error <=10 px and rotation error <=10 degrees. Ground truth only evaluated after solve; no credit for isolated anchors. Independent coordinates for each component.",
+  "limitations": [
+    "Development fixtures and additional perturbations of the same fixture family; not SOTA or an independent real-world test.",
+    "One small 5 px erosion fixture has fewer correct accepted joins (2 -> 1) while eliminating false joins.",
+    "DAFNE rounded fragments remain largely unsolved; do not interpret fewer false matches as full recovery.",
+    "Runtime values were measured with differing concurrent workloads, not a controlled speed benchmark.",
+    "Masaccio comparator is the recorded prior rounded-selection result, not a fresh baseline run."
+  ],
+  "synthetic_development": {
+    "baseline": [
+      {
+        "seed": 3,
+        "erosion_px": 3,
+        "genuine_pieces": 7,
+        "selected": {
+          "correct_relative_joins": 6,
+          "accepted_joins": 6,
+          "outlier_joins": 0,
+          "precision": 1.0
+        },
+        "wall_seconds": 6.007264999999734,
+        "model": "gap-aware",
+        "offset": {}
+      },
+      {
+        "seed": 3,
+        "erosion_px": 5,
+        "genuine_pieces": 7,
+        "selected": {
+          "correct_relative_joins": 4,
+          "accepted_joins": 6,
+          "outlier_joins": 0,
+          "precision": 0.6666666666666666
+        },
+        "wall_seconds": 5.209081408000202,
+        "model": "exact-contact",
+        "offset": {}
+      },
+      {
+        "seed": 3,
+        "erosion_px": 8,
+        "genuine_pieces": 7,
+        "selected": {
+          "correct_relative_joins": 0,
+          "accepted_joins": 6,
+          "outlier_joins": 0,
+          "precision": 0.0
+        },
+        "wall_seconds": 5.6798245320001115,
+        "model": "exact-contact",
+        "offset": {}
+      },
+      {
+        "seed": 9,
+        "erosion_px": 3,
+        "genuine_pieces": 7,
+        "selected": {
+          "correct_relative_joins": 6,
+          "accepted_joins": 6,
+          "outlier_joins": 0,
+          "precision": 1.0
+        },
+        "wall_seconds": 5.4470936249999795,
+        "model": "gap-aware",
+        "offset": {}
+      },
+      {
+        "seed": 9,
+        "erosion_px": 5,
+        "genuine_pieces": 7,
+        "selected": {
+          "correct_relative_joins": 2,
+          "accepted_joins": 6,
+          "outlier_joins": 0,
+          "precision": 0.3333333333333333
+        },
+        "wall_seconds": 5.360967578999862,
+        "model": "exact-contact",
+        "offset": {}
+      },
+      {
+        "seed": 9,
+        "erosion_px": 8,
+        "genuine_pieces": 7,
+        "selected": {
+          "correct_relative_joins": 0,
+          "accepted_joins": 6,
+          "outlier_joins": 0,
+          "precision": 0.0
+        },
+        "wall_seconds": 4.372230469999977,
+        "model": "exact-contact",
+        "offset": {}
+      },
+      {
+        "seed": 17,
+        "erosion_px": 3,
+        "genuine_pieces": 7,
+        "selected": {
+          "correct_relative_joins": 6,
+          "accepted_joins": 6,
+          "outlier_joins": 0,
+          "precision": 1.0
+        },
+        "wall_seconds": 8.366298947999894,
+        "model": "gap-aware",
+        "offset": {}
+      },
+      {
+        "seed": 17,
+        "erosion_px": 5,
+        "genuine_pieces": 7,
+        "selected": {
+          "correct_relative_joins": 2,
+          "accepted_joins": 6,
+          "outlier_joins": 1,
+          "precision": 0.3333333333333333
+        },
+        "wall_seconds": 7.911566781000147,
+        "model": "exact-contact",
+        "offset": {}
+      },
+      {
+        "seed": 17,
+        "erosion_px": 8,
+        "genuine_pieces": 7,
+        "selected": {
+          "correct_relative_joins": 0,
+          "accepted_joins": 5,
+          "outlier_joins": 0,
+          "precision": 0.0
+        },
+        "wall_seconds": 7.243055318000188,
+        "model": "exact-contact",
+        "offset": {}
+      },
+      {
+        "seed": 3,
+        "erosion_px": 5,
+        "genuine_pieces": 4,
+        "selected": {
+          "correct_relative_joins": 2,
+          "accepted_joins": 4,
+          "outlier_joins": 1,
+          "precision": 0.5
+        },
+        "wall_seconds": 2.9118936009999743,
+        "model": "exact-contact",
+        "offset": {}
+      },
+      {
+        "seed": 17,
+        "erosion_px": 5,
+        "genuine_pieces": 4,
+        "selected": {
+          "correct_relative_joins": 2,
+          "accepted_joins": 4,
+          "outlier_joins": 1,
+          "precision": 0.5
+        },
+        "wall_seconds": 2.9783256900000197,
+        "model": "exact-contact",
+        "offset": {}
+      }
+    ],
+    "candidate": [
+      {
+        "seed": 3,
+        "erosion_px": 3,
+        "genuine_pieces": 7,
+        "selected": {
+          "correct_relative_joins": 6,
+          "accepted_joins": 6,
+          "outlier_joins": 0,
+          "precision": 1.0
+        },
+        "wall_seconds": 5.029458457000146,
+        "model": "gap-aware",
+        "offset": {
+          "attempted": false
+        }
+      },
+      {
+        "seed": 3,
+        "erosion_px": 5,
+        "genuine_pieces": 7,
+        "selected": {
+          "correct_relative_joins": 5,
+          "accepted_joins": 5,
+          "outlier_joins": 0,
+          "precision": 1.0
+        },
+        "wall_seconds": 8.338734020000174,
+        "model": "classical-continuation",
+        "offset": {
+          "attempted": true,
+          "pair_work": 112,
+          "pair_budget": 1200,
+          "radii_px": [
+            3,
+            6,
+            9,
+            12
+          ],
+          "hypotheses": 443,
+          "verified_modes": 9,
+          "verified_seeds": 5,
+          "selected": true
+        }
+      },
+      {
+        "seed": 3,
+        "erosion_px": 8,
+        "genuine_pieces": 7,
+        "selected": {
+          "correct_relative_joins": 3,
+          "accepted_joins": 3,
+          "outlier_joins": 0,
+          "precision": 1.0
+        },
+        "wall_seconds": 7.941553749000377,
+        "model": "classical-continuation",
+        "offset": {
+          "attempted": true,
+          "pair_work": 112,
+          "pair_budget": 1200,
+          "radii_px": [
+            3,
+            6,
+            9,
+            12
+          ],
+          "hypotheses": 440,
+          "verified_modes": 4,
+          "verified_seeds": 3,
+          "selected": true
+        }
+      },
+      {
+        "seed": 9,
+        "erosion_px": 3,
+        "genuine_pieces": 7,
+        "selected": {
+          "correct_relative_joins": 6,
+          "accepted_joins": 6,
+          "outlier_joins": 0,
+          "precision": 1.0
+        },
+        "wall_seconds": 4.81552680599998,
+        "model": "gap-aware",
+        "offset": {
+          "attempted": false
+        }
+      },
+      {
+        "seed": 9,
+        "erosion_px": 5,
+        "genuine_pieces": 7,
+        "selected": {
+          "correct_relative_joins": 3,
+          "accepted_joins": 3,
+          "outlier_joins": 0,
+          "precision": 1.0
+        },
+        "wall_seconds": 8.387701605000075,
+        "model": "classical-continuation",
+        "offset": {
+          "attempted": true,
+          "pair_work": 112,
+          "pair_budget": 1200,
+          "radii_px": [
+            3,
+            6,
+            9,
+            12
+          ],
+          "hypotheses": 439,
+          "verified_modes": 7,
+          "verified_seeds": 3,
+          "selected": true
+        }
+      },
+      {
+        "seed": 9,
+        "erosion_px": 8,
+        "genuine_pieces": 7,
+        "selected": {
+          "correct_relative_joins": 1,
+          "accepted_joins": 1,
+          "outlier_joins": 0,
+          "precision": 1.0
+        },
+        "wall_seconds": 8.007048966000184,
+        "model": "classical-continuation",
+        "offset": {
+          "attempted": true,
+          "pair_work": 112,
+          "pair_budget": 1200,
+          "radii_px": [
+            3,
+            6,
+            9,
+            12
+          ],
+          "hypotheses": 436,
+          "verified_modes": 4,
+          "verified_seeds": 1,
+          "selected": true
+        }
+      },
+      {
+        "seed": 17,
+        "erosion_px": 3,
+        "genuine_pieces": 7,
+        "selected": {
+          "correct_relative_joins": 6,
+          "accepted_joins": 6,
+          "outlier_joins": 0,
+          "precision": 1.0
+        },
+        "wall_seconds": 4.943437111000094,
+        "model": "gap-aware",
+        "offset": {
+          "attempted": false
+        }
+      },
+      {
+        "seed": 17,
+        "erosion_px": 5,
+        "genuine_pieces": 7,
+        "selected": {
+          "correct_relative_joins": 4,
+          "accepted_joins": 4,
+          "outlier_joins": 0,
+          "precision": 1.0
+        },
+        "wall_seconds": 8.458588268999847,
+        "model": "classical-continuation",
+        "offset": {
+          "attempted": true,
+          "pair_work": 112,
+          "pair_budget": 1200,
+          "radii_px": [
+            3,
+            6,
+            9,
+            12
+          ],
+          "hypotheses": 433,
+          "verified_modes": 7,
+          "verified_seeds": 4,
+          "selected": true
+        }
+      },
+      {
+        "seed": 17,
+        "erosion_px": 8,
+        "genuine_pieces": 7,
+        "selected": {
+          "correct_relative_joins": 2,
+          "accepted_joins": 2,
+          "outlier_joins": 0,
+          "precision": 1.0
+        },
+        "wall_seconds": 8.106675975999678,
+        "model": "classical-continuation",
+        "offset": {
+          "attempted": true,
+          "pair_work": 112,
+          "pair_budget": 1200,
+          "radii_px": [
+            3,
+            6,
+            9,
+            12
+          ],
+          "hypotheses": 433,
+          "verified_modes": 2,
+          "verified_seeds": 2,
+          "selected": true
+        }
+      },
+      {
+        "seed": 3,
+        "erosion_px": 5,
+        "genuine_pieces": 4,
+        "selected": {
+          "correct_relative_joins": 2,
+          "accepted_joins": 2,
+          "outlier_joins": 0,
+          "precision": 1.0
+        },
+        "wall_seconds": 2.925438567999663,
+        "model": "classical-continuation",
+        "offset": {
+          "attempted": true,
+          "pair_work": 40,
+          "pair_budget": 1200,
+          "radii_px": [
+            3,
+            6,
+            9,
+            12
+          ],
+          "hypotheses": 155,
+          "verified_modes": 4,
+          "verified_seeds": 2,
+          "selected": true
+        }
+      },
+      {
+        "seed": 17,
+        "erosion_px": 5,
+        "genuine_pieces": 4,
+        "selected": {
+          "correct_relative_joins": 1,
+          "accepted_joins": 1,
+          "outlier_joins": 0,
+          "precision": 1.0
+        },
+        "wall_seconds": 2.909139636999953,
+        "model": "classical-continuation",
+        "offset": {
+          "attempted": true,
+          "pair_work": 40,
+          "pair_budget": 1200,
+          "radii_px": [
+            3,
+            6,
+            9,
+            12
+          ],
+          "hypotheses": 155,
+          "verified_modes": 3,
+          "verified_seeds": 1,
+          "selected": true
+        }
+      }
+    ]
+  },
+  "continuous_rotation_stress": {
+    "baseline": [
+      {
+        "seed": 31,
+        "erosion_px": 5,
+        "genuine_pieces": 7,
+        "model": "exact-contact",
+        "wall_seconds": 4.329181511000115,
+        "selected": {
+          "correct_relative_joins": 0,
+          "accepted_joins": 7,
+          "outlier_joins": 1,
+          "precision": 0.0
+        },
+        "offset": {}
+      },
+      {
+        "seed": 31,
+        "erosion_px": 8,
+        "genuine_pieces": 7,
+        "model": "exact-contact",
+        "wall_seconds": 5.395040664000135,
+        "selected": {
+          "correct_relative_joins": 0,
+          "accepted_joins": 6,
+          "outlier_joins": 1,
+          "precision": 0.0
+        },
+        "offset": {}
+      },
+      {
+        "seed": 41,
+        "erosion_px": 5,
+        "genuine_pieces": 7,
+        "model": "exact-contact",
+        "wall_seconds": 6.9299554680001165,
+        "selected": {
+          "correct_relative_joins": 0,
+          "accepted_joins": 6,
+          "outlier_joins": 0,
+          "precision": 0.0
+        },
+        "offset": {}
+      },
+      {
+        "seed": 41,
+        "erosion_px": 8,
+        "genuine_pieces": 7,
+        "model": "exact-contact",
+        "wall_seconds": 6.940650695999921,
+        "selected": {
+          "correct_relative_joins": 0,
+          "accepted_joins": 6,
+          "outlier_joins": 0,
+          "precision": 0.0
+        },
+        "offset": {}
+      }
+    ],
+    "candidate": [
+      {
+        "seed": 31,
+        "erosion_px": 5,
+        "genuine_pieces": 7,
+        "model": "classical-continuation",
+        "wall_seconds": 9.82240841599969,
+        "selected": {
+          "correct_relative_joins": 3,
+          "accepted_joins": 3,
+          "outlier_joins": 0,
+          "precision": 1.0
+        },
+        "offset": {
+          "attempted": true,
+          "pair_work": 112,
+          "pair_budget": 1200,
+          "radii_px": [
+            4,
+            8,
+            12,
+            16
+          ],
+          "hypotheses": 432,
+          "verified_modes": 4,
+          "verified_seeds": 3,
+          "selected": true
+        }
+      },
+      {
+        "seed": 31,
+        "erosion_px": 8,
+        "genuine_pieces": 7,
+        "model": "classical-continuation",
+        "wall_seconds": 13.306534088999797,
+        "selected": {
+          "correct_relative_joins": 1,
+          "accepted_joins": 1,
+          "outlier_joins": 0,
+          "precision": 1.0
+        },
+        "offset": {
+          "attempted": true,
+          "pair_work": 112,
+          "pair_budget": 1200,
+          "radii_px": [
+            3,
+            6,
+            9,
+            12
+          ],
+          "hypotheses": 427,
+          "verified_modes": 1,
+          "verified_seeds": 1,
+          "selected": true
+        }
+      },
+      {
+        "seed": 41,
+        "erosion_px": 5,
+        "genuine_pieces": 7,
+        "model": "classical-continuation",
+        "wall_seconds": 12.968943752000087,
+        "selected": {
+          "correct_relative_joins": 3,
+          "accepted_joins": 4,
+          "outlier_joins": 0,
+          "precision": 0.75
+        },
+        "offset": {
+          "attempted": true,
+          "pair_work": 112,
+          "pair_budget": 1200,
+          "radii_px": [
+            4,
+            8,
+            12,
+            16
+          ],
+          "hypotheses": 433,
+          "verified_modes": 6,
+          "verified_seeds": 4,
+          "selected": true
+        }
+      },
+      {
+        "seed": 41,
+        "erosion_px": 8,
+        "genuine_pieces": 7,
+        "model": "classical-continuation",
+        "wall_seconds": 12.907932559000074,
+        "selected": {
+          "correct_relative_joins": 0,
+          "accepted_joins": 2,
+          "outlier_joins": 0,
+          "precision": 0.0
+        },
+        "offset": {
+          "attempted": true,
+          "pair_work": 112,
+          "pair_budget": 1200,
+          "radii_px": [
+            3,
+            6,
+            9,
+            12
+          ],
+          "hypotheses": 431,
+          "verified_modes": 3,
+          "verified_seeds": 2,
+          "selected": true
+        }
+      }
+    ]
+  },
+  "dafne_resurrection": {
+    "input_count": 102,
+    "genuine_count": 87,
+    "distractors": 15,
+    "baseline": {
+      "wall_seconds": 219.56421933299998,
+      "primary": {
+        "pose_correct": 3,
+        "gt_pose_count": 87,
+        "genuine_placed": 3,
+        "outliers_placed": 0,
+        "median_position_error_px": 1.5958074513814322,
+        "median_angle_error_deg": 1.999999999999996
+      },
+      "components": {
+        "model": "classical-continuation",
+        "accepted_relative_joins": 13,
+        "correct_relative_joins": 6,
+        "outlier_joins": 0,
+        "relative_join_precision": 0.46153846153846156,
+        "nontrivial_pieces": 25,
+        "nontrivial_groups": 12,
+        "groups": [
+          {
+            "size": 3,
+            "correct_global_gauge_poses": 3
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 2
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 2
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 2
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 2
+          }
+        ]
+      },
+      "deep_recovery": {
+        "attempted": true,
+        "selected": true,
+        "gap_limit_px": 36.0,
+        "requested_gap_limit_px": 36.0,
+        "field_pixels": 2789470,
+        "field_pixel_budget": 55331161,
+        "estimated_workspace_bytes": 148963240,
+        "spectral_estimated_workspace_bytes": 202658728,
+        "sparse_degree": null,
+        "spectral_skipped_for_memory": false,
+        "line_tokens": 921,
+        "line_proposals": 71099,
+        "point_proposals": 102508,
+        "point_verified": 3399,
+        "spectral_pairs": 898,
+        "spectral_proposals": 12572,
+        "spectral_verified": 2213,
+        "population_prior": true,
+        "population_downweighted": 15,
+        "pose_modes": 3974,
+        "seed_hypotheses": 15,
+        "accepted_joins": 13,
+        "contextual_growth_joins": 1,
+        "closed_loop_joins": 0,
+        "direct_bridge_joins": 0,
+        "component_sizes": [
+          3,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "selection_reason": "rounded damaged population; confidence before component size"
+      }
+    },
+    "candidate": {
+      "wall_seconds": 205.46796736800025,
+      "primary": {
+        "pose_correct": 3,
+        "gt_pose_count": 87,
+        "genuine_placed": 3,
+        "outliers_placed": 0,
+        "median_position_error_px": 1.5958074513814322,
+        "median_angle_error_deg": 1.999999999999996
+      },
+      "components": {
+        "model": "classical-continuation",
+        "accepted_relative_joins": 12,
+        "correct_relative_joins": 6,
+        "outlier_joins": 0,
+        "relative_join_precision": 0.5,
+        "nontrivial_pieces": 23,
+        "nontrivial_groups": 11,
+        "groups": [
+          {
+            "size": 3,
+            "correct_global_gauge_poses": 3
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 2
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 2
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 2
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 2
+          }
+        ]
+      },
+      "deep_recovery": {
+        "attempted": true,
+        "selected": true,
+        "gap_limit_px": 36.0,
+        "requested_gap_limit_px": 36.0,
+        "field_pixels": 2789470,
+        "field_pixel_budget": 53382231,
+        "estimated_workspace_bytes": 148963240,
+        "spectral_estimated_workspace_bytes": 202658728,
+        "sparse_degree": null,
+        "spectral_skipped_for_memory": false,
+        "line_tokens": 921,
+        "line_proposals": 71099,
+        "point_proposals": 102508,
+        "point_verified": 3399,
+        "spectral_pairs": 898,
+        "spectral_proposals": 12572,
+        "spectral_verified": 2213,
+        "population_prior": true,
+        "population_downweighted": 15,
+        "pose_modes": 3974,
+        "seed_hypotheses": 13,
+        "seed_bridge_rejections": 2,
+        "offset_recovery": {
+          "attempted": false
+        },
+        "accepted_joins": 12,
+        "contextual_growth_joins": 1,
+        "closed_loop_joins": 0,
+        "direct_bridge_joins": 0,
+        "component_sizes": [
+          3,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "selection_reason": "rounded damaged population; confidence before component size"
+      }
+    }
+  },
+  "dafne_masaccio": {
+    "historical_baseline": {
+      "protocol": "blind auto/Balanced; independent SE(2) gauge per component; 10 px/10 degree tolerance",
+      "archive": "16.zip",
+      "case": "Masaccio_SanPietrorisanagliinfermiconlasuaombra_810x1200/Masaccio_SanPietrorisanagliinfermiconlasuaombra_810x1200_2019-2-20_16.30.25",
+      "input_count": 101,
+      "wall_seconds": 229.01904539899988,
+      "reference_used": false,
+      "primary": {
+        "pose_correct": 1,
+        "gt_pose_count": 101,
+        "genuine_placed": 2,
+        "outliers_placed": 0,
+        "median_position_error_px": 167.15806594073769,
+        "median_angle_error_deg": 45.334636621107585
+      },
+      "components": {
+        "model": "classical-continuation",
+        "accepted_relative_joins": 11,
+        "correct_relative_joins": 0,
+        "outlier_joins": 0,
+        "relative_join_precision": 0.0,
+        "nontrivial_pieces": 22,
+        "nontrivial_groups": 11,
+        "groups": [
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          }
+        ]
+      },
+      "deep_recovery": {
+        "attempted": true,
+        "selected": true,
+        "gap_limit_px": 36.0,
+        "field_pixels": 2803279,
+        "field_pixel_budget": 41069576,
+        "estimated_workspace_bytes": 151069076,
+        "sparse_degree": null,
+        "spectral_skipped_for_memory": false,
+        "line_tokens": 999,
+        "line_proposals": 76254,
+        "point_proposals": 113241,
+        "point_verified": 1286,
+        "spectral_pairs": 555,
+        "spectral_proposals": 7770,
+        "spectral_verified": 979,
+        "population_prior": true,
+        "population_downweighted": 0,
+        "pose_modes": 1684,
+        "seed_hypotheses": 11,
+        "accepted_joins": 11,
+        "contextual_growth_joins": 0,
+        "closed_loop_joins": 0,
+        "direct_bridge_joins": 0,
+        "component_sizes": [
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "selection_reason": "rounded damaged population; confidence before component size"
+      },
+      "common_scale": 1.0
+    },
+    "candidate": {
+      "protocol": "blind auto/Balanced; independent SE(2) gauge per component; 10 px/10 degree tolerance",
+      "archive": "16.zip",
+      "case": "Masaccio_SanPietrorisanagliinfermiconlasuaombra_810x1200/Masaccio_SanPietrorisanagliinfermiconlasuaombra_810x1200_2019-2-20_16.30.25",
+      "input_count": 101,
+      "wall_seconds": 231.70063907200029,
+      "reference_used": false,
+      "primary": {
+        "pose_correct": 1,
+        "gt_pose_count": 101,
+        "genuine_placed": 2,
+        "outliers_placed": 0,
+        "median_position_error_px": 167.15806594073769,
+        "median_angle_error_deg": 45.334636621107585
+      },
+      "components": {
+        "model": "classical-continuation",
+        "accepted_relative_joins": 8,
+        "correct_relative_joins": 0,
+        "outlier_joins": 0,
+        "relative_join_precision": 0.0,
+        "nontrivial_pieces": 16,
+        "nontrivial_groups": 8,
+        "groups": [
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          },
+          {
+            "size": 2,
+            "correct_global_gauge_poses": 1
+          }
+        ]
+      },
+      "deep_recovery": {
+        "attempted": true,
+        "selected": true,
+        "gap_limit_px": 36.0,
+        "requested_gap_limit_px": 36.0,
+        "field_pixels": 2803279,
+        "field_pixel_budget": 53280128,
+        "estimated_workspace_bytes": 151069076,
+        "spectral_estimated_workspace_bytes": 209810644,
+        "sparse_degree": null,
+        "spectral_skipped_for_memory": false,
+        "line_tokens": 999,
+        "line_proposals": 76254,
+        "point_proposals": 113241,
+        "point_verified": 1286,
+        "spectral_pairs": 555,
+        "spectral_proposals": 7770,
+        "spectral_verified": 979,
+        "population_prior": true,
+        "population_downweighted": 0,
+        "pose_modes": 1684,
+        "seed_hypotheses": 8,
+        "seed_bridge_rejections": 3,
+        "offset_recovery": {
+          "attempted": false
+        },
+        "accepted_joins": 8,
+        "contextual_growth_joins": 0,
+        "closed_loop_joins": 0,
+        "direct_bridge_joins": 0,
+        "component_sizes": [
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "selection_reason": "rounded damaged population; confidence before component size"
+      },
+      "common_scale": 1.0
+    }
+  }
+}

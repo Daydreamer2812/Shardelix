@@ -1,5 +1,25 @@
 # Experimental gap-aware recovery for degraded fragments
 
+## V14.2: curved missing-boundary recovery
+
+When the weak exact-contact route cannot justify a coherent reconstruction,
+Balanced/High accuracy can test morphological offsets of measured fragment
+silhouettes at four scale-dependent radii. Complementary arc matching on these
+temporary offset masks proposes rigid poses, which are mapped back into the
+original crop coordinates and checked against actual mask collision, opposing
+tangents, contiguous arc support and gap dispersion. Correlation of variations
+and first differences through the missing seam establishes independent
+appearance support; low-contrast or competing poses are withheld.
+
+The search is bounded by pair-work and memory budgets. It is not a new public
+solver or a dilation-based output renderer. Rounded populations do not use
+this offset prior, since their lost boundaries contain little complementary
+shape; a separate bridge-consistency guard rejects weak seeds while retaining
+their poses as competitors. Existing stronger gap-aware selections are retained.
+
+See [V14.2.0 release notes](releases/v14.2.0.md) and
+[paired damage benchmark](../reports/v14/damaged_fragments_v142.json).
+
 ## Scope
 
 The physical scan solver now has an adaptive reference-free pipeline for
